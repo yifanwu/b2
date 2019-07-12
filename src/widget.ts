@@ -77,7 +77,7 @@ export class MidasWidget extends DOMWidgetView {
       if (this.view == null) {
         throw new Error("Internal error: no view attached to widget");
       }
-    }
+    };
 
     const applyUpdate = async (update: WidgetUpdate) => {
       checkView();

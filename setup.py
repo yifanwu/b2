@@ -30,7 +30,7 @@ DATA_FILES          = [
                             ]),
                             ('etc/jupyter/nbconfig/notebook.d' , ['midas.json'])
                         ]
-ENTRY_POINTS        = {'altair.vegalite.v3.renderer': ['notebook=midas:entry_point_renderer']}
+# ENTRY_POINTS        = {'altair.vegalite.v3.renderer': ['notebook=midas:entry_point_renderer']}
 EXTRAS_REQUIRE      = {'widget': ['ipywidgets']}
 
 
@@ -78,7 +78,7 @@ setup(name=NAME,
       packages=PACKAGES,
       package_data=PACKAGE_DATA,
       data_files=DATA_FILES,
-      entry_points=ENTRY_POINTS,
+    #   entry_points=ENTRY_POINTS,
       extras_require=EXTRAS_REQUIRE,
       include_package_data=True,
       classifiers=[
