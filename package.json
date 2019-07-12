@@ -1,17 +1,17 @@
 {
-  "name": "jupyter-vega",
-  "version": "2.4.0",
-  "description": "IPython/Jupyter notebook module for [Vega](https://vega.github.io/vega), and [Vega-Lite](https://vega.github.io/vega-lite).",
+  "name": "midas",
+  "version": "0.0.1",
+  "description": "Augmenting notebooks with interactions using [Vega](https://vega.github.io/vega)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vega/ipyvega.git"
+    "url": "git+https://github.com/yifanwu/midas.git"
   },
   "author": "",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/vega/ipyvega/issues"
+    "url": "https://github.com/yifanwu/midas/issues"
   },
-  "homepage": "https://github.com/vega/ipyvega#readme",
+  "homepage": "https://github.com/yifanwu/midas#readme",
   "scripts": {
     "format": "prettier --write 'src/*.ts'",
     "lint": "prettier --check 'src/*.ts'",

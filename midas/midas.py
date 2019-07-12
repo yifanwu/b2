@@ -45,6 +45,8 @@ class Midas(object):
 
     def display(self):
         """Render the visualization."""
+        # TODO: remove, temp, testing
+        print("displaying")
         display(self)
 
 
