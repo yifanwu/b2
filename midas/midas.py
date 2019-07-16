@@ -12,42 +12,38 @@ from .utils import prepare_spec
 class Midas(object):
     """Create Interactive visualization in the Jupyter Notebook"""
     
-    def __init__(self, spec, data=None, opt=None):
-        """Initialize the visualization object."""
-        spec = spec
-        self.opt = opt or {}
-        self.spec = self._prepare_spec(spec, data)
+    def __init__(self):
+        # this is an overall environement
+    # def _prepare_spec(self, spec, data):
+    #     return prepare_spec(spec, data)
 
-    def _prepare_spec(self, spec, data):
-        return prepare_spec(spec, data)
+    # def _generate_js(self, id, **kwds):
+    #     template = utils.get_content("static/midas.js")
+    #     payload = template.format(
+    #         id=id,
+    #         spec=json.dumps(self.spec, **kwds),
+    #         opt=json.dumps(self.opt, **kwds),
+    #         # type=self.render_type
+    #         # support vega only for now, since
+    #         # - internal use
+    #         # - better signal handling support
+    #         type="vega"
+    #     )
+    #     return payload
 
-    def _generate_js(self, id, **kwds):
-        template = utils.get_content("static/vega.js")
-        payload = template.format(
-            id=id,
-            spec=json.dumps(self.spec, **kwds),
-            opt=json.dumps(self.opt, **kwds),
-            # type=self.render_type
-            # support vega only for now, since
-            # - internal use
-            # - better signal handling support
-            type="vega"
-        )
-        return payload
+    # def _repr_mimebundle_(self, include=None, exclude=None):
+    #     """Display the visualization in the Jupyter notebook."""
+    #     id = uuid.uuid4()
+    #     return (
+    #         {'application/javascript': self._generate_js(id)},
+    #         {'midas': '#{0}'.format(id)},
+    #     )
 
-    def _repr_mimebundle_(self, include=None, exclude=None):
-        """Display the visualization in the Jupyter notebook."""
-        id = uuid.uuid4()
-        return (
-            {'application/javascript': self._generate_js(id)},
-            {'midas': '#{0}'.format(id)},
-        )
-
-    def display(self):
-        """Render the visualization."""
-        # TODO: remove, temp, testing
-        print("displaying")
-        display(self)
+    # def display(self):
+    #     """Render the visualization."""
+    #     # TODO: remove, temp, testing
+    #     print("displaying")
+    #     display(self)
 
 
 # not sure wha the following is doing...
@@ -55,7 +51,6 @@ class Midas(object):
 #     vl = Midas(spec, opt=embed_options)
 #     vl.display()
 #     return {'text/plain': ''}
-
 
 __all__ = ['Midas']
 # , 'entry_point_renderer']

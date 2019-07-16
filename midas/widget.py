@@ -7,7 +7,7 @@ try:
 
 except ImportError as err:
     new_err = ImportError(
-        "vega.widget requires ipywidgets, which could not be imported. "
+        "midas.widget requires ipywidgets, which could not be imported. "
         "Is ipywidgets installed?"
     )
 
@@ -72,10 +72,6 @@ class MidasWidget(DOMWidget):
         self._opt_source = json.dumps(value)
         self._reset()
 
-    def bindToSignal(cb):
-      """Bind a function to signal of the chart
-
-      """
 
     def update(self, key, remove=None, insert=None):
         """Update the chart data.
@@ -106,3 +102,25 @@ class MidasWidget(DOMWidget):
         else:
             self._pending_updates.append(update)
 
+    # the new data is a dataframe
+    def replaceData(self, key, newDf):
+        """Replaces the chart data
+        works by creating a remove function that removes everything
+        """
+        newValues = newDf.to_dict('records')
+        self.update(key, insert=newValues, remove='true')
+
+    def tick(self, dfFun, widget, updateKey):
+        newDf = dfFun(self.selection)
+        widget.replaceData(updateKey, newDf)
+
+    def registerSignalCallback(self, signal, callback):
+        """Register a callback to the signal
+        """
+        print("#2 received register signal", signal, callback)
+        registerSignal = dict(signal=signal, callback=callback)
+        # FIXME: probably nee dot check 
+        self.send(dict(type="registerSignal", callbacks=[registerSignal]))
+
+
+        
