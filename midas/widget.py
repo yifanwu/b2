@@ -4,7 +4,6 @@ import json
 try:
     from ipywidgets import DOMWidget
     from traitlets import Unicode, Dict
-
 except ImportError as err:
     new_err = ImportError(
         "midas.widget requires ipywidgets, which could not be imported. "
