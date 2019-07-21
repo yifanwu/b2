@@ -4,8 +4,8 @@
    * two attributes, bar, scatter, or line
 """
 from typing import Optional, Dict
-from pandas import Dataframe, Series, cut
-from pandas.api.types import is_string_dtype, is_numeric_dtype, is_boolean_dtype
+from pandas import DataFrame, Series, cut
+from pandas.api.types import is_string_dtype, is_numeric_dtype, is_bool_dtype
 
 # all data sources we will assume to be DEFAULT_DATA_SOURCE
 DEFAULT_DATA_SOURCE = "table"
@@ -100,7 +100,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
             "range": "height"
         }
     ]
-    spec_base["axes"]: [
+    spec_base["axes"] = [
         {
             "scale": "x",
             "grid": True,
@@ -118,7 +118,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
             "title": y_field
         }
     ]
-    spec_base["marks"]: [
+    spec_base["marks"] = [
         {
             "name": "marks",
             "type": "symbol",
@@ -204,42 +204,44 @@ def gen_spec_base():
             "padding": 5,
         }
 
-def set_data_attr(spec_base: Dict, data: Dataframe) -> Dict:
+def set_data_attr(spec_base: Dict, data: DataFrame) -> Dict:
     """set_data_attr takes the df and transformes it into Dict object shape for serialization
     
     Arguments:
         spec_base {Dict} -- [description]
-        data {Dataframe} -- [description]
+        data {DataFrame} -- [description]
     
     Returns:
         Dict -- [description]
     """
-    spec_base["data"] = {
+    spec_base["data"] = [{
         "name": DEFAULT_DATA_SOURCE,
         "values": data.to_dict(orient='records')
-    }
+    }]
     return spec_base
 
-def get_categorical_districution(data: Series) -> Dataframe:
+def get_categorical_districution(data: Series) -> DataFrame:
     # just select the top 10
     return data.value_counts().to_frame(COUNT_COL_NAME)
 
-def get_numeric_districution(data: Series) -> Dataframe:
+def get_numeric_districution(data: Series) -> DataFrame:
     # wow can just use pd.cut
     return cut(data, bins=10).value_counts().to_frame(COUNT_COL_NAME)
 
-def gen_spec(df: Dataframe):
+def gen_spec(df: DataFrame):
     """Implements basic show me like feature
       if there is only one column, try to do a distribution with reasonable binning
       if one categorical, one numeric, barchart
       if two numeric, scatter, unless if one is time, then line (line, todo)
+      TODO:
+      [ ] if the numeric value has a limited number of unique values, also treat as bar chart!
     """
     # error if df has no column
     df_len = len(df.columns)
-    df_to_visualize: Dataframe = None
+    df_to_visualize: DataFrame = None
     spec_base = gen_spec_base()
     if (df_len == 0):
-        raise Exception("Dataframe has too few columns")
+        raise Exception("DataFrame has too few columns")
     elif (df_len == 1):
         first_col = df.columns.values[0]
         if (is_string_dtype(df[first_col])):
@@ -250,9 +252,10 @@ def gen_spec(df: Dataframe):
         spec_base = set_data_attr(spec_base, df_to_visualize)
         return set_bar_chart_spec(spec_base, first_col, COUNT_COL_NAME)
     else:
+        first_col = df.columns.values[0]
         # fow now let's just take the frist two columns
         second_col = df.columns.values[1]
-        spec_base = set_data_attr(spec_base, df[df[first_col, second_col]])
+        spec_base = set_data_attr(spec_base, df[[first_col, second_col]])
         if (is_string_dtype(df[first_col]) & is_numeric_dtype(df[second_col])):
             return set_bar_chart_spec(spec_base, first_col, second_col)
         elif (is_numeric_dtype(df[first_col]) & is_string_dtype(df[second_col])):
