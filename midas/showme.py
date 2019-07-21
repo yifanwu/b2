@@ -15,7 +15,9 @@ X_SELECT_SIGNAL = "xBrush"
 Y_PIXEL_SIGNAL = "xBrushPixel"
 Y_SELECT_SIGNAL = "yBrush"
 CHART_HEIGHT = 200
+CHART_INNER_HEIGHT = CHART_HEIGHT
 CHART_WIDTH = 400
+CHART_INNER_WIDTH = CHART_WIDTH
 
 def gen_click_signal():
     return {
@@ -129,13 +131,88 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
                 "y": {"scale": "y", "field": y_field},
                 "size": {"value": 4},
                 "shape": {"value": "circle"},
-                "strokeWidth": {"value": 2},
+                "strokeWidth": {"value": 5},
                 "opacity": {"value": 0.5},
                 "stroke": {"value": "#4682b4"},
                 "fill": {"value": "transparent"}
                 }
             }
         },
+        {
+          "type": "rect",
+          "name": "brush",
+          "encode": {
+            "enter": {
+              "fill": {"value": "#333"},
+              "fillOpacity": {"value": 0.2}
+            },
+            "update": {
+              "x": {"signal": "brushX ? brushX[0] : 0"},
+              "x2": {"signal": "brushX ? brushX[1] : 0"},
+              "y": {"signal": "brushY ?  brushY[0] : 0"},
+              "y2": {"signal": "brushY ? brushY[1] : 0"}
+            }
+          }
+    }
+    ]
+    spec_base["signals"] = [
+        { "name": "chartWidth", "value": CHART_INNER_WIDTH },
+        { "name": "chartHeight", "value": CHART_INNER_HEIGHT },
+        {
+        "name": "brushX", "value": 0,
+        "on": [
+          {
+            "events": "mousedown",
+            "update": "[x(), x()]"
+          },
+          {
+            "events": "[mousedown, mouseup] > mousemove",
+            "update": "[brushX[0], clamp(x(), 0, chartWidth)]"
+          },
+          {
+            "events": {"signal": "delta"},
+            "update": "clampRange([anchorX[0] + delta[0], anchorX[1] + delta[0]], 0, chartWidth)"
+          }
+        ]
+      },
+      {
+        "name": "brushY", "value": 0,
+        "on": [
+          {
+            "events": "mousedown",
+            "update": "[y(), y()]"
+          },
+          {
+            "events": "[mousedown, mouseup] > mousemove",
+            "update": "[brushY[0], clamp(y(), 0, chartHeight)]"
+          },
+          {
+            "events": {"signal": "delta"},
+            "update": "clampRange([anchorY[0] + delta[1], anchorY[1] + delta[1]], 0, chartHeight)"
+          }
+        ]
+      },
+      {
+        "name": "down", "value": [0, 0],
+        "on": [{"events": "@brush:mousedown", "update": "[x(), y()]"}]
+      },
+      {
+        "name": "anchorX", "value": 0,
+        "on": [{"events": "@brush:mousedown", "update": "slice(brushX)"}]
+      },
+      {
+        "name": "anchorY", "value": 0,
+        "on": [{"events": "@brush:mousedown", "update": "slice(brushY)"}]
+      },
+      {
+        "name": "delta", "value": [0, 0],
+        "on": [
+          {
+            "events": "[@brush:mousedown, window:mouseup] > window:mousemove",
+            "update": "[x() - down[0], y() - down[1]]"
+          }
+        ]
+      }
     ]
     return spec_base
 
