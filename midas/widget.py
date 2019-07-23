@@ -113,9 +113,15 @@ class MidasWidget(DOMWidget):
         newDf = dfFun(self.selection)
         widget.replaceData(updateKey, newDf)
 
-    def registerSignalCallback(self, signal, callback):
-        """Register a callback to the signal
+    def registerSignalCallback(self, signal: str, callback: str):
+        """registerSignalCallback attaches the JS based callback
+            assuming that it takes the varialbes "name", and "value", based on the vega spec
+        
+        Arguments:
+            signal {str} -- [description]
+            callback {str} -- [description]
         """
+        
         print("#2 received register signal", signal, callback)
         registerSignal = dict(signal=signal, callback=callback)
         # FIXME: probably nee dot check 

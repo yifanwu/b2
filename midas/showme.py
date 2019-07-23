@@ -12,12 +12,15 @@ DEFAULT_DATA_SOURCE = "table"
 COUNT_COL_NAME = "count"
 X_PIXEL_SIGNAL = "xBrushPixel"
 X_SELECT_SIGNAL = "xBrush"
-Y_PIXEL_SIGNAL = "xBrushPixel"
+Y_PIXEL_SIGNAL = "yBrushPixel"
 Y_SELECT_SIGNAL = "yBrush"
 CHART_HEIGHT = 200
 CHART_INNER_HEIGHT = CHART_HEIGHT
 CHART_WIDTH = 400
 CHART_INNER_WIDTH = CHART_WIDTH
+SELECTION_SIGNAL = "selectionRange"
+X_SCALE = "xscale"
+Y_SCALE = "yscale"
 
 def gen_click_signal():
     return {
@@ -28,10 +31,11 @@ def gen_click_signal():
         ]
     }
 
+
 def gen_x_brush_signal():
     return [
         {
-          "name": "xBrushPixel",
+          "name": X_PIXEL_SIGNAL,
           "value": [0, 0],
           "on": [
             {
@@ -73,8 +77,8 @@ def gen_x_brush_signal():
           "push": "outer",
           "on": [
             {
-              "events": {"signal": "xBrushPixel"},
-              "update": "span(brush) ? invert('xOverview', brush) : null"
+              f"events": {"signal": "{X_PIXEL_SIGNAL}"},
+              f"update": "span({X_PIXEL_SIGNAL}) ? invert('{X_SCALE}', {X_PIXEL_SIGNAL}) : null"
             }
           ]
         }]
@@ -84,7 +88,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
     data_name = DEFAULT_DATA_SOURCE if (data_name == None) else data_name
     spec_base["scales"] = [
         {
-            "name": "x",
+            "name": X_SCALE,
             "type": "linear",
             "round": True,
             "nice": True,
@@ -93,7 +97,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
             "range": "width"
         },
         {
-            "name": "y",
+            "name": Y_SCALE,
             "type": "linear",
             "round": True,
             "nice": True,
@@ -104,7 +108,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
     ]
     spec_base["axes"] = [
         {
-            "scale": "x",
+            "scale": X_SCALE,
             "grid": True,
             "domain": False,
             "orient": "bottom",
@@ -112,7 +116,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
             "title": x_field
         },
         {
-            "scale": "y",
+            "scale": Y_SCALE,
             "grid": True,
             "domain": False,
             "orient": "left",
@@ -127,8 +131,8 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
             "from": {"data": data_name},
             "encode": {
                 "update": {
-                "x": {"scale": "x", "field": x_field},
-                "y": {"scale": "y", "field": y_field},
+                "x": {"scale": X_SCALE, "field": x_field},
+                "y": {"scale": Y_SCALE, "field": y_field},
                 "size": {"value": 4},
                 "shape": {"value": "circle"},
                 "strokeWidth": {"value": 5},
@@ -147,10 +151,10 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
               "fillOpacity": {"value": 0.2}
             },
             "update": {
-              "x": {"signal": "brushX ? brushX[0] : 0"},
-              "x2": {"signal": "brushX ? brushX[1] : 0"},
-              "y": {"signal": "brushY ?  brushY[0] : 0"},
-              "y2": {"signal": "brushY ? brushY[1] : 0"}
+              "x": {"signal": f"{X_PIXEL_SIGNAL} ? {X_PIXEL_SIGNAL}[0] : 0"},
+              "x2": {"signal": f"{X_PIXEL_SIGNAL} ? {X_PIXEL_SIGNAL}[1] : 0"},
+              "y": {"signal": f"{Y_PIXEL_SIGNAL} ?  {Y_PIXEL_SIGNAL}[0] : 0"},
+              "y2": {"signal": f"{Y_PIXEL_SIGNAL} ? {Y_PIXEL_SIGNAL}[1] : 0"}
             }
           }
     }
@@ -159,7 +163,17 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
         { "name": "chartWidth", "value": CHART_INNER_WIDTH },
         { "name": "chartHeight", "value": CHART_INNER_HEIGHT },
         {
-        "name": "brushX", "value": 0,
+          "name": SELECTION_SIGNAL,
+          "on": [
+            {
+              "events": {"signal": f"{X_PIXEL_SIGNAL} || {Y_PIXEL_SIGNAL}"},
+              "update": f"(span({X_PIXEL_SIGNAL}) || span({Y_PIXEL_SIGNAL})) ? {{x: invert('{X_SCALE}', {X_PIXEL_SIGNAL}), y: invert('{Y_SCALE}', {Y_PIXEL_SIGNAL})}} : null"
+            }
+          ]
+        },
+        {
+        "name": X_PIXEL_SIGNAL,
+        "value": 0,
         "on": [
           {
             "events": "mousedown",
@@ -167,7 +181,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
           },
           {
             "events": "[mousedown, mouseup] > mousemove",
-            "update": "[brushX[0], clamp(x(), 0, chartWidth)]"
+            "update": f"[{X_PIXEL_SIGNAL}[0], clamp(x(), 0, chartWidth)]"
           },
           {
             "events": {"signal": "delta"},
@@ -176,7 +190,8 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
         ]
       },
       {
-        "name": "brushY", "value": 0,
+        "name": Y_PIXEL_SIGNAL,
+        "value": 0,
         "on": [
           {
             "events": "mousedown",
@@ -184,7 +199,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
           },
           {
             "events": "[mousedown, mouseup] > mousemove",
-            "update": "[brushY[0], clamp(y(), 0, chartHeight)]"
+            "update": f"[{Y_PIXEL_SIGNAL}[0], clamp(y(), 0, chartHeight)]"
           },
           {
             "events": {"signal": "delta"},
@@ -198,11 +213,11 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
       },
       {
         "name": "anchorX", "value": 0,
-        "on": [{"events": "@brush:mousedown", "update": "slice(brushX)"}]
+        "on": [{"events": "@brush:mousedown", "update": f"slice({X_PIXEL_SIGNAL})"}]
       },
       {
         "name": "anchorY", "value": 0,
-        "on": [{"events": "@brush:mousedown", "update": "slice(brushY)"}]
+        "on": [{"events": "@brush:mousedown", "update": f"slice({Y_PIXEL_SIGNAL})"}]
       },
       {
         "name": "delta", "value": [0, 0],
@@ -221,7 +236,7 @@ def set_bar_chart_spec(spec_base: Dict, x_field: str, y_field: str, data_name: O
     data_name = DEFAULT_DATA_SOURCE if (data_name == None) else data_name
     spec_base["scales"] = [
         {
-            "name": "xscale",
+            "name": X_SCALE,
             "type": "band",
             "domain": {"data": data_name, "field": x_field},
             "range": "width",
@@ -229,7 +244,7 @@ def set_bar_chart_spec(spec_base: Dict, x_field: str, y_field: str, data_name: O
             "round": True
         },
         {
-            "name": "yscale",
+            "name": Y_SCALE,
             "domain": {"data": data_name, "field": y_field},
             "nice": True,
             "range": "height"
@@ -242,8 +257,8 @@ def set_bar_chart_spec(spec_base: Dict, x_field: str, y_field: str, data_name: O
             "from": {"data": data_name},
             "encode": {
                 "enter": {
-                    "x": {"scale": "xscale", "field": x_field},
-                    "width": {"scale": "xscale", "band": 1},
+                    "x": {"scale": X_SCALE, "field": x_field},
+                    "width": {"scale": X_SCALE, "band": 1},
                     "y": {"scale": "yscale", "field": y_field},
                     "y2": {"scale": "yscale", "value": 0}
                 },
@@ -281,6 +296,7 @@ def gen_spec_base():
             "padding": 5,
         }
 
+
 def set_data_attr(spec_base: Dict, data: DataFrame) -> Dict:
     """set_data_attr takes the df and transformes it into Dict object shape for serialization
     
@@ -297,13 +313,16 @@ def set_data_attr(spec_base: Dict, data: DataFrame) -> Dict:
     }]
     return spec_base
 
+
 def get_categorical_districution(data: Series) -> DataFrame:
     # just select the top 10
     return data.value_counts().to_frame(COUNT_COL_NAME)
 
+
 def get_numeric_districution(data: Series) -> DataFrame:
     # wow can just use pd.cut
     return cut(data, bins=10).value_counts().to_frame(COUNT_COL_NAME)
+
 
 def gen_spec(df: DataFrame):
     """Implements basic show me like feature
