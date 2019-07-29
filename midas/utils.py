@@ -3,6 +3,8 @@
 import codecs
 import os.path
 
+from typing import Any, Optional
+from .types import NullValueError
 
 def abs_path(path):
     """Make path absolute."""
@@ -98,3 +100,9 @@ def prepare_spec(spec, data=None):
         data = sanitize_dataframe(data)
         spec['data'] = {'values': data.to_dict(orient='records')}
     return spec
+
+ifnone = lambda a, b: b if a is None else a
+
+def check_not_null(val: Any, err_msg: Optional[str]=None):
+    if (val == None):
+        raise NullValueError(err_msg)

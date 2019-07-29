@@ -128,4 +128,3 @@ class MidasWidget(DOMWidget):
         self.send(dict(type="registerSignal", callbacks=[registerSignal]))
 
 
-        
