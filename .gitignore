@@ -1,4 +1,6 @@
 .DS_Store
+notebooks/
+*.scrap
 *.js
 .idea
 .scrap
