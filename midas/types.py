@@ -5,6 +5,10 @@ from pandas import DataFrame
 
 from .widget import MidasWidget
 
+"""
+Note that namedtuples are immutable, so we'll basically 
+"""
+
 class ChartType(Enum):
     bar = "bar"
     scatter = "scatter"
@@ -28,11 +32,12 @@ class JoinInfo(NamedTuple):
     dfs: List[str]
     join_colums: List[str]
 
-
 class DFLoc(NamedTuple):
-    rows: slice
-    columns: slice
+    rows: Union[slice, List[int]]
+    columns: Union[slice, List[str]]
 
+# TODO: we need a new derivation that captures functions applied
+# class DF, Callable[]
 
 class DFDerivation(NamedTuple):
     soruce_df: str
@@ -47,6 +52,9 @@ class NullValueError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
+class WrongTypeError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
 
 class TwoDimSelectionPredicate(NamedTuple):
     interaction_time: datetime
@@ -61,23 +69,30 @@ class OneDimSelectionPredicate(NamedTuple):
     x_column: str
     x: Tuple[float, float]
 
+SelectionPredicate = Union[TwoDimSelectionPredicate, OneDimSelectionPredicate]
 
-PredicateCallback = Callable[[Union[TwoDimSelectionPredicate, OneDimSelectionPredicate]], None]
+PredicateCallback = Callable[[SelectionPredicate], None]
 
 
-class TickItemBase:
-    throttle_rate: Optional[float] = None
-    last_called: Optional[datetime] = None
+class TickCallbackType(Enum):
+    dataframe = "dataframe"
+    predicate = "predicate"
 
-class TickItemNewDF(NamedTuple) :
+
+class DataFrameCall(NamedTuple):
     func: Callable[[DataFrame], DataFrame]
     target_df: str
 
-class TickItemBlackBox(NamedTuple):
-    predicate_func: PredicateCallback
+class PredicateCall(NamedTuple):
+    func: PredicateCallback
     
 
-TickItem = Union[TickItemNewDF, ]
+class TickItem(NamedTuple):
+    callback_type: TickCallbackType
+    call: Union[DataFrameCall, PredicateCall]
+    throttle_rate: Optional[float] = None
+    last_called: Optional[datetime] = None
+
 
 class ChartSpec:
     chart_type: ChartType
@@ -94,7 +109,7 @@ class DFInfo(NamedTuple):
     df_name: str
     df: DataFrame
     created_on: datetime
-    predicates: List[Union[TwoDimSelectionPredicate, OneDimSelectionPredicate]]
+    predicates: List[SelectionPredicate]
     derivation: DFDerivation
     visualization: Optional[Visualization] = None
     

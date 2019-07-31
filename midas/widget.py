@@ -1,6 +1,7 @@
 from __future__ import print_function
 import json
 
+
 try:
     from ipywidgets import DOMWidget
     from traitlets import Unicode, Dict
@@ -13,6 +14,9 @@ except ImportError as err:
     # perform manual exception chaining for python 2 compat
     new_err.__cause__ = err
     raise new_err
+
+from .showme import DEFAULT_DATA_SOURCE
+
 
 __all__ = ['MidasWidget']
 
@@ -102,19 +106,15 @@ class MidasWidget(DOMWidget):
             self._pending_updates.append(update)
 
     # the new data is a dataframe
-    def replaceData(self, key, newDf):
+    def replace_data(self, newDf, key=DEFAULT_DATA_SOURCE):
         """Replaces the chart data
         works by creating a remove function that removes everything
         """
         newValues = newDf.to_dict('records')
         self.update(key, insert=newValues, remove='true')
 
-    def tick(self, dfFun, widget, updateKey):
-        newDf = dfFun(self.selection)
-        widget.replaceData(updateKey, newDf)
-
-    def registerSignalCallback(self, signal: str, callback: str):
-        """registerSignalCallback attaches the JS based callback
+    def register_signal_callback(self, signal: str, callback: str):
+        """register_signal_callback attaches the JS based callback
             assuming that it takes the varialbes "name", and "value", based on the vega spec
         
         Arguments:
@@ -122,7 +122,7 @@ class MidasWidget(DOMWidget):
             callback {str} -- [description]
         """
         
-        print("#2 received register signal", signal, callback)
+        # print("#2 received register signal", signal, callback)
         registerSignal = dict(signal=signal, callback=callback)
         # FIXME: probably nee dot check 
         self.send(dict(type="registerSignal", callbacks=[registerSignal]))

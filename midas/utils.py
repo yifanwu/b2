@@ -4,7 +4,7 @@ import codecs
 import os.path
 
 from typing import Any, Optional
-from .types import NullValueError
+from .types import NullValueError, WrongTypeError
 
 def abs_path(path):
     """Make path absolute."""
@@ -106,3 +106,8 @@ ifnone = lambda a, b: b if a is None else a
 def check_not_null(val: Any, err_msg: Optional[str]=None):
     if (val == None):
         raise NullValueError(err_msg)
+
+def type_warning(val: Any, t: Any):
+    if not (isinstance(val, t)):
+        err_msg = f"expected variable to be {t} but got {val} instead"
+        raise WrongTypeError(err_msg)

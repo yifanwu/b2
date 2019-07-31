@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from pandas import DataFrame, read_csv, read_json
-from typing import Dict, Optional, List, Callable, Union
+from typing import Dict, Optional, List, Callable, Union, cast
 from datetime import datetime
 from json import loads
 
@@ -10,7 +10,7 @@ from json import loads
 from .utils import prepare_spec, check_not_null
 from .showme import gen_spec, set_data_attr, SELECTION_SIGNAL
 from .widget import MidasWidget
-from .types import DFInfo, ChartType, TwoDimSelectionPredicate, OneDimSelectionPredicate, Channel, DFDerivation, DerivationType, DFLoc, TickItem, JoinInfo, Visualization, PredicateCallback
+from .types import DFInfo, ChartType, TwoDimSelectionPredicate, OneDimSelectionPredicate, SelectionPredicate, Channel, DFDerivation, DerivationType, DFLoc, TickItem, JoinInfo, Visualization, PredicateCallback, TickCallbackType, DataFrameCall, PredicateCall, NullValueError
 
 CUSTOM_FUNC_PREFIX = "__m_"
 MIDAS_INSTANCE_NAME = "m"
@@ -30,21 +30,34 @@ class Midas(object):
         self.m_name: str = m_name
         print("Initiated Midas")
         # TODO: maybe we can just change the DataFrame here...
-        self._pandas_magic()
-    
-    def _pandas_magic(self):
-        old_loc = DataFrame.loc
-        # s is self.
-        def new_loc(s, df_name: str,  new_df_name: str, columns: slice, rows: slice):
-            """
-            need to pass in, named, df, rows, columns, and the new name of the df
-            """
-            found = self.dfs[df_name]
-            new_df = found.df.loc[rows, columns]
-            loc_spec = DFLoc(rows, columns)
-            self.register_df(new_df, new_df_name, DFDerivation(df_name, new_df_name, DerivationType.loc, loc_spec))
-            return new_df
-        DataFrame.m_loc = new_loc
+        # self._pandas_magic()
+
+    def loc(self, df_name: str, new_df_name: str, rows: Optional[Union[slice, List[int]]] = None, columns: Optional[Union[slice, List[str]]] = None) -> DataFrame:
+        """this is a wrapper around the DataFrame `loc` function so that Midas will
+        help keep track
+        
+        Arguments:
+            df_name {str} -- [description]
+            new_df_name {str} -- [description]
+            columns {slice} -- [description]
+            rows {slice} -- [description]
+        
+        Returns:
+            DataFrame -- the new dataframe that's is returned 
+        """
+        # need to pass in, named, df, rows, columns, and the new name of the df
+        found = self.dfs[df_name]
+        filled_rows = rows if rows else slice(None, None, None)
+        filled_columns = columns if columns else slice(None, None, None)
+        new_df = found.df.loc[filled_rows, filled_columns]
+        loc_spec = DFLoc(filled_rows, filled_columns)
+        self.register_df(new_df, new_df_name, DFDerivation(df_name, new_df_name, DerivationType.loc, loc_spec))
+        return new_df
+
+    # def _pandas_magic(self):
+    #     old_loc = DataFrame.loc
+    #     # s is self.
+    #     DataFrame.m_loc = new_loc
 
 
     def df(self, df_name: str):
@@ -62,7 +75,7 @@ class Midas(object):
         """
 
         created_on = datetime.now()
-        selections = []
+        selections: List[SelectionPredicate] = []
         chart_spec = None # to be populated later
         df_info = DFInfo(df_name, df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
@@ -70,7 +83,7 @@ class Midas(object):
 
 
     def remove_df(self, df_name: str):
-        self.dfs[df_name] = None
+        self.dfs.pop(df_name)
 
 
     def __show_or_rename_visualization(self):
@@ -115,13 +128,20 @@ class Midas(object):
         # generate default spec
         if (spec == None):
             # see if it's stored
-            stored_spec = self.dfs[df_name].visualization.chart_spec
+            vis = self.dfs[df_name].visualization
+            if vis:
+                stored_spec = vis.chart_spec
+            else:
+                raise NullValueError('visualization should be set by now')
             if (stored_spec != None):
                 return self.visualize_df_with_spec(df_name, stored_spec, True)
             return self.visualize_df_without_spec(df_name)
         else:
             return self.visualize_df_with_spec(df_name, spec, True)
 
+    def visualize(self, df_name: str):
+        # just an alias
+        return self.visualize_df_without_spec(df_name)
 
     def visualize_df_without_spec(self, df_name: str):
         df = self.df(df_name)
@@ -133,11 +153,22 @@ class Midas(object):
     def _tick(self, df_name: str):
         # checkthe tick item
         items = self.tick_funcs.get(df_name)
-        if (items == None):
-            return
-        for i in items:
-            new_data = i.func(self.get_selection(df_name))
-            # now push the new_data to the relevant widget
+        if items:
+            _items = items
+            for i in _items:
+                if (i.callback_type == TickCallbackType.predicate):
+                    p = self.get_selection_by_predicate(df_name)
+                    if p:
+                        i.call.func(p)
+                    return
+                else:
+                    _call = cast(DataFrameCall, i.call)
+                    new_data = _call.func(self.get_selection_by_df(df_name))
+                    # send the update
+                    vis = self.dfs[_call.target_df].visualization
+                    if vis:
+                        vis.widget.replaceData()
+                # now push the new_data to the relevant widget
 
     def js_add_selection(self, df_name: str, selection: str):
         # DataFrame
@@ -146,19 +177,30 @@ class Midas(object):
         check_not_null(df_info)
         predicate_raw = loads(selection)
         interaction_time = datetime.now()
-        if (df_info.visualization.chart_spec.chart_type == ChartType.scatter):
-            x_column = df_info.visualization.chart_spec.encodings[Channel.x]
-            y_column = df_info.visualization.chart_spec.encodings[Channel.y]
-            predicate = TwoDimSelectionPredicate(interaction_time, x_column, y_column, predicate_raw.x, predicate_raw.y)
-        else:
-            x_column = df_info.visualization.chart_spec.encodings[Channel.x]
-            predicate = OneDimSelectionPredicate(interaction_time, x_column, predicate_raw.x)
-        df_info.predicates.append(predicate)
-        self._tick(df_name)
+        vis = df_info.visualization
+        predicate: SelectionPredicate
+        if vis:
+            if (vis.chart_spec.chart_type == ChartType.scatter):
+                x_column = vis.chart_spec.encodings[Channel.x]
+                y_column = vis.chart_spec.encodings[Channel.y]
+                predicate = TwoDimSelectionPredicate(interaction_time, x_column, y_column, predicate_raw.x, predicate_raw.y)
+            else:
+                x_column = vis.chart_spec.encodings[Channel.x]
+                predicate = OneDimSelectionPredicate(interaction_time, x_column, predicate_raw.x)
+            df_info.predicates.append(predicate)
+            self._tick(df_name)
         return
         
+    def get_selection_by_predicate(self, df_name: str):
+        df_info = self.dfs[df_name]
+        check_not_null(df_info)
+        if (len(df_info.predicates) > 0):
+            predicate = df_info.predicates[-1]
+            return predicate
+        return None
 
-    def get_selection(self, df_name: str):
+
+    def get_selection_by_df(self, df_name: str):
         """get_selection returns the selection DF with the optional columns specified
         The default would be the selection of all of the df
         However, if some column is not in the rows of the df are specified, Midas will try to figure out based on the derivation history what is going on.
@@ -217,6 +259,9 @@ class Midas(object):
         cb: PredicateCallback
       ):
         # we'll put this inside the python so it's not all generated by the janky JS
+        call = PredicateCall(cb)
+        item = TickItem(TickCallbackType.predicate, call)
+        self._add_to_tick(df_name, item)
 
         return
 
@@ -233,7 +278,8 @@ class Midas(object):
         Raises:
             NotImplementedError: [description]
         """
-        item = TickItem(df_transformation, new_df_name)
+        call = DataFrameCall(df_transformation, new_df_name)
+        item = TickItem(TickCallbackType.dataframe, call)
         self._add_to_tick(df_interact_name, item)
         return
 
@@ -265,10 +311,15 @@ class Midas(object):
     def visualize_df_with_spec(self, df_name: str, spec, set_data=False):
         if (set_data):
             df = self.df(df_name)
-            spec = set_data_attr(spec, df)
+            # note that we need to assign to a new variable, otherwise it will not load
+            spec_with_data = set_data_attr(spec, df)
+        else:
+            spec_with_data = spec
         # register the spec to the df
-        w = MidasWidget(spec)
-        self.dfs[df_name].visualization = Visualization(spec, w)
+        w = MidasWidget(spec_with_data)
+        # items[node.ind] = items[node.ind]._replace(v=node.v)
+
+        self.dfs[df_name] = self.dfs[df_name]._replace(visualization = Visualization(spec, w))
         cb = f"""
             var {CUSTOM_FUNC_PREFIX}val_str = JSON.stringify(value);
             var pythonCommand = `
@@ -281,7 +332,7 @@ class Midas(object):
             console.log('pythonCommand', pythonCommand);
             IPython.notebook.kernel.execute(pythonCommand);
         """
-        w.registerSignalCallback(SELECTION_SIGNAL, cb)
+        w.register_signal_callback(SELECTION_SIGNAL, cb)
         return w
 
 
