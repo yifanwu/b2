@@ -7,10 +7,10 @@ from json import loads
 
 # from IPython.display import display, publish_display_data
 
-from .utils import prepare_spec, check_not_null
+from .errors import check_not_null, NullValueError
 from .showme import gen_spec, set_data_attr, SELECTION_SIGNAL
 from .widget import MidasWidget
-from .types import DFInfo, ChartType, TwoDimSelectionPredicate, OneDimSelectionPredicate, SelectionPredicate, Channel, DFDerivation, DerivationType, DFLoc, TickItem, JoinInfo, Visualization, PredicateCallback, TickCallbackType, DataFrameCall, PredicateCall, NullValueError
+from .types import DFInfo, ChartType, TwoDimSelectionPredicate, OneDimSelectionPredicate, SelectionPredicate, Channel, DFDerivation, DerivationType, DFLoc, TickItem, JoinInfo, Visualization, PredicateCallback, TickCallbackType, DataFrameCall, PredicateCall
 
 CUSTOM_FUNC_PREFIX = "__m_"
 MIDAS_INSTANCE_NAME = "m"

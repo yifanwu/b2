@@ -48,14 +48,6 @@ class DFDerivation(NamedTuple):
     # dataframe in, dataframe out
 
 
-class NullValueError(Exception):
-    def __init__(self, message):
-        super().__init__(message)
-
-class WrongTypeError(Exception):
-    def __init__(self, message):
-        super().__init__(message)
-
 class TwoDimSelectionPredicate(NamedTuple):
     interaction_time: datetime
     x_column: str

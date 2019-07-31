@@ -7,20 +7,9 @@ from typing import Optional, Dict
 from pandas import DataFrame, Series, cut
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_bool_dtype
 
-# all data sources we will assume to be DEFAULT_DATA_SOURCE
-DEFAULT_DATA_SOURCE = "table"
-COUNT_COL_NAME = "count"
-X_PIXEL_SIGNAL = "xBrushPixel"
-X_SELECT_SIGNAL = "xBrush"
-Y_PIXEL_SIGNAL = "yBrushPixel"
-Y_SELECT_SIGNAL = "yBrush"
-CHART_HEIGHT = 200
-CHART_INNER_HEIGHT = CHART_HEIGHT
-CHART_WIDTH = 400
-CHART_INNER_WIDTH = CHART_WIDTH
-SELECTION_SIGNAL = "selectionRange"
-X_SCALE = "xscale"
-Y_SCALE = "yscale"
+from .errors import type_check_with_warning
+from .serialization import sanitize_dataframe
+from .defaults import DEFAULT_DATA_SOURCE, COUNT_COL_NAME, X_PIXEL_SIGNAL, X_SELECT_SIGNAL, Y_PIXEL_SIGNAL, Y_SELECT_SIGNAL, CHART_HEIGHT, CHART_INNER_HEIGHT, CHART_WIDTH, CHART_INNER_WIDTH, SELECTION_SIGNAL, X_SCALE, Y_SCALE
 
 def gen_click_signal():
     return {
@@ -77,8 +66,8 @@ def gen_x_brush_signal():
           "push": "outer",
           "on": [
             {
-              f"events": {"signal": "{X_PIXEL_SIGNAL}"},
-              f"update": "span({X_PIXEL_SIGNAL}) ? invert('{X_SCALE}', {X_PIXEL_SIGNAL}) : null"
+              "events": {"signal": f"{X_PIXEL_SIGNAL}"},
+              "update": f"span({X_PIXEL_SIGNAL}) ? invert(\"{X_SCALE}\", {X_PIXEL_SIGNAL}) : null"
             }
           ]
         }]
@@ -261,9 +250,6 @@ def set_bar_chart_spec(spec_base: Dict, x_field: str, y_field: str, data_name: O
                     "width": {"scale": X_SCALE, "band": 1},
                     "y": {"scale": "yscale", "field": y_field},
                     "y2": {"scale": "yscale", "value": 0}
-                },
-                "update": {
-                    "fill":  [{"test": "datum === tooltip", "value": "green"}, {"value": "steelblue"}]
                 }
             }
         },
@@ -307,9 +293,10 @@ def set_data_attr(spec_base: Dict, data: DataFrame) -> Dict:
     Returns:
         Dict -- [description]
     """
+    sanitzied_df = sanitize_dataframe(data)
     spec_base["data"] = [{
         "name": DEFAULT_DATA_SOURCE,
-        "values": data.to_dict(orient='records')
+        "values": sanitzied_df.to_dict(orient='records')
     }]
     return spec_base
 
@@ -332,6 +319,7 @@ def gen_spec(df: DataFrame):
       TODO:
       [ ] if the numeric value has a limited number of unique values, also treat as bar chart!
     """
+    type_check_with_warning(df, DataFrame)
     # error if df has no column
     df_len = len(df.columns)
     df_to_visualize: DataFrame = None
