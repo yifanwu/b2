@@ -84,6 +84,6 @@ def get_categorical_distribution(data: Series, column_name: str) -> DataFrame:
     return data.value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
 
 
-def get_numeric_distribution(data: Series) -> DataFrame:
+def get_numeric_distribution(data: Series,  column_name: str) -> DataFrame:
     # wow can just use pd.cut
-    return cut(data, bins=10).value_counts().to_frame(COUNT_COL_NAME)
+    return cut(data, bins=10).value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()

@@ -24,5 +24,11 @@ def test_scatter():
     small_df = cars_df.head(5)
     _shared_gen_spec(small_df)
 
-test_agg_categorical()
+def test_agg_linear():
+    displacement_df = m.loc('cars_df', 'origin_df', columns=['Displacement'])
+    _shared_gen_spec(displacement_df)
+
+
+# test_agg_categorical()
+test_agg_linear()
 # test_scatter()

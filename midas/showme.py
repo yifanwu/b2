@@ -36,7 +36,7 @@ def gen_spec(df: DataFrame):
         if (is_string_dtype(df[first_col])):
             df_to_visualize = get_categorical_distribution(df[first_col], first_col)
         else:
-            df_to_visualize = get_numeric_distribution(df[first_col])
+            df_to_visualize = get_numeric_distribution(df[first_col], first_col)
         # then generated the bar chart
         spec_base = set_data_attr(spec_base, df_to_visualize)
         return set_bar_chart_spec(spec_base, first_col, COUNT_COL_NAME)
@@ -50,4 +50,11 @@ def gen_spec(df: DataFrame):
         elif (is_numeric_dtype(df[first_col]) & is_string_dtype(df[second_col])):
             return set_bar_chart_spec(spec_base, second_col, first_col)
         elif (is_numeric_dtype(df[first_col]) & is_numeric_dtype(df[second_col])):
-            return gen_scatterplot_spec(spec_base, first_col, second_col)
+            s = gen_scatterplot_spec(spec_base, first_col, second_col)
+            s["config"] = {
+                "axisX": {
+                    "labelAngle": 45,
+                }
+            }
+            return s
+
