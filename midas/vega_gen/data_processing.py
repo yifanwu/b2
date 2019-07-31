@@ -1,3 +1,26 @@
+from typing import Dict
+from pandas import DataFrame, Series, cut
+
+from .defaults import DEFAULT_DATA_SOURCE, COUNT_COL_NAME
+
+
+def set_data_attr(spec_base: Dict, data: DataFrame) -> Dict:
+    """set_data_attr takes the df and transformes it into Dict object shape for serialization
+    
+    Arguments:
+        spec_base {Dict} -- [description]
+        data {DataFrame} -- [description]
+    
+    Returns:
+        Dict -- [description]
+    """
+    sanitzied_df = sanitize_dataframe(data)
+    spec_base["data"] = [{
+        "name": DEFAULT_DATA_SOURCE,
+        "values": sanitzied_df.to_dict(orient='records')
+    }]
+    return spec_base
+
 
 def sanitize_dataframe(df):
     """Sanitize a DataFrame to prepare it for serialization.
@@ -54,3 +77,13 @@ def sanitize_dataframe(df):
             col = df[col_name].apply(to_list_if_array, convert_dtype=False)
             df[col_name] = col.where(col.notnull(), None)
     return df
+
+
+def get_categorical_distribution(data: Series, column_name: str) -> DataFrame:
+    # TODO: just select the top 10
+    return data.value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
+
+
+def get_numeric_distribution(data: Series) -> DataFrame:
+    # wow can just use pd.cut
+    return cut(data, bins=10).value_counts().to_frame(COUNT_COL_NAME)

@@ -8,9 +8,14 @@ from json import loads
 # from IPython.display import display, publish_display_data
 
 from .errors import check_not_null, NullValueError
-from .showme import gen_spec, set_data_attr, SELECTION_SIGNAL
+from .showme import gen_spec, set_data_attr
+from .vega_gen.defaults import SELECTION_SIGNAL
 from .widget import MidasWidget
-from .types import DFInfo, ChartType, TwoDimSelectionPredicate, OneDimSelectionPredicate, SelectionPredicate, Channel, DFDerivation, DerivationType, DFLoc, TickItem, JoinInfo, Visualization, PredicateCallback, TickCallbackType, DataFrameCall, PredicateCall
+from .types import DFInfo, ChartType, \
+    TwoDimSelectionPredicate, OneDimSelectionPredicate, \
+    SelectionPredicate, Channel, DFDerivation, DerivationType, \
+    DFLoc, TickItem, JoinInfo, Visualization, \
+    PredicateCallback, TickCallbackType, DataFrameCall, PredicateCall
 
 CUSTOM_FUNC_PREFIX = "__m_"
 MIDAS_INSTANCE_NAME = "m"
@@ -28,7 +33,6 @@ class Midas(object):
         self.dfs = {}
         self.tick_funcs = {}
         self.m_name: str = m_name
-        print("Initiated Midas")
         # TODO: maybe we can just change the DataFrame here...
         # self._pandas_magic()
 
@@ -79,7 +83,7 @@ class Midas(object):
         chart_spec = None # to be populated later
         df_info = DFInfo(df_name, df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
-        self.__show_or_rename_visualization()
+        # self.__show_or_rename_visualization()
 
 
     def remove_df(self, df_name: str):
@@ -88,7 +92,8 @@ class Midas(object):
 
     def __show_or_rename_visualization(self):
         # raise NotImplementedError("__show_visualization needs to understand event between phospher")
-        print("showing visualization")
+        # print("showing visualization")
+        raise NotImplementedError()
 
 
     def get_current_widget(self):

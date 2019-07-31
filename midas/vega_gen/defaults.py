@@ -12,3 +12,4 @@ CHART_INNER_WIDTH = CHART_WIDTH
 SELECTION_SIGNAL = "selectionRange"
 X_SCALE = "xscale"
 Y_SCALE = "yscale"
+BRUSH_MARK = "brushMark"

@@ -1,4 +1,5 @@
 .DS_Store
+*.json
 notebooks/
 *.scrap
 *.js

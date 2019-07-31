@@ -2,9 +2,12 @@ from __future__ import print_function
 import json
 
 
+from .vega_gen.defaults import DEFAULT_DATA_SOURCE
+
+
 try:
     from ipywidgets import DOMWidget
-    from traitlets import Unicode, Dict
+    from traitlets import Unicode
 except ImportError as err:
     new_err = ImportError(
         "midas.widget requires ipywidgets, which could not be imported. "
@@ -14,8 +17,6 @@ except ImportError as err:
     # perform manual exception chaining for python 2 compat
     new_err.__cause__ = err
     raise new_err
-
-from .showme import DEFAULT_DATA_SOURCE
 
 
 __all__ = ['MidasWidget']
