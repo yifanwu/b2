@@ -10,6 +10,10 @@ class WrongTypeError(Exception):
         super().__init__(message)
 
 
+class DfNotFoundError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
 
 def check_not_null(val: Any, err_msg: Optional[str]=None):
     if (val == None):

@@ -49,6 +49,9 @@ class DFDerivation(NamedTuple):
 
 
 class TwoDimSelectionPredicate(NamedTuple):
+    """
+    going to assume that two dimension is both linear
+    """
     interaction_time: datetime
     x_column: str
     y_column: str
@@ -59,7 +62,8 @@ class TwoDimSelectionPredicate(NamedTuple):
 class OneDimSelectionPredicate(NamedTuple):
     interaction_time: datetime
     x_column: str
-    x: Tuple[float, float]
+    # the first is selecting linear scale, the second categorical scale
+    x: Union[Tuple[float, float], List[str]]
 
 SelectionPredicate = Union[TwoDimSelectionPredicate, OneDimSelectionPredicate]
 

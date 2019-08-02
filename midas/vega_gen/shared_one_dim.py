@@ -13,27 +13,58 @@ def gen_click_signal():
         ]
     }
 
+def gen_x_brush_signal_core():
+    return {  
+        "name": X_PIXEL_SIGNAL,
+        "value":[  
+            0,
+            0
+        ],
+        "on":[  
+            {  
+                "source":"scope",
+                "events":{  
+                    "type":"mousedown",
+                    "filter":[  
+                        f"!event.item || event.item.mark.name !== \"{BRUSH_MARK}\""
+                    ]
+                },
+                "update":"[x(), x()]"
+            },
+            {  
+                "events":{  
+                    "source": "window",
+                    "type": "mousemove",
+                    "consume": True,
+                    "between":[  
+                    {  
+                        "source":"scope",
+                        "type":"mousedown",
+                        "filter":[  
+                            f"!event.item || event.item.mark.name !== \"{BRUSH_MARK}\""
+                        ]
+                    },
+                    {  
+                        "source":"window",
+                        "type":"mouseup"
+                    }
+                    ]
+                },
+                "update": f"[{X_PIXEL_SIGNAL}[0], clamp(x(), 0, width)]"
+            },
+            {  
+                "events":{  
+                    "signal":"delta"
+                },
+                "update":"[anchor[0] + delta, anchor[1] + delta]"
+            }
+        ]
+    }
 
 def gen_x_brush_signal():
+    core = gen_x_brush_signal_core()
     return [
-        {
-            "name": X_PIXEL_SIGNAL,
-            "value": [0, 0],
-            "on": [
-                {
-                    "events": "mousedown",
-                    "update": "[x(), x()]"
-                },
-                {
-                    "events": "[mousedown, window:mouseup] > window:mousemove!",
-                    "update": f"[{X_PIXEL_SIGNAL}[0], clamp(x(), 0, width)]"
-                },
-                {
-                    "events": {"signal": "delta"},
-                    "update": "clampRange([anchor[0] + delta, anchor[1] + delta], 0, width)"
-                }
-            ]
-        },
+        core,
         {
             "name": "anchor",
             "value": None,
