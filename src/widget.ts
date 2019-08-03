@@ -2,6 +2,7 @@ import { vegaEmbed } from "./index";
 
 import { DOMWidgetView } from "@jupyter-widgets/base";
 import { LogInternalError } from "./utils";
+import {addDataFrame} from "./floater";
 
 interface WidgetUpdate {
   key: string;
@@ -44,7 +45,9 @@ export class MidasWidget extends DOMWidgetView {
 
   render() {
     this.viewElement = document.createElement("div");
-    this.el.appendChild(this.viewElement);
+
+    // this.el.appendChild(this.viewElement);
+    addDataFrame(this.viewElement);
 
     this.errorElement = document.createElement("div");
     this.errorElement.style.color = "red";

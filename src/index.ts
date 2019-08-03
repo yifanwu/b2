@@ -1,8 +1,13 @@
 import vegaEmbed, { Mode, EmbedOptions } from "vega-embed";
 import { Spec, View } from "vega";
 import { TopLevelSpec } from "vega-lite";
+import {createFloater} from "./floater";
 
 export { default as vegaEmbed } from "vega-embed";
+
+export function load_ipython_extension() {
+  createFloater();
+}
 
 function javascriptIndex(selector: string, outputs: any) {
   // Return the index in the output array of the JS repr of this viz

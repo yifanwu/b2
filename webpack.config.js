@@ -10,6 +10,9 @@ const commonConfig = {
       {
         test: /\.tsx?$/,
         loader: "ts-loader"
+      }, {
+        test: /\.css$/,
+        loader: ['style-loader', "css-loader"]
       }
     ]
   }
@@ -41,5 +44,15 @@ module.exports = [
       "@jupyter-widgets/base": "@jupyter-widgets/base",
       "./index": "nbextensions/midas/index"
     }
-  })
+  }),
+  Object.assign({}, commonConfig, {
+    entry: "./src/floater.css",
+    output: {
+      filename: "floater.css",
+      library: "nbextensions/midas/index",
+      path: outputPath,
+      libraryTarget: outputLibraryTarget
+    }
+  }),
+
 ];
