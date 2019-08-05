@@ -1,10 +1,18 @@
 
 from typing import Optional, Dict
+from pandas import DataFrame
+
 from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, Y_PIXEL_SIGNAL, CHART_INNER_HEIGHT, CHART_INNER_WIDTH, SELECTION_SIGNAL, BRUSH_MARK
+from .shared_all import gen_spec_base
 
 
-def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name: Optional[str] = None):
-    data_name = DEFAULT_DATA_SOURCE if (data_name == None) else data_name
+def gen_scatterplot_spec(x_field: str, y_field: str, data: DataFrame):
+    spec_base = gen_spec_base(data)
+    spec_base["config"] = {
+        "axisX": {
+            "labelAngle": 45,
+        }
+    }
     spec_base["scales"] = [
         {
             "name": X_SCALE,
@@ -12,7 +20,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
             "round": True,
             "nice": True,
             "zero": True,
-            "domain": {"data": data_name, "field": x_field},
+            "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
             "range": "width"
         },
         {
@@ -21,7 +29,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
             "round": True,
             "nice": True,
             "zero": True,
-            "domain": {"data": data_name, "field": y_field},
+            "domain": {"data": DEFAULT_DATA_SOURCE, "field": y_field},
             "range": "height"
         }
     ]
@@ -47,7 +55,7 @@ def gen_scatterplot_spec(spec_base: Dict, x_field: str, y_field: str, data_name:
         {
             "name": "marks",
             "type": "symbol",
-            "from": {"data": data_name},
+            "from": {"data": DEFAULT_DATA_SOURCE},
             "encode": {
                 "update": {
                 "x": {"scale": X_SCALE, "field": x_field},

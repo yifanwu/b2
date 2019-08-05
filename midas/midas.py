@@ -7,11 +7,11 @@ from json import loads
 
 # from IPython.display import display, publish_display_data
 
-from .errors import check_not_null, NullValueError, DfNotFoundError
+from .errors import check_not_null, NullValueError, DfNotFoundError, report_error_to_user
 from .showme import gen_spec, set_data_attr
 from .vega_gen.defaults import SELECTION_SIGNAL
 from .widget import MidasWidget
-from .types import DFInfo, ChartType, \
+from .types import DFInfo, VegaSpecType, ChartType, ChartInfo, \
     TwoDimSelectionPredicate, OneDimSelectionPredicate, \
     SelectionPredicate, Channel, DFDerivation, DerivationType, \
     DFLoc, TickItem, JoinInfo, Visualization, \
@@ -130,20 +130,21 @@ class Midas(object):
 
 
     # note that spec is defaulted to none without the Optional signature because there is no typing for JSON.
-    def visualize_df(self, df_name: str, spec=None):
+    def visualize_df(self, df_name: str, spec: Optional[ChartInfo]=None):
         # generate default spec
-        if (spec == None):
+        if spec:
+            return self.visualize_df_with_spec(df_name, spec, set_data = True)
+        else:
             # see if it's stored
             vis = self.dfs[df_name].visualization
             if vis:
-                stored_spec = vis.chart_spec
+                stored_info = vis.chart_info
             else:
                 raise NullValueError('visualization should be set by now')
-            if (stored_spec != None):
-                return self.visualize_df_with_spec(df_name, stored_spec, True)
+            if (stored_info != None):
+                return self.visualize_df_with_spec(df_name, stored_info, set_data = True)
             return self.visualize_df_without_spec(df_name)
-        else:
-            return self.visualize_df_with_spec(df_name, spec, True)
+
 
     def visualize(self, df_name: str):
         # just an alias
@@ -152,8 +153,12 @@ class Midas(object):
     def visualize_df_without_spec(self, df_name: str):
         df = self.df(df_name)
         spec = gen_spec(df)
-        # set_data is false because gen_spec already sets the data
-        return self.visualize_df_with_spec(df_name, spec, False)
+        if spec:
+            # set_data is false because gen_spec already sets the data
+            return self.visualize_df_with_spec(df_name, spec, set_data=False)
+        else:
+            # TODO: add better explanations
+            report_error_to_user("we could not generat the spec")
 
 
     def _tick(self, df_name: str):
@@ -178,22 +183,25 @@ class Midas(object):
                 # now push the new_data to the relevant widget
 
     def js_add_selection(self, df_name: str, selection: str):
-        # DataFrame
         # figure out what spec it was
         df_info = self.dfs[df_name]
         check_not_null(df_info)
         predicate_raw = loads(selection)
+        print(predicate_raw)
+        x_value = predicate_raw[Channel.x.value]
         interaction_time = datetime.now()
         vis = df_info.visualization
         predicate: SelectionPredicate
         if vis:
-            if (vis.chart_spec.chart_type == ChartType.scatter):
-                x_column = vis.chart_spec.encodings[Channel.x]
-                y_column = vis.chart_spec.encodings[Channel.y]
-                predicate = TwoDimSelectionPredicate(interaction_time, x_column, y_column, predicate_raw.x, predicate_raw.y)
+            print("chart_spec type", type(vis.chart_info))
+            if (vis.chart_info.chart_type == ChartType.scatter):
+                y_value = predicate_raw[Channel.y.value]
+                x_column = vis.chart_info.encodings[Channel.x]
+                y_column = vis.chart_info.encodings[Channel.y]
+                predicate = TwoDimSelectionPredicate(interaction_time, x_column, y_column, x_value, y_value)
             else:
-                x_column = vis.chart_spec.encodings[Channel.x]
-                predicate = OneDimSelectionPredicate(interaction_time, x_column, predicate_raw.x)
+                x_column = vis.chart_info.encodings[Channel.x]
+                predicate = OneDimSelectionPredicate(interaction_time, x_column, x_value)
             df_info.predicates.append(predicate)
             self._tick(df_name)
         return
@@ -327,28 +335,21 @@ class Midas(object):
         raise NotImplementedError()
 
 
-    def visualize_df_with_spec(self, df_name: str, spec, set_data=False):
+    # spec: VegaSpecType, encodings: Dict[Channel, str], chart_type: ChartType
+    def visualize_df_with_spec(self, df_name: str, chart_info: ChartInfo, set_data=False):
         if (set_data):
             df = self.df(df_name)
             # note that we need to assign to a new variable, otherwise it will not load
-            spec_with_data = set_data_attr(spec, df)
-        else:
-            spec_with_data = spec
+            spec_with_data = set_data_attr(chart_info.vega_spec, df)
         # register the spec to the df
-        w = MidasWidget(spec_with_data)
+        w = MidasWidget(chart_info.vega_spec)
         # items[node.ind] = items[node.ind]._replace(v=node.v)
-
-        self.dfs[df_name] = self.dfs[df_name]._replace(visualization = Visualization(spec, w))
+        vis = Visualization(chart_info, w)
+        self.dfs[df_name] = self.dfs[df_name]._replace(visualization = vis)
+        # note that we use a custom prefix to avoid accidentally overwrriting a user defined function
         cb = f"""
             var {CUSTOM_FUNC_PREFIX}val_str = JSON.stringify(value);
-            var pythonCommand = `
-                from json import loads
-                from pandas import DataFrame
-                {CUSTOM_FUNC_PREFIX}loaded_data = loads('${{{CUSTOM_FUNC_PREFIX}val_str}}')
-                {CUSTOM_FUNC_PREFIX}select_df = DataFrame({CUSTOM_FUNC_PREFIX}loaded_data, index=[0])
-                {self.m_name}.js_add_selection("{df_name}", {CUSTOM_FUNC_PREFIX}select_df)
-            `;
-            console.log('pythonCommand', pythonCommand);
+            var pythonCommand = `{self.m_name}.js_add_selection("{df_name}", "${{{CUSTOM_FUNC_PREFIX}val_str}}")`;
             IPython.notebook.kernel.execute(pythonCommand);
         """
         w.register_signal_callback(SELECTION_SIGNAL, cb)

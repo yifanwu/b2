@@ -9,6 +9,9 @@ from .widget import MidasWidget
 Note that namedtuples are immutable, so we'll basically 
 """
 
+# hack
+VegaSpecType = Dict[str, Any]
+
 class ChartType(Enum):
     bar = "bar"
     scatter = "scatter"
@@ -90,14 +93,14 @@ class TickItem(NamedTuple):
     last_called: Optional[datetime] = None
 
 
-class ChartSpec:
+class ChartInfo(NamedTuple):
     chart_type: ChartType
     # ASK Arvind: this seems to be redundant information to the vega spec?
     encodings: Dict[Channel, str]
-    vega_spec: Any
+    vega_spec: VegaSpecType
 
 class Visualization(NamedTuple):
-    chart_spec: ChartSpec
+    chart_info: ChartInfo
     widget: MidasWidget
 
 

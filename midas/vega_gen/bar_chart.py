@@ -1,25 +1,27 @@
 
 from typing import Optional, Dict
-from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, CHART_HEIGHT, BRUSH_MARK
+from pandas import DataFrame
 
+from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, CHART_HEIGHT, BRUSH_MARK
 from .shared_one_dim import gen_x_brush_signal  
+from .shared_all import gen_spec_base
 
 from .defaults import X_SELECT_SIGNAL
 
-def set_bar_chart_spec(spec_base: Dict, x_field: str, y_field: str, data_name: Optional[str] = None):
-    data_name = DEFAULT_DATA_SOURCE if (data_name == None) else data_name
+def gen_bar_chart_spec(x_field: str, y_field: str, data: DataFrame):
+    spec_base = gen_spec_base(data)
     spec_base["scales"] = [
         {
             "name": X_SCALE,
             "type": "band",
-            "domain": {"data": data_name, "field": x_field},
+            "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
             "range": "width",
             "padding": 0.05,
             "round": True
         },
         {
             "name": Y_SCALE,
-            "domain": {"data": data_name, "field": y_field},
+            "domain": {"data": DEFAULT_DATA_SOURCE, "field": y_field},
             "nice": True,
             "range": "height"
         }
@@ -28,7 +30,7 @@ def set_bar_chart_spec(spec_base: Dict, x_field: str, y_field: str, data_name: O
     spec_base["marks"] = [
         {
             "type": "rect",
-            "from": {"data": data_name},
+            "from": {"data": DEFAULT_DATA_SOURCE},
             "encode": {
                 "enter": {
                     "x": {"scale": X_SCALE, "field": x_field},

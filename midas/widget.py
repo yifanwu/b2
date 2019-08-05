@@ -122,8 +122,7 @@ class MidasWidget(DOMWidget):
             signal {str} -- [description]
             callback {str} -- [description]
         """
-        
-        # print("#2 received register signal", signal, callback)
+        print(f"registered callback for signal {signal}: {callback}")
         registerSignal = dict(signal=signal, callback=callback)
         # FIXME: probably nee dot check 
         self.send(dict(type="registerSignal", callbacks=[registerSignal]))

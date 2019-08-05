@@ -33,6 +33,6 @@ def test_agg_linear():
     _shared_gen_spec(displacement_df)
 
 
-test_agg_categorical()
+# test_agg_categorical()
 # test_agg_linear()
-# test_scatter()
+test_scatter()
