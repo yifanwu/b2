@@ -19,14 +19,19 @@
     "watch": "webpack --mode development --watch"
   },
   "dependencies": {
-    "vega": "5.4.0",
-    "vega-lite": "3.3.0",
-    "vega-embed": "^4.2.1",
     "@jupyter-widgets/base": "2.0.1",
-    "@types/webpack-env": "*"
+    "@types/jqueryui": "^1.12.7",
+    "@types/webpack-env": "*",
+    "jquery": "^3.4.1",
+    "jqueryui": "^1.11.1",
+    "vega": "5.4.0",
+    "vega-embed": "^4.2.1",
+    "vega-lite": "3.3.0"
   },
   "devDependencies": {
+    "css-loader": "^3.1.0",
     "prettier": "^1.18.2",
+    "style-loader": "^0.23.1",
     "ts-loader": "^6.0.4",
     "typescript": "^3.5.2",
     "webpack": "^4.35.2",

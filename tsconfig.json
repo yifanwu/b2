@@ -19,7 +19,7 @@
       "webpack-env"
   ],
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
   ],
   "exclude": [
     "node_modules"
