@@ -19,7 +19,7 @@ export function addDataFrame(element: any) {
   $("#midas-floater-container").append(div);
 
   let button = $("<button/>", {
-      text: "[x]",
+      text: "x",
       click: () => {
         div.remove();
       },
@@ -55,7 +55,7 @@ export function createFloater() {
 function makeHeader() {
   return $("<div id=\"midas-floater-header\">")
     .addClass("header")
-    .text("Data Frames ");
+    .text("Midas Monitor");
 }
 
 function makeDraggable() {

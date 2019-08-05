@@ -84,17 +84,17 @@ class Midas(object):
         chart_spec = None # to be populated later
         df_info = DFInfo(df_name, df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
-        # self.__show_or_rename_visualization()
+        self.__show_or_rename_visualization(df_name)
 
 
     def remove_df(self, df_name: str):
         self.dfs.pop(df_name)
 
 
-    def __show_or_rename_visualization(self):
+    def __show_or_rename_visualization(self, df_name: str):
         # raise NotImplementedError("__show_visualization needs to understand event between phospher")
-        # print("showing visualization")
-        raise NotImplementedError()
+        print("showing visualization")
+        return self.visualize_df_without_spec(df_name)
 
 
     def get_current_widget(self):
