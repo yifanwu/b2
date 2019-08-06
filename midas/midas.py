@@ -84,7 +84,7 @@ class Midas(object):
         chart_spec = None # to be populated later
         df_info = DFInfo(df_name, df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
-        self.__show_or_rename_visualization(df_name)
+        # return self.__show_or_rename_visualization(df_name)
 
 
     def remove_df(self, df_name: str):
@@ -163,7 +163,7 @@ class Midas(object):
 
     def _tick(self, df_name: str):
         # checkthe tick item
-        print("tick")
+        print("tick", df_name)
         items = self.tick_funcs.get(df_name)
         if items:
             _items = items
@@ -172,22 +172,21 @@ class Midas(object):
                     p = self.get_selection_by_predicate(df_name)
                     if p:
                         i.call.func(p)
-                    return
                 else:
                     _call = cast(DataFrameCall, i.call)
                     new_data = _call.func(self.get_selection_by_df(df_name))
                     # send the update
                     vis = self.dfs[_call.target_df].visualization
                     if vis:
-                        vis.widget.replaceData()
+                        vis.widget.replace_data(new_data)
                 # now push the new_data to the relevant widget
 
-    def js_add_selection(self, df_name: str, selection: str):
+    def js_add_selection(self, df_name: str, selection: str, is_categorical: bool=False):
+        print ("js_add_selection called")
         # figure out what spec it was
         df_info = self.dfs[df_name]
         check_not_null(df_info)
         predicate_raw = loads(selection)
-        print(predicate_raw)
         x_value = predicate_raw[Channel.x.value]
         interaction_time = datetime.now()
         vis = df_info.visualization
@@ -201,7 +200,7 @@ class Midas(object):
                 predicate = TwoDimSelectionPredicate(interaction_time, x_column, y_column, x_value, y_value)
             else:
                 x_column = vis.chart_info.encodings[Channel.x]
-                predicate = OneDimSelectionPredicate(interaction_time, x_column, x_value)
+                predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
             df_info.predicates.append(predicate)
             self._tick(df_name)
         return
@@ -232,21 +231,26 @@ class Midas(object):
         check_not_null(df_info)
         if (len(df_info.predicates) > 0):
             predicate = df_info.predicates[-1]
+            print("predicate for selection", predicate)
             if (isinstance(predicate, OneDimSelectionPredicate)):
-                # .dim == 1):
                 # FIXME: the story around categorical is not clear
-                selection_df = df_info.df.loc[
-                      (df_info.df[predicate.x_column] < predicate.x[1])
-                    & (df_info.df[predicate.x_column] < predicate.x[0])
-                ]
+                _p = cast(OneDimSelectionPredicate, predicate)
+                if (_p.is_categoritcal):
+                    selection_df = df_info.df.loc[
+                        df_info.df[predicate.x_column].isin(_p.x)
+                    ]
+                else:
+                    selection_df = df_info.df.loc[
+                        (df_info.df[predicate.x_column] < predicate.x[1])
+                        & (df_info.df[predicate.x_column] > predicate.x[0])
+                    ]
                 return selection_df
             else:
-                # new_predicate: TwoDimSelectionPredicate(predicate)
                 selection_df = df_info.df.loc[
                       (df_info.df[predicate.x_column] < predicate.x[1])
                     & (df_info.df[predicate.x_column] < predicate.x[0])
-                    & (df_info.df[predicate.x_column] > predicate.y[0])
-                    & (df_info.df[predicate.x_column] < predicate.y[1])
+                    & (df_info.df[predicate.y_column] > predicate.y[0])
+                    & (df_info.df[predicate.y_column] < predicate.y[1])
                 ]
                 return selection_df
         else:
@@ -347,9 +351,11 @@ class Midas(object):
         vis = Visualization(chart_info, w)
         self.dfs[df_name] = self.dfs[df_name]._replace(visualization = vis)
         # note that we use a custom prefix to avoid accidentally overwrriting a user defined function
+        is_categorical = "True" if (chart_info.chart_type == ChartType.bar) else "False"
         cb = f"""
             var {CUSTOM_FUNC_PREFIX}val_str = JSON.stringify(value);
-            var pythonCommand = `{self.m_name}.js_add_selection("{df_name}", "${{{CUSTOM_FUNC_PREFIX}val_str}}")`;
+            var pythonCommand = `{self.m_name}.js_add_selection("{df_name}", "${{{CUSTOM_FUNC_PREFIX}val_str}}", {is_categorical})`;
+            console.log("calling", pythonCommand)
             IPython.notebook.kernel.execute(pythonCommand);
         """
         w.register_signal_callback(SELECTION_SIGNAL, cb)

@@ -71,6 +71,7 @@ class MidasWidget(DOMWidget):
     def opt(self):
         return json.loads(self._opt_source)
 
+
     @opt.setter
     def opt(self, value):
         self._opt_source = json.dumps(value)
@@ -106,6 +107,7 @@ class MidasWidget(DOMWidget):
         else:
             self._pending_updates.append(update)
 
+
     # the new data is a dataframe
     def replace_data(self, newDf, key=DEFAULT_DATA_SOURCE):
         """Replaces the chart data
@@ -113,6 +115,7 @@ class MidasWidget(DOMWidget):
         """
         newValues = newDf.to_dict('records')
         self.update(key, insert=newValues, remove='true')
+
 
     def register_signal_callback(self, signal: str, callback: str):
         """register_signal_callback attaches the JS based callback
@@ -122,7 +125,7 @@ class MidasWidget(DOMWidget):
             signal {str} -- [description]
             callback {str} -- [description]
         """
-        print(f"registered callback for signal {signal}: {callback}")
+        # print(f"registered callback for signal {signal}: {callback}")
         registerSignal = dict(signal=signal, callback=callback)
         # FIXME: probably nee dot check 
         self.send(dict(type="registerSignal", callbacks=[registerSignal]))

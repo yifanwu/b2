@@ -65,6 +65,7 @@ class TwoDimSelectionPredicate(NamedTuple):
 class OneDimSelectionPredicate(NamedTuple):
     interaction_time: datetime
     x_column: str
+    is_categoritcal: bool
     # the first is selecting linear scale, the second categorical scale
     x: Union[Tuple[float, float], List[str]]
 
