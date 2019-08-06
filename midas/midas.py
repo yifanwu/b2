@@ -177,13 +177,17 @@ class Midas(object):
                         i.call.func(p)
                 else:
                     _call = cast(DataFrameCall, i.call)
+                    print("calling on dataframe call", _call)
                     # if this is the first time that this is called, which we can figure out by
                     # checking if the dataframe is already in
                     new_data = _call.func(self.get_selection_by_df(df_name))
                     if not self._has_df(_call.target_df):
+                        print(f"first time seeing {_call.target_df}", "setting")
                         self.register_df(new_data, _call.target_df)
                         self.__show_or_rename_visualization(_call.target_df)
                         # FIXME: also need to have this visualized, otherwise 
+                    else:
+                        print("seen", _call.target_df, "already")
                     # send the update
                     vis = self.dfs[_call.target_df].visualization
                     if vis:
