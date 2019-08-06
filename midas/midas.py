@@ -8,6 +8,7 @@ from json import loads
 # from IPython.display import display, publish_display_data
 
 from .errors import check_not_null, NullValueError, DfNotFoundError, report_error_to_user
+from .utils import get_min_max_tuple_from_list
 from .showme import gen_spec, set_data_attr
 from .vega_gen.defaults import SELECTION_SIGNAL
 from .widget import MidasWidget
@@ -78,13 +79,14 @@ class Midas(object):
         """pivate method to keep track of dfs
             TODO: make the meta_data work with the objects
         """
-
+        print("register_df")
         created_on = datetime.now()
         selections: List[SelectionPredicate] = []
         chart_spec = None # to be populated later
         df_info = DFInfo(df_name, df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
-        # return self.__show_or_rename_visualization(df_name)
+        return
+        # self.__show_or_rename_visualization(df_name)
 
 
     def remove_df(self, df_name: str):
@@ -150,6 +152,7 @@ class Midas(object):
         # just an alias
         return self.visualize_df_without_spec(df_name)
 
+
     def visualize_df_without_spec(self, df_name: str):
         df = self.df(df_name)
         spec = gen_spec(df)
@@ -174,12 +177,18 @@ class Midas(object):
                         i.call.func(p)
                 else:
                     _call = cast(DataFrameCall, i.call)
+                    # if this is the first time that this is called, which we can figure out by
+                    # checking if the dataframe is already in
                     new_data = _call.func(self.get_selection_by_df(df_name))
+                    if not self._has_df(_call.target_df):
+                        self.register_df(new_data, _call.target_df)
+                        self.__show_or_rename_visualization(_call.target_df)
+                        # FIXME: also need to have this visualized, otherwise 
                     # send the update
                     vis = self.dfs[_call.target_df].visualization
                     if vis:
                         vis.widget.replace_data(new_data)
-                # now push the new_data to the relevant widget
+
 
     def js_add_selection(self, df_name: str, selection: str, is_categorical: bool=False):
         print ("js_add_selection called")
@@ -187,14 +196,14 @@ class Midas(object):
         df_info = self.dfs[df_name]
         check_not_null(df_info)
         predicate_raw = loads(selection)
-        x_value = predicate_raw[Channel.x.value]
+        x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
         interaction_time = datetime.now()
         vis = df_info.visualization
         predicate: SelectionPredicate
         if vis:
             print("chart_spec type", type(vis.chart_info))
             if (vis.chart_info.chart_type == ChartType.scatter):
-                y_value = predicate_raw[Channel.y.value]
+                y_value = get_min_max_tuple_from_list(predicate_raw[Channel.y.value])
                 x_column = vis.chart_info.encodings[Channel.x]
                 y_column = vis.chart_info.encodings[Channel.y]
                 predicate = TwoDimSelectionPredicate(interaction_time, x_column, y_column, x_value, y_value)
@@ -215,7 +224,7 @@ class Midas(object):
 
 
     def get_selection_by_df(self, df_name: str):
-        """get_selection returns the selection DF with the optional columns specified
+        """get_selection returns the selection DF
         The default would be the selection of all of the df
         However, if some column is not in the rows of the df are specified, Midas will try to figure out based on the derivation history what is going on.
         
@@ -225,8 +234,8 @@ class Midas(object):
         Returns:
             [type] -- [description]
         """
-        # MAYBE TODO: add columns: Optional[List[str]]=None
-        # take the predicate and generate the dataframe
+        # Maybe TODO: with the optional columns specified
+
         df_info = self.dfs[df_name]
         check_not_null(df_info)
         if (len(df_info.predicates) > 0):
@@ -269,6 +278,7 @@ class Midas(object):
 
 
     def _add_to_tick(self, df_name: str, item: TickItem):
+        print("_add_to_tick called", df_name, item)
         if (df_name in self.tick_funcs):
             self.tick_funcs[df_name].append(item)
         else:
@@ -309,6 +319,7 @@ class Midas(object):
         Raises:
             NotImplementedError: [description]
         """
+        print("new_visualization_from_selection called")
         call = DataFrameCall(df_transformation, new_df_name)
         item = TickItem(TickCallbackType.dataframe, call)
         self._add_to_tick(df_interact_name, item)
@@ -344,7 +355,7 @@ class Midas(object):
         if (set_data):
             df = self.df(df_name)
             # note that we need to assign to a new variable, otherwise it will not load
-            spec_with_data = set_data_attr(chart_info.vega_spec, df)
+            set_data_attr(chart_info.vega_spec, df)
         # register the spec to the df
         w = MidasWidget(chart_info.vega_spec)
         # items[node.ind] = items[node.ind]._replace(v=node.v)
@@ -354,10 +365,10 @@ class Midas(object):
         is_categorical = "True" if (chart_info.chart_type == ChartType.bar) else "False"
         cb = f"""
             var {CUSTOM_FUNC_PREFIX}val_str = JSON.stringify(value);
-            var pythonCommand = `{self.m_name}.js_add_selection("{df_name}", "${{{CUSTOM_FUNC_PREFIX}val_str}}", {is_categorical})`;
-            console.log("calling", pythonCommand)
-            IPython.notebook.kernel.execute(pythonCommand);
+            var pythonCommand = `{self.m_name}.js_add_selection("{df_name}", '${{{CUSTOM_FUNC_PREFIX}val_str}}', {is_categorical})`;
+            console.log("calling", pythonCommand);
         """
+        # IPython.notebook.kernel.execute(pythonCommand);
         w.register_signal_callback(SELECTION_SIGNAL, cb)
         return w
 

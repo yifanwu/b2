@@ -3,6 +3,7 @@
 import codecs
 import os.path
 
+from typing import Tuple, List
 
 def abs_path(path):
     """Make path absolute."""
@@ -101,3 +102,16 @@ def prepare_spec(spec, data=None):
 
 
 ifnone = lambda a, b: b if a is None else a
+
+def get_min_max_tuple_from_list(values: List[float]) -> Tuple[float, float]:
+    """sets in place the array if the values are not min and max
+    
+    Arguments:
+        x_value {List[int]} -- [description]
+    
+    Returns:
+       returns the modifed array in place
+    """
+    if (values[0] > values[1]):
+        return (values[1], values[0])
+    return (values[0], values[1])

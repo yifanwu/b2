@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from pandas import DataFrame, Series, cut
 
 from .defaults import DEFAULT_DATA_SOURCE, COUNT_COL_NAME
@@ -79,11 +79,17 @@ def sanitize_dataframe(df):
     return df
 
 
-def get_categorical_distribution(data: Series, column_name: str) -> DataFrame:
+def get_categorical_distribution(data: Series, column_name: str) -> Optional[DataFrame]:
     # TODO: just select the top 10
-    return data.value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
+    if not data.empty:
+        return data.value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
+    else:
+        return None
 
 
-def get_numeric_distribution(data: Series,  column_name: str) -> DataFrame:
+def get_numeric_distribution(data: Series,  column_name: str) -> Optional[DataFrame]:
     # wow can just use pd.cut
-    return cut(data, bins=10).value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
+    if not data.empty:
+        return cut(data, bins=10).value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
+    else:
+        return None

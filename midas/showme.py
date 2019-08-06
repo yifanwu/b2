@@ -72,8 +72,9 @@ def gen_spec(df: DataFrame) -> Optional[ChartInfo]:
             
     if chart_type:
         if encoding:
-            return _gen_spec_helper(chart_type, encoding, df_to_visualize)
-    raise InternalLogicalError("not all cases handled")
+            if not df_to_visualize.empty:
+                return _gen_spec_helper(chart_type, encoding, df_to_visualize)
+    raise InternalLogicalError("Failed to generate spec")
 
 
 def _gen_spec_helper(chart_type: ChartType, encoding: Dict[Channel, str], data: DataFrame) -> ChartInfo:
