@@ -6,7 +6,7 @@ from midas import Midas
 
 m = Midas()
 DF_NAME = 'simple_df'
-# cars_df = m.read_json('/Users/yifanwu/Dev/midas/notebooks/cars.json', 'cars_df')
+cars_df = m.read_json('/Users/yifanwu/Dev/midas/notebooks/cars.json', 'cars_df')
 df = pd.DataFrame([[1,2], [3,4], [5,6]], columns=['a', 'b'])
 m.register_df(df, DF_NAME)
 
@@ -68,6 +68,9 @@ class TestSelections(unittest.TestCase):
         # now start the second iteration of the loop
         val_str_2 = '{"x":[0, 4],"y":[1, 5]}'
         m.js_add_selection("simple_df", val_str_2)
+    
+    def test_cars(self):
 
 if __name__ == '__main__':
     unittest.main()
+

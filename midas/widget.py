@@ -94,7 +94,6 @@ class MidasWidget(DOMWidget):
         self._reset()
 
 
-
     # the new data is a dataframe
     def replace_data(self, new_df: DataFrame, key=DEFAULT_DATA_SOURCE):
         """Replaces the chart data
@@ -103,7 +102,8 @@ class MidasWidget(DOMWidget):
         new_values = dataframe_to_dict(new_df)
         insert = new_values
         remove = 'true'
-        update = dict(insert=insert, remove=remove)
+        update = dict(key=key, insert=insert, remove=remove)
+        debug_log(f"\nNew dataframe\n{new_values}\n")
         if self._displayed:
             self.send(dict(
                 type=WidgetMessageType.update_data.value,

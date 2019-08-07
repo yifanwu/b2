@@ -37,6 +37,11 @@ class TickCallbackType(Enum):
     predicate = "predicate"
 
 
+class DfTransform(Enum):
+    categorical_distribution = "categorical_distribution"
+    numeric_distribution = "numeric_distribution"
+
+
 class JoinInfo(NamedTuple):
     dfs: List[str]
     join_colums: List[str]
@@ -107,10 +112,16 @@ class TickItem(NamedTuple):
 
 
 class ChartInfo(NamedTuple):
+    """[summary]
+    
+    Arguments:
+        additional_transforms {DfTransform} -- this is the record any transformations that we need to do when updating the data.
+    """
     chart_type: ChartType
     # ASK Arvind: this seems to be redundant information to the vega spec?
     encodings: Dict[Channel, str]
     vega_spec: VegaSpecType
+    additional_transforms: Optional[DfTransform]
 
 
 class Visualization(NamedTuple):

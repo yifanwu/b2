@@ -15,7 +15,7 @@ from .vega_gen.data_processing import get_categorical_distribution, \
     get_numeric_distribution, set_data_attr
 from .vega_gen.defaults import COUNT_COL_NAME
 
-from .types import ChartInfo, ChartType, Channel
+from .types import ChartInfo, ChartType, Channel, DfTransform
 
 def gen_spec(df: DataFrame) -> Optional[ChartInfo]:
     """Implements basic show me like feature
@@ -33,14 +33,17 @@ def gen_spec(df: DataFrame) -> Optional[ChartInfo]:
     df_to_visualize: DataFrame = None
     chart_type: Optional[ChartType] = None
     encoding: Optional[Dict[Channel, str]] = None
+    additional_transforms: Optional[DfTransform] = None
     if (df_len == 0):
         raise Exception("DataFrame has too few columns")
     elif (df_len == 1):
         first_col = df.columns.values[0]
         if (is_string_dtype(df[first_col])):
+            additional_transforms = DfTransform.categorical_distribution
             df_to_visualize = get_categorical_distribution(df[first_col], first_col)
             chart_type = ChartType.bar_categorical
         else:
+            additional_transforms = DfTransform.numeric_distribution
             df_to_visualize = get_numeric_distribution(df[first_col], first_col)
             chart_type = ChartType.bar_linear
         encoding = {
@@ -74,11 +77,11 @@ def gen_spec(df: DataFrame) -> Optional[ChartInfo]:
     if chart_type:
         if encoding:
             if df_to_visualize is not None:
-                return _gen_spec_helper(chart_type, encoding, df_to_visualize)
+                return _gen_spec_helper(chart_type, encoding, df_to_visualize, additional_transforms)
     raise InternalLogicalError(f"Failed to generate spec:\nchart_type {chart_type}\nencoding: {encoding}\ndf_to_visualize:{df_to_visualize}")
 
 
-def _gen_spec_helper(chart_type: ChartType, encoding: Dict[Channel, str], data: DataFrame) -> ChartInfo:
+def _gen_spec_helper(chart_type: ChartType, encoding: Dict[Channel, str], data: DataFrame, additional_transforms: Optional[DfTransform]) -> ChartInfo:
     if (chart_type == ChartType.bar_linear) or (chart_type == ChartType.bar_categorical):
         vega_spec = gen_bar_chart_spec(encoding[Channel.x], encoding[Channel.y], data)
     elif (chart_type == ChartType.scatter):
@@ -86,4 +89,4 @@ def _gen_spec_helper(chart_type: ChartType, encoding: Dict[Channel, str], data: 
     else:
         vega_spec = gen_linechart_spec(encoding[Channel.x], encoding[Channel.y], data)
 
-    return ChartInfo(chart_type, encoding, vega_spec)
+    return ChartInfo(chart_type, encoding, vega_spec, additional_transforms)

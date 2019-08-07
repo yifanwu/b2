@@ -89,6 +89,7 @@ export class MidasWidget extends DOMWidgetView {
         "return (" + (update.remove || "false") + ")"
       );
       const newValues = update.insert || [];
+      console.log("new values", newValues, "\n");
       const changeSet = this.view
         .changeset()
         .insert(newValues)
