@@ -201,17 +201,7 @@ class Midas(object):
                     if lineage_data is None:
                         lineage_data = get_df_by_predicate(df_info.df, predicate)
                     new_data = _call.func(lineage_data)
-                    # see if we need to do any transforms..
-                    vis_data = new_data
-                    # we need to look up the target...
-                    df_target_additional_transforms = self.dfs[_call.target_df].visualization.chart_info.additional_transforms
-                    if (df_target_additional_transforms == DfTransform.categorical_distribution):
-                        first_col = new_data.columns.values[0]
-                        vis_data = get_categorical_distribution(new_data[first_col], first_col)
-                    elif (df_target_additional_transforms == DfTransform.numeric_distribution):
-                        first_col = new_data.columns.values[0]
-                        vis_data = get_numeric_distribution(new_data[first_col], first_col)
-
+                    
                     # only update if this is not null
                     if new_data is not None:
                         if (len(new_data.index) > 0):
@@ -219,6 +209,17 @@ class Midas(object):
                             if not self._has_df(_call.target_df):
                                 self.register_df(new_data, _call.target_df)
                             else:
+                                # see if we need to do any transforms..
+                                vis_data = new_data
+                                # we need to look up the target...
+                                df_target_additional_transforms = self.dfs[_call.target_df].visualization.chart_info.additional_transforms
+                                if (df_target_additional_transforms == DfTransform.categorical_distribution):
+                                    first_col = new_data.columns.values[0]
+                                    vis_data = get_categorical_distribution(new_data[first_col], first_col)
+                                elif (df_target_additional_transforms == DfTransform.numeric_distribution):
+                                    first_col = new_data.columns.values[0]
+                                    vis_data = get_numeric_distribution(new_data[first_col], first_col)
+
                                 # update the data in store
                                 self.set_df_data(_call.target_df, new_data)
                                 # send the update

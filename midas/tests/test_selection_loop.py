@@ -3,13 +3,10 @@ import unittest
 # from time import sleep
 
 from midas import Midas
+from midas.types import ChartType
 
-m = Midas()
 DF_NAME = 'simple_df'
-cars_df = m.read_json('/Users/yifanwu/Dev/midas/notebooks/cars.json', 'cars_df')
-df = pd.DataFrame([[1,2], [3,4], [5,6]], columns=['a', 'b'])
-m.register_df(df, DF_NAME)
-
+DERIVED_DF_NAME = 'derived_df'
 
 def df_trans(df_in):
     df_out = df_in['a'] + df_in['b']
@@ -18,7 +15,10 @@ def df_trans(df_in):
 
 class TestSelections(unittest.TestCase):
     def test_simple(self):
-        m.visualize_df_without_spec(DF_NAME)
+        m = Midas()
+        df = pd.DataFrame([[1,2], [3,4], [5,6]], columns=['a', 'b'])
+        m.register_df(df, DF_NAME)
+
         steps = 0
         def cb(predicate):
             nonlocal steps
@@ -27,7 +27,7 @@ class TestSelections(unittest.TestCase):
                 print('\n> unit test started for step 1')
                 self.assertEqual(predicate.x[0], 2)
                 # assert that the df_trans is set properly
-                derived_df = m.get_df('derived_df')
+                derived_df = m.get_df(DERIVED_DF_NAME)
                 print(derived_df)
                 # 1 row
                 self.assertEqual(derived_df.shape[0], 1)
@@ -37,11 +37,16 @@ class TestSelections(unittest.TestCase):
                 self.assertEqual(len(m.dfs[DF_NAME].predicates), 1)
                 self.assertEqual(m.dfs[DF_NAME].predicates[0].x[0], 2)
                 self.assertEqual(m.dfs[DF_NAME].predicates[0].x_column, 'a')
+                # make sure that the visual specs are created for 'derived_df'
+                self.assertIsNotNone(m.dfs[DERIVED_DF_NAME].visualization)
+                self.assertIsNotNone(m.dfs[DERIVED_DF_NAME].visualization.widget)
+                # make sure that this is scatter plot
+                self.assertEqual(m.dfs[DERIVED_DF_NAME].visualization.chart_info.chart_type, ChartType.bar_linear)
             elif (steps == 2):
                 print('\n> unit test started for step 2')
                 self.assertEqual(predicate.x[0], 0)
                 # assert that the df_trans is set properly
-                derived_df_2 = m.get_df('derived_df')
+                derived_df_2 = m.get_df(DERIVED_DF_NAME)
                 print(derived_df_2)
                 # 1 row
                 self.assertEqual(derived_df_2.shape[0], 2)
@@ -53,7 +58,7 @@ class TestSelections(unittest.TestCase):
                 self.assertEqual(m.dfs[DF_NAME].predicates[1].x[0], 0)
                 self.assertEqual(m.dfs[DF_NAME].predicates[1].x_column, 'a')
             print('unit test completed\n')
-        m.new_visualization_from_selection(DF_NAME, 'derived_df', df_trans)
+        m.new_visualization_from_selection(DF_NAME, DERIVED_DF_NAME, df_trans)
         # note that this has to come after the first callback, since it will otherwise not get called
         m.add_callback_to_selection(DF_NAME, cb)
         cb_items = m.tick_funcs.get(DF_NAME)
@@ -69,7 +74,22 @@ class TestSelections(unittest.TestCase):
         val_str_2 = '{"x":[0, 4],"y":[1, 5]}'
         m.js_add_selection("simple_df", val_str_2)
     
-    def test_cars(self):
+    # def test_create_chart_after(self):
+    #     m = Midas()
+    #     df = pd.DataFrame([[1,2], [3,4], [5,6]], columns=['a', 'b'])
+    #     m.register_df(df, DF_NAME)
+    #     steps = 0
+    #     def cb(predicate):
+    #         nonlocal steps
+    #         steps += 1
+    #     # note that this has to come after the first callback, since it will otherwise not get called
+    #     m.add_callback_to_selection(DF_NAME, cb)
+    #     val_str = '{"x":[2, 4],"y":[3, 5]}'
+    #     # now start one iteration of the loop
+    #     m.js_add_selection("simple_df", val_str)
+    #     m.new_visualization_from_selection(DF_NAME, 'derived_df', df_trans)
+        
+
 
 if __name__ == '__main__':
     unittest.main()
