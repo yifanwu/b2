@@ -6,7 +6,7 @@ from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, CHA
 from .shared_one_dim import gen_x_brush_signal  
 from .shared_all import gen_spec_base
 
-from .defaults import X_SELECT_SIGNAL
+from .defaults import SELECTION_SIGNAL
 
 def gen_bar_chart_spec(x_field: str, y_field: str, data: DataFrame):
     spec_base = gen_spec_base(data)
@@ -41,7 +41,7 @@ def gen_bar_chart_spec(x_field: str, y_field: str, data: DataFrame):
                 "update": {
                     "fill": [
                         {
-                            "test": f"{X_SELECT_SIGNAL} ? indexof({X_SELECT_SIGNAL}, datum.{x_field}) > -1 : false",
+                            "test": f"{SELECTION_SIGNAL} ? indexof({SELECTION_SIGNAL}, datum.{x_field}) > -1 : false",
                             "value": "red"
                         },
                         {"value": "blue"

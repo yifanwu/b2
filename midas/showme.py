@@ -25,6 +25,7 @@ def gen_spec(df: DataFrame) -> Optional[ChartInfo]:
 
     TODO:
     [ ] if the numeric value has a limited number of unique values, treat as bar chart!
+    [ ] also add line chart
     """
     type_check_with_warning(df, DataFrame)
     # error if df has no column
@@ -38,10 +39,10 @@ def gen_spec(df: DataFrame) -> Optional[ChartInfo]:
         first_col = df.columns.values[0]
         if (is_string_dtype(df[first_col])):
             df_to_visualize = get_categorical_distribution(df[first_col], first_col)
+            chart_type = ChartType.bar_categorical
         else:
             df_to_visualize = get_numeric_distribution(df[first_col], first_col)
-        # then generated the bar chart
-        chart_type = ChartType.bar
+            chart_type = ChartType.bar_linear
         encoding = {
             Channel.x: first_col,
             Channel.y: COUNT_COL_NAME
@@ -52,13 +53,13 @@ def gen_spec(df: DataFrame) -> Optional[ChartInfo]:
         second_col = df.columns.values[1]
         df_to_visualize = df[[first_col, second_col]]
         if (is_string_dtype(df[first_col]) & is_numeric_dtype(df[second_col])):
-            chart_type = ChartType.bar
+            chart_type = ChartType.bar_categorical
             encoding = {
                 Channel.x: first_col,
                 Channel.y: second_col
             }
         elif (is_numeric_dtype(df[first_col]) & is_string_dtype(df[second_col])):
-            chart_type = ChartType.bar
+            chart_type = ChartType.bar_categorical
             encoding = {
                 Channel.x: second_col,
                 Channel.y: first_col
@@ -78,7 +79,7 @@ def gen_spec(df: DataFrame) -> Optional[ChartInfo]:
 
 
 def _gen_spec_helper(chart_type: ChartType, encoding: Dict[Channel, str], data: DataFrame) -> ChartInfo:
-    if (chart_type == ChartType.bar):
+    if (chart_type == ChartType.bar_linear) or (chart_type == ChartType.bar_categorical):
         vega_spec = gen_bar_chart_spec(encoding[Channel.x], encoding[Channel.y], data)
     elif (chart_type == ChartType.scatter):
         vega_spec = gen_scatterplot_spec(encoding[Channel.x], encoding[Channel.y], data)

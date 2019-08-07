@@ -3,6 +3,7 @@ import json
 from pandas import DataFrame
 from typing import List, Optional, Dict
 
+from .errors import debug_log
 from .vega_gen.defaults import DEFAULT_DATA_SOURCE
 from .utils import dataframe_to_dict
 from .widget_types import UpdateDataMessage, SignalMessage, WidgetMessageType
@@ -120,7 +121,7 @@ class MidasWidget(DOMWidget):
             signal {str} -- [description]
             callback {str} -- [description]
         """
-        # print(f"registered callback for signal {signal}: {callback}")
+        debug_log(f"registered callback for signal {signal}: {callback}")
         cb = dict(signal=signal, callback=callback)
         if self._displayed:
             self.send(dict(

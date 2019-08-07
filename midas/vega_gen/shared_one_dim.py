@@ -1,5 +1,5 @@
 
-from .defaults import BRUSH_MARK, X_SCALE, X_PIXEL_SIGNAL, X_SELECT_SIGNAL, CHART_WIDTH, CHART_HEIGHT
+from .defaults import BRUSH_MARK, X_SCALE, X_PIXEL_SIGNAL, SELECTION_SIGNAL
 
 def gen_click_signal():
     return {
@@ -14,7 +14,7 @@ def gen_click_signal():
     }
 
 def gen_x_brush_signal_core():
-    return {  
+    return {
         "name": X_PIXEL_SIGNAL,
         "value":[  
             0,
@@ -86,7 +86,7 @@ def gen_x_brush_signal():
             }]
         },
         {
-            "name": X_SELECT_SIGNAL,
+            "name": SELECTION_SIGNAL,
             "on": [
                 {
                 "events": {"signal": f"{X_PIXEL_SIGNAL}"},

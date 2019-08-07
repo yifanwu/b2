@@ -13,7 +13,8 @@ Note that namedtuples are immutable, so we'll basically
 VegaSpecType = Dict[str, Any]
 
 class ChartType(Enum):
-    bar = "bar"
+    bar_categorical = "bar_categorical"
+    bar_linear = "bar_linear"
     scatter = "scatter"
     line = "line"
 
@@ -73,6 +74,7 @@ class TwoDimSelectionPredicate(NamedTuple):
     y_column: str
     x: Tuple[float, float]
     y: Tuple[float, float]
+    dimension = 2
 
 
 class OneDimSelectionPredicate(NamedTuple):
@@ -81,6 +83,8 @@ class OneDimSelectionPredicate(NamedTuple):
     is_categoritcal: bool
     # the first is selecting linear scale, the second categorical scale
     x: Union[Tuple[float, float], List[str]]
+    dimension = 1
+    
 
 SelectionPredicate = Union[TwoDimSelectionPredicate, OneDimSelectionPredicate]
 

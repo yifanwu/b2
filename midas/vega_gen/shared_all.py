@@ -11,6 +11,11 @@ def gen_spec_base(data: Optional[DataFrame]=None) -> VegaSpecType:
             "width": CHART_WIDTH,
             "height": CHART_HEIGHT,
             "padding": 5,
+            "config": {
+                "axisX": {
+                    "labelAngle": 45,
+                }
+            }
         }
     if data is not None:
         set_data_attr(base, data)

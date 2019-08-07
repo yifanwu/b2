@@ -5,12 +5,13 @@ from datetime import datetime
 from json import loads
 import ipywidgets
 
-# from IPython.display import display, publish_display_data
+from IPython.display import display
 
 from .errors import NullValueError, DfNotFoundError, InternalLogicalError, \
     report_error_to_user, logging, debug_log, \
     check_not_null
 from .utils import get_min_max_tuple_from_list
+from .helper import get_df_by_predicate
 from .showme import gen_spec, set_data_attr
 from .vega_gen.defaults import SELECTION_SIGNAL
 from .widget import MidasWidget
@@ -145,11 +146,6 @@ class Midas(object):
             return self.visualize_df_without_spec(df_name)
 
 
-    def visualize(self, df_name: str):
-        # just an alias
-        return self.visualize_df_without_spec(df_name)
-
-
     def visualize_df_without_spec(self, df_name: str):
         df = self.get_df(df_name)
         spec = gen_spec(df)
@@ -193,17 +189,18 @@ class Midas(object):
                 else:
                     _call = cast(DataFrameCall, i.call)
                     if lineage_data is None:
-                        lineage_data = self._get_selection_by_df(df_info, predicate)
+                        lineage_data = get_df_by_predicate(df_info, predicate)
                     new_data = _call.func(lineage_data)
                     # register data if this is the first time that this is called
                     if not self._has_df(_call.target_df):
                         self.register_df(new_data, _call.target_df)
-                    # update the data in store
-                    self.set_df_data(_call.target_df, new_data)
-                    # send the update
-                    vis = self.dfs[_call.target_df].visualization
-                    if vis:
-                        vis.widget.replace_data(new_data)
+                    else:
+                        # update the data in store
+                        self.set_df_data(_call.target_df, new_data)
+                        # send the update
+                        vis = self.dfs[_call.target_df].visualization
+                        if vis:
+                            vis.widget.replace_data(new_data)
         
         # if queue is not empty, invoke it
         if (len(self.tick_queue) > 0):
@@ -220,25 +217,39 @@ class Midas(object):
             raise InternalLogicalError("df not defined")
 
 
-    def js_add_selection(self, df_name: str, selection: str, is_categorical: bool=False):
+    def js_add_selection(self, df_name: str, selection: str):
         logging("js_add_selection", df_name)
         # figure out what spec it was
         df_info = self.dfs[df_name]
         check_not_null(df_info)
         predicate_raw = loads(selection)
-        x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
         interaction_time = datetime.now()
         vis = df_info.visualization
         predicate: SelectionPredicate
+        c_type = df_info.visualization.chart_info.chart_type
+        # the following two, x_column, y_column are shared by all chart types
+        x_column = vis.chart_info.encodings[Channel.x]
+        y_column = vis.chart_info.encodings[Channel.y]
         if vis:
-            if (vis.chart_info.chart_type == ChartType.scatter):
+            if (c_type == ChartType.scatter):
+                x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
                 y_value = get_min_max_tuple_from_list(predicate_raw[Channel.y.value])
-                x_column = vis.chart_info.encodings[Channel.x]
-                y_column = vis.chart_info.encodings[Channel.y]
                 predicate = TwoDimSelectionPredicate(interaction_time, x_column, y_column, x_value, y_value)
-            else:
-                x_column = vis.chart_info.encodings[Channel.x]
+            elif (c_type == ChartType.bar_categorical):
+                x_value = predicate_raw[Channel.x.value]
+                is_categorical = True
                 predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
+            elif (c_type == ChartType.bar_linear):
+                bound_left = predicate_raw[Channel.x.value][0][0]
+                bound_right = predicate_raw[Channel.x.value][-1][1]
+                x_value = get_min_max_tuple_from_list([bound_left, bound_right])
+                is_categorical = False
+                predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
+            else:
+                x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
+                is_categorical = False
+                predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
+
             history_index = len(df_info.predicates)
             df_info.predicates.append(predicate)
             self._tick(df_name, history_index)
@@ -272,54 +283,10 @@ class Midas(object):
             if (option == "predicate"):
                 return predicate
             else:
-                return self._get_selection_by_df(df_info, predicate)
+                return get_df_by_predicate(df_info, predicate)
         else:
             return None
 
-
-    def _get_selection_by_df(self, df_info: DFInfo, predicate: SelectionPredicate):
-        """get_selection returns the selection DF
-        The default would be the selection of all of the df
-        However, if some column is not in the rows of the df are specified, Midas will try to figure out based on the derivation history what is going on.
-        
-        Arguments:
-            df_name {str} -- [description]
-        
-        Returns:
-            [type] -- [description]
-        """
-        # Maybe TODO: with the optional columns specified
-
-        if (isinstance(predicate, OneDimSelectionPredicate)):
-            # FIXME: the story around categorical is not clear
-            _p = cast(OneDimSelectionPredicate, predicate)
-            if (_p.is_categoritcal):
-                selection_df = df_info.df.loc[
-                    df_info.df[predicate.x_column].isin(_p.x)
-                ]
-            else:
-                selection_df = df_info.df.loc[
-                    (df_info.df[predicate.x_column] < predicate.x[1])
-                    & (df_info.df[predicate.x_column] > predicate.x[0])
-                ]
-            return selection_df
-        else:
-            selection_df = df_info.df.loc[
-                  (df_info.df[predicate.x_column] < predicate.x[1])
-                & (df_info.df[predicate.x_column] > predicate.x[0])
-                & (df_info.df[predicate.y_column] > predicate.y[0])
-                & (df_info.df[predicate.y_column] < predicate.y[1])
-            ]
-            return selection_df
-        # df_info = self.dfs[df_name]
-        # check_not_null(df_info)
-        # if (len(df_info.predicates) > 0):
-        #     predicate = df_info.predicates[-1]
-        # else:
-        #     # return no result
-        #     col_names =  df_info.df.columns
-        #     empty_df = DataFrame(columns = col_names)
-        #     return empty_df
 
 
     def get_selection_history(self, df_name: str):
@@ -372,9 +339,21 @@ class Midas(object):
         Raises:
             NotImplementedError: [description]
         """
+        if (df_interact_name not in self.dfs):
+            raise UserWarning(f"Your interaction based df {df_interact_name} does not exists")
+        if (new_df_name in self.dfs):
+            raise UserWarning(f"Your result based df {df_interact_name} does not exists")
+
         call = DataFrameCall(df_transformation, new_df_name)
         item = TickItem(TickCallbackType.dataframe, call)
         self._add_to_tick(df_interact_name, item)
+        
+        # also see if the selection has already been made, if it has
+        df_info = self.dfs[df_interact_name]
+        if (len(df_info.predicates) > 0):
+            # register it
+            new_data = df_transformation(get_df_by_predicate(df_info, df_info.predicates[-1]))
+            self.register_df(new_data, new_df_name)
         return
 
 
@@ -414,10 +393,9 @@ class Midas(object):
         vis = Visualization(chart_info, w)
         self.dfs[df_name] = self.dfs[df_name]._replace(visualization = vis)
         # note that we use a custom prefix to avoid accidentally overwrriting a user defined function
-        is_categorical = "True" if (chart_info.chart_type == ChartType.bar) else "False"
         cb = f"""
             var {CUSTOM_FUNC_PREFIX}val_str = JSON.stringify(value);
-            var pythonCommand = `{self.m_name}.js_add_selection("{df_name}", '${{{CUSTOM_FUNC_PREFIX}val_str}}', {is_categorical})`;
+            var pythonCommand = `{self.m_name}.js_add_selection("{df_name}", '${{{CUSTOM_FUNC_PREFIX}val_str}}')`;
             console.log("calling", pythonCommand);
             IPython.notebook.kernel.execute(pythonCommand)
         """

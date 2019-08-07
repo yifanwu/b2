@@ -8,11 +8,6 @@ from .shared_all import gen_spec_base
 
 def gen_scatterplot_spec(x_field: str, y_field: str, data: DataFrame):
     spec_base = gen_spec_base(data)
-    spec_base["config"] = {
-        "axisX": {
-            "labelAngle": 45,
-        }
-    }
     spec_base["scales"] = [
         {
             "name": X_SCALE,
@@ -90,13 +85,13 @@ def gen_scatterplot_spec(x_field: str, y_field: str, data: DataFrame):
         { "name": "chartWidth", "value": CHART_INNER_WIDTH },
         { "name": "chartHeight", "value": CHART_INNER_HEIGHT },
         {
-        "name": SELECTION_SIGNAL,
-        "on": [
-            {
-            "events": {"signal": f"{X_PIXEL_SIGNAL} || {Y_PIXEL_SIGNAL}"},
-            "update": f"(span({X_PIXEL_SIGNAL}) || span({Y_PIXEL_SIGNAL})) ? {{x: invert('{X_SCALE}', {X_PIXEL_SIGNAL}), y: invert('{Y_SCALE}', {Y_PIXEL_SIGNAL})}} : null"
-            }
-        ]
+            "name": SELECTION_SIGNAL,
+            "on": [
+                {
+                "events": {"signal": f"{X_PIXEL_SIGNAL} || {Y_PIXEL_SIGNAL}"},
+                "update": f"(span({X_PIXEL_SIGNAL}) || span({Y_PIXEL_SIGNAL})) ? {{x: invert('{X_SCALE}', {X_PIXEL_SIGNAL}), y: invert('{Y_SCALE}', {Y_PIXEL_SIGNAL})}} : null"
+                }
+            ]
         },
         {
             "name": X_PIXEL_SIGNAL,
