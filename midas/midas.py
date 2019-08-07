@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-
 from pandas import DataFrame, read_csv, read_json
 from typing import Dict, Optional, List, Callable, Union, cast
 from datetime import datetime
@@ -7,12 +6,14 @@ from json import loads
 
 # from IPython.display import display, publish_display_data
 
-from .errors import check_not_null, NullValueError, DfNotFoundError, report_error_to_user
+from .errors import NullValueError, DfNotFoundError, InternalLogicalError, \
+    report_error_to_user, logging, debug_log, \
+    check_not_null
 from .utils import get_min_max_tuple_from_list
 from .showme import gen_spec, set_data_attr
 from .vega_gen.defaults import SELECTION_SIGNAL
 from .widget import MidasWidget
-from .types import DFInfo, VegaSpecType, ChartType, ChartInfo, \
+from .types import DFInfo, ChartType, ChartInfo, TickSpec, \
     TwoDimSelectionPredicate, OneDimSelectionPredicate, \
     SelectionPredicate, Channel, DFDerivation, DerivationType, \
     DFLoc, TickItem, JoinInfo, Visualization, \
@@ -35,6 +36,9 @@ class Midas(object):
         self.dfs = {}
         self.tick_funcs = {}
         self.m_name: str = m_name
+        self.current_tick: int = 0
+        self.is_processing_tick: bool = False
+        self.tick_queue: List[TickSpec] = []
         # TODO: maybe we can just change the DataFrame here...
         # self._pandas_magic()
 
@@ -60,17 +64,11 @@ class Midas(object):
         self.register_df(new_df, new_df_name, DFDerivation(df_name, new_df_name, DerivationType.loc, loc_spec))
         return new_df
 
-    # def _pandas_magic(self):
-    #     old_loc = DataFrame.loc
-    #     # s is self.
-    #     DataFrame.m_loc = new_loc
 
-
-    def df(self, df_name: str):
+    def get_df(self, df_name: str):
         # all the dfs are named via the global var so we can manipulate without worrying about reference changes!
-        found = self.dfs[df_name]
-        if (found != None):
-            return found.df
+        if (df_name in self.dfs):
+            return self.dfs[df_name].df
         else:
             return None
 
@@ -79,14 +77,14 @@ class Midas(object):
         """pivate method to keep track of dfs
             TODO: make the meta_data work with the objects
         """
-        print("register_df")
+        logging("register_df", df_name)
         created_on = datetime.now()
         selections: List[SelectionPredicate] = []
         chart_spec = None # to be populated later
         df_info = DFInfo(df_name, df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
+        self.__show_or_rename_visualization(df_name)
         return
-        # self.__show_or_rename_visualization(df_name)
 
 
     def remove_df(self, df_name: str):
@@ -94,8 +92,6 @@ class Midas(object):
 
 
     def __show_or_rename_visualization(self, df_name: str):
-        # raise NotImplementedError("__show_visualization needs to understand event between phospher")
-        print("showing visualization")
         return self.visualize_df_without_spec(df_name)
 
 
@@ -154,7 +150,7 @@ class Midas(object):
 
 
     def visualize_df_without_spec(self, df_name: str):
-        df = self.df(df_name)
+        df = self.get_df(df_name)
         spec = gen_spec(df)
         if spec:
             # set_data is false because gen_spec already sets the data
@@ -164,38 +160,67 @@ class Midas(object):
             report_error_to_user("we could not generat the spec")
 
 
-    def _tick(self, df_name: str):
+    def _tick(self, df_name: str, history_index: int):
+        if self.is_processing_tick:
+            # put on queue and return
+            logging("tick", f"queuing {df_name} at {history_index}")
+            self.tick_queue.append(TickSpec(df_name, history_index, datetime.now()))
+            return
+        
+        logging("tick", f"processing {df_name} with history {history_index}")
+        self.is_processing_tick = True
+        print("actually processing")
+        self._process_tick(df_name, history_index)
+        self.is_processing_tick = False
+
+
+    def _process_tick(self, df_name: str, history_index: int):
+        self.current_tick += 1
+        # see if we need to wait
         # checkthe tick item
-        print("tick", df_name)
+        predicate, df_info = self._get_selection_by_predicate(df_name, history_index)
+        if not predicate:
+            return
+        lineage_data: DataFrame = None
         items = self.tick_funcs.get(df_name)
+        logging("tick", f"for predicate{predicate}")
         if items:
-            _items = items
-            for i in _items:
+            for _, i in enumerate(items):
+                logging("  callback", f"{i}")
                 if (i.callback_type == TickCallbackType.predicate):
-                    p = self.get_selection_by_predicate(df_name)
-                    if p:
-                        i.call.func(p)
+                    i.call.func(predicate)
                 else:
                     _call = cast(DataFrameCall, i.call)
-                    print("calling on dataframe call", _call)
-                    # if this is the first time that this is called, which we can figure out by
-                    # checking if the dataframe is already in
-                    new_data = _call.func(self.get_selection_by_df(df_name))
+                    if lineage_data is None:
+                        lineage_data = self._get_selection_by_df(df_info, predicate)
+                    new_data = _call.func(lineage_data)
+                    # register data if this is the first time that this is called
                     if not self._has_df(_call.target_df):
-                        print(f"first time seeing {_call.target_df}", "setting")
                         self.register_df(new_data, _call.target_df)
-                        self.__show_or_rename_visualization(_call.target_df)
-                        # FIXME: also need to have this visualized, otherwise 
-                    else:
-                        print("seen", _call.target_df, "already")
+                    # update the data in store
+                    self.set_df_data(_call.target_df, new_data)
                     # send the update
                     vis = self.dfs[_call.target_df].visualization
                     if vis:
                         vis.widget.replace_data(new_data)
+        
+        # if queue is not empty, invoke it
+        if (len(self.tick_queue) > 0):
+            # push the first one off, FIFO
+            to_process = self.tick_queue.pop(0)
+            self._process_tick(to_process.df_name, to_process.history_index)
+        return
+
+
+    def set_df_data(self, df_name: str, df: DataFrame):
+        if self._has_df(df_name):
+            self.dfs[df_name] = self.dfs[df_name]._replace(df = df)
+        else:
+            raise InternalLogicalError("df not defined")
 
 
     def js_add_selection(self, df_name: str, selection: str, is_categorical: bool=False):
-        print ("js_add_selection called")
+        logging("js_add_selection", df_name)
         # figure out what spec it was
         df_info = self.dfs[df_name]
         check_not_null(df_info)
@@ -205,7 +230,6 @@ class Midas(object):
         vis = df_info.visualization
         predicate: SelectionPredicate
         if vis:
-            print("chart_spec type", type(vis.chart_info))
             if (vis.chart_info.chart_type == ChartType.scatter):
                 y_value = get_min_max_tuple_from_list(predicate_raw[Channel.y.value])
                 x_column = vis.chart_info.encodings[Channel.x]
@@ -214,20 +238,45 @@ class Midas(object):
             else:
                 x_column = vis.chart_info.encodings[Channel.x]
                 predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
+            history_index = len(df_info.predicates)
             df_info.predicates.append(predicate)
-            self._tick(df_name)
+            self._tick(df_name, history_index)
         return
         
-    def get_selection_by_predicate(self, df_name: str):
+
+    def _get_selection_by_predicate(self, df_name: str, history_index: int):
+        df_info = self.dfs[df_name]
+        check_not_null(df_info)
+        if (len(df_info.predicates) > history_index):
+            predicate = df_info.predicates[history_index]
+            return predicate, df_info
+        else:
+            raise DfNotFoundError(df_name)
+
+
+    def get_current_selection(self, df_name: str, option: str="predicate"):
+        """[summary]
+        
+        Arguments:
+            df_name {str} -- [description]
+            option {str} -- two options, "predicate" or "data", defaults to "predicate"
+        
+        Returns:
+            [type] -- [description]
+        """
         df_info = self.dfs[df_name]
         check_not_null(df_info)
         if (len(df_info.predicates) > 0):
             predicate = df_info.predicates[-1]
-            return predicate
-        return None
+            if (option == "predicate"):
+                return predicate
+            else:
+                return self._get_selection_by_df(df_info, predicate)
+        else:
+            return None
 
 
-    def get_selection_by_df(self, df_name: str):
+    def _get_selection_by_df(self, df_info: DFInfo, predicate: SelectionPredicate):
         """get_selection returns the selection DF
         The default would be the selection of all of the df
         However, if some column is not in the rows of the df are specified, Midas will try to figure out based on the derivation history what is going on.
@@ -240,37 +289,36 @@ class Midas(object):
         """
         # Maybe TODO: with the optional columns specified
 
-        df_info = self.dfs[df_name]
-        check_not_null(df_info)
-        if (len(df_info.predicates) > 0):
-            predicate = df_info.predicates[-1]
-            print("predicate for selection", predicate)
-            if (isinstance(predicate, OneDimSelectionPredicate)):
-                # FIXME: the story around categorical is not clear
-                _p = cast(OneDimSelectionPredicate, predicate)
-                if (_p.is_categoritcal):
-                    selection_df = df_info.df.loc[
-                        df_info.df[predicate.x_column].isin(_p.x)
-                    ]
-                else:
-                    selection_df = df_info.df.loc[
-                        (df_info.df[predicate.x_column] < predicate.x[1])
-                        & (df_info.df[predicate.x_column] > predicate.x[0])
-                    ]
-                return selection_df
+        if (isinstance(predicate, OneDimSelectionPredicate)):
+            # FIXME: the story around categorical is not clear
+            _p = cast(OneDimSelectionPredicate, predicate)
+            if (_p.is_categoritcal):
+                selection_df = df_info.df.loc[
+                    df_info.df[predicate.x_column].isin(_p.x)
+                ]
             else:
                 selection_df = df_info.df.loc[
-                      (df_info.df[predicate.x_column] < predicate.x[1])
-                    & (df_info.df[predicate.x_column] < predicate.x[0])
-                    & (df_info.df[predicate.y_column] > predicate.y[0])
-                    & (df_info.df[predicate.y_column] < predicate.y[1])
+                    (df_info.df[predicate.x_column] < predicate.x[1])
+                    & (df_info.df[predicate.x_column] > predicate.x[0])
                 ]
-                return selection_df
+            return selection_df
         else:
-            # return no result
-            col_names =  df_info.df.columns
-            empty_df = DataFrame(columns = col_names)
-            return empty_df
+            selection_df = df_info.df.loc[
+                  (df_info.df[predicate.x_column] < predicate.x[1])
+                & (df_info.df[predicate.x_column] > predicate.x[0])
+                & (df_info.df[predicate.y_column] > predicate.y[0])
+                & (df_info.df[predicate.y_column] < predicate.y[1])
+            ]
+            return selection_df
+        # df_info = self.dfs[df_name]
+        # check_not_null(df_info)
+        # if (len(df_info.predicates) > 0):
+        #     predicate = df_info.predicates[-1]
+        # else:
+        #     # return no result
+        #     col_names =  df_info.df.columns
+        #     empty_df = DataFrame(columns = col_names)
+        #     return empty_df
 
 
     def get_selection_history(self, df_name: str):
@@ -282,7 +330,7 @@ class Midas(object):
 
 
     def _add_to_tick(self, df_name: str, item: TickItem):
-        print("_add_to_tick called", df_name, item)
+        logging("_add_to_tick", f" called{df_name}\n{item}")
         if (df_name in self.tick_funcs):
             self.tick_funcs[df_name].append(item)
         else:
@@ -323,7 +371,6 @@ class Midas(object):
         Raises:
             NotImplementedError: [description]
         """
-        print("new_visualization_from_selection called")
         call = DataFrameCall(df_transformation, new_df_name)
         item = TickItem(TickCallbackType.dataframe, call)
         self._add_to_tick(df_interact_name, item)
@@ -357,7 +404,7 @@ class Midas(object):
     # spec: VegaSpecType, encodings: Dict[Channel, str], chart_type: ChartType
     def visualize_df_with_spec(self, df_name: str, chart_info: ChartInfo, set_data=False):
         if (set_data):
-            df = self.df(df_name)
+            df = self.get_df(df_name)
             # note that we need to assign to a new variable, otherwise it will not load
             set_data_attr(chart_info.vega_spec, df)
         # register the spec to the df
@@ -371,10 +418,9 @@ class Midas(object):
             var {CUSTOM_FUNC_PREFIX}val_str = JSON.stringify(value);
             var pythonCommand = `{self.m_name}.js_add_selection("{df_name}", '${{{CUSTOM_FUNC_PREFIX}val_str}}', {is_categorical})`;
             console.log("calling", pythonCommand);
+            IPython.notebook.kernel.execute(pythonCommand)
         """
-        # IPython.notebook.kernel.execute(pythonCommand);
         w.register_signal_callback(SELECTION_SIGNAL, cb)
         return w
-
 
 __all__ = ['Midas']

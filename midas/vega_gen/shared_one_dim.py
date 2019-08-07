@@ -25,8 +25,9 @@ def gen_x_brush_signal_core():
                 "source":"scope",
                 "events":{  
                     "type":"mousedown",
-                    "filter":[  
-                        f"!event.item || event.item.mark.name !== \"{BRUSH_MARK}\""
+                    "filter":[
+                        # there is something weird with using \", so switching to '
+                        f"!event.item || event.item.mark.name !== '{BRUSH_MARK}'"
                     ]
                 },
                 "update":"[x(), x()]"
@@ -41,7 +42,7 @@ def gen_x_brush_signal_core():
                         "source":"scope",
                         "type":"mousedown",
                         "filter":[  
-                            f"!event.item || event.item.mark.name !== \"{BRUSH_MARK}\""
+                            f"!event.item || event.item.mark.name !== '{BRUSH_MARK}'"
                         ]
                     },
                     {  
@@ -89,7 +90,7 @@ def gen_x_brush_signal():
             "on": [
                 {
                 "events": {"signal": f"{X_PIXEL_SIGNAL}"},
-                "update": f"span({X_PIXEL_SIGNAL}) ? invert(\"{X_SCALE}\", {X_PIXEL_SIGNAL}) : null"
+                "update": f"span({X_PIXEL_SIGNAL}) ? invert('{X_SCALE}', {X_PIXEL_SIGNAL}) : null"
                 }
             ]
         }

@@ -2,13 +2,14 @@ from typing import Any, Optional
 
 class bcolors:
     HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
 
 class NullValueError(Exception):
     def __init__(self, message):
@@ -43,3 +44,12 @@ def type_check_with_warning(val: Any, t: Any):
 
 def report_error_to_user(msg: str):
     print(bcolors.WARNING + "[Warning] " + msg + bcolors.ENDC)
+
+
+def logging(function: str, msg: str):
+    print(bcolors.GREEN + f"[{function}]\t\t" + msg + bcolors.ENDC)
+
+
+def debug_log(msg: str):
+    print(bcolors.WARNING + msg + bcolors.ENDC)
+    

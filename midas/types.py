@@ -31,14 +31,27 @@ class DerivationType(Enum):
     black_box = "black_box"
 
 
+class TickCallbackType(Enum):
+    dataframe = "dataframe"
+    predicate = "predicate"
+
+
 class JoinInfo(NamedTuple):
     dfs: List[str]
     join_colums: List[str]
+
+
+class TickSpec(NamedTuple):
+    df_name: str
+    history_index: int
+    start_time: datetime
+
 
 class DFLoc(NamedTuple):
     rows: Union[slice, List[int]]
     columns: Union[slice, List[str]]
 
+    
 # TODO: we need a new derivation that captures functions applied
 # class DF, Callable[]
 
@@ -74,11 +87,6 @@ SelectionPredicate = Union[TwoDimSelectionPredicate, OneDimSelectionPredicate]
 PredicateCallback = Callable[[SelectionPredicate], None]
 
 
-class TickCallbackType(Enum):
-    dataframe = "dataframe"
-    predicate = "predicate"
-
-
 class DataFrameCall(NamedTuple):
     func: Callable[[DataFrame], DataFrame]
     target_df: str
@@ -99,6 +107,7 @@ class ChartInfo(NamedTuple):
     # ASK Arvind: this seems to be redundant information to the vega spec?
     encodings: Dict[Channel, str]
     vega_spec: VegaSpecType
+
 
 class Visualization(NamedTuple):
     chart_info: ChartInfo

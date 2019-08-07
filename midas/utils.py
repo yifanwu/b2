@@ -4,6 +4,7 @@ import codecs
 import os.path
 
 from typing import Tuple, List
+from pandas import DataFrame
 
 def abs_path(path):
     """Make path absolute."""
@@ -87,8 +88,8 @@ def prepare_spec(spec, data=None):
     if isinstance(data, pd.DataFrame):
         # We have to do the isinstance test first because we can't
         # compare a DataFrame to None.
-        data = sanitize_dataframe(data)
-        spec['data'] = {'values': data.to_dict(orient='records')}
+        # data = sanitize_dataframe(data)
+        spec['data'] = {'values': dataframe_to_dict(data)}
     elif data is None:
         # Assume data is within spec & do nothing
         # It may be deep in the spec rather than at the top level
@@ -96,10 +97,13 @@ def prepare_spec(spec, data=None):
     else:
         # As a last resort try to pass the data to a DataFrame and use it
         data = pd.DataFrame(data)
-        data = sanitize_dataframe(data)
-        spec['data'] = {'values': data.to_dict(orient='records')}
+        spec['data'] = {'values': dataframe_to_dict(data)}
     return spec
 
+
+def dataframe_to_dict(df: DataFrame):
+    clean_df = sanitize_dataframe(df)
+    return clean_df.to_dict(orient='records')
 
 ifnone = lambda a, b: b if a is None else a
 
