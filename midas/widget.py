@@ -1,7 +1,7 @@
 from __future__ import print_function
 import json
 from pandas import DataFrame
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from .vega_gen.defaults import DEFAULT_DATA_SOURCE
 from .utils import dataframe_to_dict
@@ -38,8 +38,8 @@ class MidasWidget(DOMWidget):
         self._has_waited = False
 
         self._displayed = False
-        self._pending_signal_message: List[SignalMessage] = []
-        self._pending_data_updates: List[UpdateDataMessage] = []
+        self._pending_signal_message: List[Dict] = []
+        self._pending_data_updates: List[Dict] = []
 
         self.on_msg(self._handle_message)
 
@@ -101,11 +101,13 @@ class MidasWidget(DOMWidget):
         """
         new_values = dataframe_to_dict(new_df)
         insert = new_values
-        remove='true'
-        update = UpdateDataMessage(insert, remove)
-        
+        remove = 'true'
+        update = dict(insert=insert, remove=remove)
         if self._displayed:
-            self.send(dict(type=WidgetMessageType.update_data.value, updates=[update]))
+            self.send(dict(
+                type=WidgetMessageType.update_data.value,
+                updates=[update]
+            ))
         else:
             self._pending_data_updates.append(update)
 
@@ -119,11 +121,13 @@ class MidasWidget(DOMWidget):
             callback {str} -- [description]
         """
         # print(f"registered callback for signal {signal}: {callback}")
-        register_signal = SignalMessage(signal, callback)
-        
+        cb = dict(signal=signal, callback=callback)
         if self._displayed:
-            self.send(dict(type=WidgetMessageType.register_signal_callback.value, callbacks=[register_signal]))
+            self.send(dict(
+                type=WidgetMessageType.register_signal_callback.value,
+                callbacks=[cb]
+            ))
         else:
-            self._pending_signal_message.append(register_signal)
+            self._pending_signal_message.append(cb)
 
 

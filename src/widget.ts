@@ -122,7 +122,7 @@ export class MidasWidget extends DOMWidgetView {
           return;
         }
         case WidgeMessageType.registerSignal: {
-          console.log("Got request to register signal");
+          console.log("Got request to register signal", ev);
           const message = ev as WidgetRegisterSignalMessage;
           for (const callback of message.callbacks) {
             registerSignalCallback(callback);
