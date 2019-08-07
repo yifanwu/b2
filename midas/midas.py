@@ -3,6 +3,7 @@ from pandas import DataFrame, read_csv, read_json
 from typing import Dict, Optional, List, Callable, Union, cast
 from datetime import datetime
 from json import loads
+import ipywidgets
 
 # from IPython.display import display, publish_display_data
 
@@ -421,6 +422,11 @@ class Midas(object):
             IPython.notebook.kernel.execute(pythonCommand)
         """
         w.register_signal_callback(SELECTION_SIGNAL, cb)
+        out = ipywidgets.Output(layout={'border': '1px solid black'})
+
+        with out:
+          display(w)
+
         return w
 
 __all__ = ['Midas']
