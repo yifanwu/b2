@@ -4,6 +4,7 @@ from pandas import DataFrame, read_csv, read_json
 from typing import Dict, Optional, List, Callable, Union, cast
 from datetime import datetime
 from json import loads
+import ipywidgets
 
 # from IPython.display import display, publish_display_data
 
@@ -85,8 +86,8 @@ class Midas(object):
         chart_spec = None # to be populated later
         df_info = DFInfo(df_name, df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
+        self.__show_or_rename_visualization(df_name)
         return
-        # self.__show_or_rename_visualization(df_name)
 
 
     def remove_df(self, df_name: str):
@@ -374,6 +375,11 @@ class Midas(object):
         """
         # IPython.notebook.kernel.execute(pythonCommand);
         w.register_signal_callback(SELECTION_SIGNAL, cb)
+        out = ipywidgets.Output(layout={'border': '1px solid black'})
+
+        with out:
+          display(w)
+
         return w
 
 
