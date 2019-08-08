@@ -5,7 +5,7 @@ cases covered:
 """
 from typing import Optional, Dict
 from pandas import DataFrame
-from pandas.api.types import is_string_dtype, is_numeric_dtype, is_bool_dtype
+from pandas.api.types import is_string_dtype, is_numeric_dtype, is_bool_dtype, is_datetime64_any_dtype
 
 from .errors import type_check_with_warning, check_not_null, InternalLogicalError
 from .vega_gen.bar_chart import gen_bar_chart_spec
@@ -42,6 +42,10 @@ def gen_spec(df: DataFrame) -> Optional[ChartInfo]:
             additional_transforms = DfTransform.categorical_distribution
             df_to_visualize = get_categorical_distribution(df[first_col], first_col)
             chart_type = ChartType.bar_categorical
+        elif (is_datetime64_any_dtype(df[first_col])):
+            additional_transforms = DfTransform.categorical_distribution
+            df_to_visualize = get_categorical_distribution(df[first_col], first_col)
+            chart_type = ChartType.line
         else:
             additional_transforms = DfTransform.numeric_distribution
             df_to_visualize = get_numeric_distribution(df[first_col], first_col)

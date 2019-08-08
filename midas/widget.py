@@ -121,7 +121,7 @@ class MidasWidget(DOMWidget):
             signal {str} -- [description]
             callback {str} -- [description]
         """
-        debug_log(f"registered callback for signal {signal}: {callback}")
+        # debug_log(f"registered callback for signal {signal}: {callback}")
         cb = dict(signal=signal, callback=callback)
         if self._displayed:
             self.send(dict(

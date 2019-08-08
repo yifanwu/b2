@@ -6,6 +6,22 @@ import os.path
 from typing import Tuple, List
 from pandas import DataFrame
 
+def in_ipynb():
+    try:
+        cfg = get_ipython().config 
+        if cfg['IPKernelApp']['parent_appname'] == 'ipython-notebook':
+            return True
+        else:
+            return False
+    except NameError:
+        return False
+
+try:
+    from IPython.display import get_ipython
+except ImportError as err:
+    def in_ipynb():
+        return False
+
 def abs_path(path):
     """Make path absolute."""
     return os.path.join(

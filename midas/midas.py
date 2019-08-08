@@ -5,7 +5,12 @@ from datetime import datetime, timedelta
 from json import loads
 import ipywidgets
 
-from IPython.display import display
+try:
+    from IPython.display import display
+except ImportError as err:
+    print("not in Notebook environment")
+    display = lambda x: None
+    logging = lambda x, y: None
 
 from .config import THROTTLE_RATE_MS
 from .errors import NullValueError, DfNotFoundError, InternalLogicalError, UserError, \
@@ -97,17 +102,6 @@ class Midas(object):
 
     def __show_or_rename_visualization(self, df_name: str):
         return self.visualize_df_without_spec(df_name)
-
-
-    def get_current_widget(self):
-        # TODO: show all the dfs (cut off at 5)
-        current_obj = max(self.dfs.values(), key=lambda v: v.created_on)
-        if ((current_obj != None) & (current_obj.df_name != None)):
-            df_name = current_obj.df_name
-            print(df_name)
-            return self.visualize_df_without_spec(df_name)
-        else:
-           return
 
 
     def read_json(self, path: str, df_name: str, **kwargs):

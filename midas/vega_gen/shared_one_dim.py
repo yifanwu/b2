@@ -1,5 +1,4 @@
-
-from .defaults import BRUSH_MARK, X_SCALE, X_PIXEL_SIGNAL, SELECTION_SIGNAL
+from .defaults import BRUSH_MARK, X_SCALE, X_PIXEL_SIGNAL, SELECTION_SIGNAL, CHART_HEIGHT
 
 def gen_click_signal():
     return {
@@ -96,3 +95,21 @@ def gen_x_brush_signal():
         }
     ]
 
+
+def gen_x_brush_mark():
+    return {
+        "type": "rect",
+        "name": BRUSH_MARK,
+        "encode": {
+            "enter": {
+                "y": {"value": 0},
+                "height": {"value": CHART_HEIGHT},
+                "fill": {"value": "#333"},
+                "fillOpacity": {"value": 0.2}
+            },
+            "update": {
+                "x": {"signal": f"{X_PIXEL_SIGNAL}[0]"},
+                "x2": {"signal": f"{X_PIXEL_SIGNAL}[1]"}
+            }
+        }
+    }

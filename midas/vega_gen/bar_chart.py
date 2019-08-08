@@ -3,7 +3,7 @@ from typing import Optional, Dict
 from pandas import DataFrame
 
 from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, CHART_HEIGHT, BRUSH_MARK
-from .shared_one_dim import gen_x_brush_signal  
+from .shared_one_dim import gen_x_brush_signal, gen_x_brush_mark
 from .shared_all import gen_spec_base
 
 from .defaults import SELECTION_SIGNAL
@@ -49,22 +49,7 @@ def gen_bar_chart_spec(x_field: str, y_field: str, data: DataFrame):
                 }
             }
         },
-        {
-            "type": "rect",
-            "name": BRUSH_MARK,
-            "encode": {
-                "enter": {
-                    "y": {"value": 0},
-                    "height": {"value": CHART_HEIGHT},
-                    "fill": {"value": "#333"},
-                    "fillOpacity": {"value": 0.2}
-                },
-                "update": {
-                    "x": {"signal": f"{X_PIXEL_SIGNAL}[0]"},
-                    "x2": {"signal": f"{X_PIXEL_SIGNAL}[1]"}
-                }
-            }
-        },
+        gen_x_brush_mark()
     ]
     spec_base["axes"] = [
         { "orient": "bottom", "scale": X_SCALE },
