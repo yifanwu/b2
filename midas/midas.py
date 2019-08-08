@@ -17,10 +17,11 @@ from .errors import NullValueError, DfNotFoundError, InternalLogicalError, UserE
     report_error_to_user, logging, debug_log, report_error_to_user, \
     check_not_null
 from .utils import get_min_max_tuple_from_list
-from .helper import get_df_by_predicate
+from .helper import get_df_by_predicate, get_df_transform_func_by_index
 from .showme import gen_spec, set_data_attr
 from .vega_gen.defaults import SELECTION_SIGNAL
 from .widget import MidasWidget
+from .constants import CUSTOM_INDEX_NAME
 from .vega_gen.data_processing import get_categorical_distribution, get_numeric_distribution
 from .types import DFInfo, ChartType, ChartInfo, TickSpec, DfTransform, \
     TwoDimSelectionPredicate, OneDimSelectionPredicate, \
@@ -90,6 +91,8 @@ class Midas(object):
         created_on = datetime.now()
         selections: List[SelectionPredicate] = []
         chart_spec = None # to be populated later
+        df.index.map(str).map(lambda x: f"{x}-{df_name}")
+        df.index.name = CUSTOM_INDEX_NAME
         df_info = DFInfo(df_name, df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
         self.__show_or_rename_visualization(df_name)
@@ -391,7 +394,7 @@ class Midas(object):
         raise NotImplementedError()
 
 
-    def link_dfs(self, df_interact_name: str, new_df_name: str):
+    def link(self, df1_name: str, df2_name: str):
         # infer how  df_interact_name and df_filter_name are connected to each other
         # the simplest case is that they are both columns from a large existing table
         # basically re-write the otherone if we know how to
@@ -402,7 +405,23 @@ class Midas(object):
         #         then we can either create a new Vega spec with data, using loc
         #         or we can just go through the predicate construction via the df logic?
         #         #TODO: ask Arvind?
-        raise NotImplementedError()
+        # all we need to do now is to filter the target
+        # 1. create a transform function
+
+        # 2. create tick item
+        df2_info = self.dfs[df2_name]
+        df2 = df2_info.df
+        df_transformation = get_df_transform_func_by_index(df2)
+        call = DataFrameCall(df_transformation, df2_name)
+        item = TickItem(TickCallbackType.dataframe, call)
+        self._add_to_tick(df1_name, item)
+        # update if there is already a selection
+        df_info = self.dfs[df1_name]
+        if (len(df_info.predicates) > 0):
+            # register it
+            new_data = df_transformation(get_df_by_predicate(df_info.df, df_info.predicates[-1]))
+            df2_info.visualization.widget.update_data(new_data)
+        return
 
 
     # spec: VegaSpecType, encodings: Dict[Channel, str], chart_type: ChartType

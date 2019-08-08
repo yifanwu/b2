@@ -41,7 +41,7 @@ def gen_bar_chart_spec(x_field: str, y_field: str, data: DataFrame):
                 "update": {
                     "fill": [
                         {
-                            "test": f"{SELECTION_SIGNAL} ? indexof({SELECTION_SIGNAL}, datum.{x_field}) > -1 : false",
+                            "test": f"{SELECTION_SIGNAL} ? indexof({SELECTION_SIGNAL}.x, datum.{x_field}) > -1 : false",
                             "value": "red"
                         },
                         {"value": "blue"

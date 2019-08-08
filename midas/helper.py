@@ -1,6 +1,15 @@
-from typing import cast
-from .types import OneDimSelectionPredicate, SelectionPredicate
 from pandas import DataFrame
+from typing import cast
+
+from .types import OneDimSelectionPredicate, SelectionPredicate
+from .constants import CUSTOM_INDEX_NAME
+
+def get_df_transform_func_by_index(target_df: DataFrame):
+    # basically add a 
+    def transform(df_in: DataFrame):
+        import pandas as pd
+        return pd.merge(target_df, df_in, how="inner", on=CUSTOM_INDEX_NAME)
+    return transform
 
 def get_df_by_predicate(df: DataFrame, predicate: SelectionPredicate):
     """get_selection returns the selection DF

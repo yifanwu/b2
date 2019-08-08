@@ -89,7 +89,7 @@ def gen_x_brush_signal():
             "on": [
                 {
                 "events": {"signal": f"{X_PIXEL_SIGNAL}"},
-                "update": f"span({X_PIXEL_SIGNAL}) ? invert('{X_SCALE}', {X_PIXEL_SIGNAL}) : null"
+                "update": f"span({X_PIXEL_SIGNAL}) ? {{x: invert('{X_SCALE}', {X_PIXEL_SIGNAL})}} : null"
                 }
             ]
         }
