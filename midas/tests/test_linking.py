@@ -25,6 +25,11 @@ class TestLinking(unittest.TestCase):
         self.assertEqual(len(bc_df.index), 1)
         self.assertTrue(bc_df.iloc[0]['b'] == 4)
         self.assertTrue(bc_df.iloc[0]['c'] == 0)
+        m.js_add_selection('ad_df', "null")
+        bc_df2 = m.dfs['bc_df'].df
+        self.assertEqual(len(bc_df2.index), 5)
+        self.assertTrue(bc_df2.iloc[0]['b'] == 2)
+        self.assertTrue(bc_df2.iloc[0]['c'] == 0)
 
 
 if __name__ == '__main__':

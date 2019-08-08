@@ -82,6 +82,11 @@ class TwoDimSelectionPredicate(NamedTuple):
     dimension = 2
 
 
+class NullSelectionPredicate(NamedTuple):
+    interaction_time: datetime
+    dimension = 0
+
+
 class OneDimSelectionPredicate(NamedTuple):
     interaction_time: datetime
     x_column: str
@@ -91,7 +96,7 @@ class OneDimSelectionPredicate(NamedTuple):
     dimension = 1
     
 
-SelectionPredicate = Union[TwoDimSelectionPredicate, OneDimSelectionPredicate]
+SelectionPredicate = Union[TwoDimSelectionPredicate, OneDimSelectionPredicate, NullSelectionPredicate]
 
 PredicateCallback = Callable[[SelectionPredicate], None]
 

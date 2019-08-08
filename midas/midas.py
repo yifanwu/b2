@@ -24,7 +24,7 @@ from .widget import MidasWidget
 from .constants import CUSTOM_INDEX_NAME
 from .vega_gen.data_processing import get_categorical_distribution, get_numeric_distribution
 from .types import DFInfo, ChartType, ChartInfo, TickSpec, DfTransform, \
-    TwoDimSelectionPredicate, OneDimSelectionPredicate, \
+    TwoDimSelectionPredicate, OneDimSelectionPredicate, NullSelectionPredicate, \
     SelectionPredicate, Channel, DFDerivation, DerivationType, \
     DFLoc, TickItem, JoinInfo, Visualization, \
     PredicateCallback, TickCallbackType, DataFrameCall, PredicateCall
@@ -258,28 +258,33 @@ class Midas(object):
         x_column = vis.chart_info.encodings[Channel.x]
         y_column = vis.chart_info.encodings[Channel.y]
         if vis:
-            if (c_type == ChartType.scatter):
-                x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
-                y_value = get_min_max_tuple_from_list(predicate_raw[Channel.y.value])
-                predicate = TwoDimSelectionPredicate(interaction_time, x_column, y_column, x_value, y_value)
-            elif (c_type == ChartType.bar_categorical):
-                x_value = predicate_raw[Channel.x.value]
-                is_categorical = True
-                predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
-            elif (c_type == ChartType.bar_linear):
-                bound_left = predicate_raw[Channel.x.value][0][0]
-                bound_right = predicate_raw[Channel.x.value][-1][1]
-                x_value = get_min_max_tuple_from_list([bound_left, bound_right])
-                is_categorical = False
-                predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
+            if predicate_raw:
+                if (c_type == ChartType.scatter):
+                    x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
+                    y_value = get_min_max_tuple_from_list(predicate_raw[Channel.y.value])
+                    predicate = TwoDimSelectionPredicate(interaction_time, x_column, y_column, x_value, y_value)
+                elif (c_type == ChartType.bar_categorical):
+                    x_value = predicate_raw[Channel.x.value]
+                    is_categorical = True
+                    predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
+                elif (c_type == ChartType.bar_linear):
+                    bound_left = predicate_raw[Channel.x.value][0][0]
+                    bound_right = predicate_raw[Channel.x.value][-1][1]
+                    x_value = get_min_max_tuple_from_list([bound_left, bound_right])
+                    is_categorical = False
+                    predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
+                else:
+                    x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
+                    is_categorical = False
+                    predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
             else:
-                x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
-                is_categorical = False
-                predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
+                predicate = NullSelectionPredicate(interaction_time)
 
             history_index = len(df_info.predicates)
             df_info.predicates.append(predicate)
             self._tick(df_name, history_index)
+        else:
+            raise InternalLogicalError("Should already be defined")
         return
         
 
