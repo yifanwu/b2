@@ -41,8 +41,10 @@ class Midas(object):
     dfs: Dict[str, DFInfo]
     tick_funcs: Dict[str, List[TickItem]]
     joins: List[JoinInfo]
+    nextId: int
 
     def __init__(self, m_name=MIDAS_INSTANCE_NAME):
+        self.nextId = 0
         self.dfs = {}
         self.tick_funcs = {}
         self.m_name: str = m_name
@@ -52,6 +54,12 @@ class Midas(object):
         # TODO: maybe we can just change the DataFrame here...
         # self._pandas_magic()
 
+    
+    def _next_id(self):
+      to_return = self.nextId
+      self.nextId += 1
+      return to_return
+        
     def loc(self, df_name: str, new_df_name: str, rows: Optional[Union[slice, List[int]]] = None, columns: Optional[Union[slice, List[str]]] = None) -> DataFrame:
         """this is a wrapper around the DataFrame `loc` function so that Midas will
         help keep track
@@ -81,6 +89,13 @@ class Midas(object):
             return self.dfs[df_name].df
         else:
             return None
+        # why not self.dfs.get(df_name)?
+
+    def _get_id(self, df_name: str):
+        if self._has_df(df_name):
+          return self.dfs[df_name].df_id
+        else:
+          return self._next_id()
 
 
     def register_df(self, df: DataFrame, df_name: str, derivation=None):
@@ -93,7 +108,7 @@ class Midas(object):
         chart_spec = None # to be populated later
         df.index.map(str).map(lambda x: f"{x}-{df_name}")
         df.index.name = CUSTOM_INDEX_NAME
-        df_info = DFInfo(df_name, df, created_on, selections, derivation, chart_spec)
+        df_info = DFInfo(df_name, self._get_id(df_name), df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
         self.__show_or_rename_visualization(df_name)
         return
@@ -436,7 +451,8 @@ class Midas(object):
             # note that we need to assign to a new variable, otherwise it will not load
             set_data_attr(chart_info.vega_spec, df)
         # register the spec to the df
-        w = MidasWidget(chart_info.vega_spec)
+    
+        w = MidasWidget(self.dfs[df_name].df_id, chart_info.vega_spec)
         # items[node.ind] = items[node.ind]._replace(v=node.v)
         vis = Visualization(chart_info, w)
         self.dfs[df_name] = self.dfs[df_name]._replace(visualization = vis)

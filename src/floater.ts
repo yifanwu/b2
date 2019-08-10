@@ -6,17 +6,18 @@ import { contains } from "vega-lite/build/src/util";
 
 // TODO: extract HTML class names so there aren't so many strings everywhere
 
-let id = 0;
 
-export function addDataFrame(element: any) {
-
-
-
-  let myId = `midas-element-${id++}`;
+export function addDataFrame(element: any, id: Number) {
+  let myId = `midas-element-${id}`;
   let div = $(`<div id=${myId}/>`);
   div.addClass("midas-element");
 
-  $("#midas-floater-container").append(div);
+  if ($("#" + myId).length === 0) {
+    $("#midas-floater-container").append(div);
+  } else {
+    let oldDiv = $(`#${myId}`);
+    oldDiv.replaceWith(div);
+  }
 
   let button = $("<button/>", {
       text: "x",
@@ -38,16 +39,15 @@ function createContainer() {
 }
 
 export function createFloater() {
-  let floater = $("<div id=\"midas-floater-wrapper\"/>");
+  let floater = $("<div id=\"midas-floater-wrapper-fixed\"/>");
 
-  $("body").append(floater);
-
-  makeResizable();
-  makeDraggable();
-  floater.append(makeHeader);
+  $("#notebook-container").after(floater);
+  // makeResizable();
+  // makeDraggable();
+  // floater.append(makeHeader);
   floater.append(createContainer);
 
-  $("#midas-floater-wrapper").css("position", "fixed");
+  // $("#midas-floater-wrapper").css("position", "fixed");
 
   $("#midas-floating-container").height($("#midas-floater-wrapper").innerHeight);
 }

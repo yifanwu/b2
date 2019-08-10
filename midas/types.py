@@ -136,6 +136,7 @@ class Visualization(NamedTuple):
 
 class DFInfo(NamedTuple):
     df_name: str
+    df_id: int
     df: DataFrame
     created_on: datetime
     predicates: List[SelectionPredicate]
