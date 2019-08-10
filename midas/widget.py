@@ -32,8 +32,9 @@ class MidasWidget(DOMWidget):
     _spec_source = Unicode('null').tag(sync=True)
     _opt_source = Unicode('null').tag(sync=True)
     
-    def __init__(self, spec=None, opt=None, **kwargs):
+    def __init__(self, title:str, spec=None, opt=None, **kwargs):
         super().__init__(**kwargs)
+        self.title = title
         self._spec_source = json.dumps(spec)
         self._opt_source = json.dumps(opt)
         self._has_waited = False

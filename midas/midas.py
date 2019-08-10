@@ -17,7 +17,7 @@ from .errors import NullValueError, DfNotFoundError, InternalLogicalError, UserE
     report_error_to_user, logging, debug_log, report_error_to_user, \
     check_not_null
 from .utils import get_min_max_tuple_from_list
-from .helper import get_df_by_predicate, get_df_transform_func_by_index
+from .helper import get_df_by_predicate, get_df_transform_func_by_index, get_chart_title
 from .showme import gen_spec, set_data_attr
 from .vega_gen.defaults import SELECTION_SIGNAL
 from .widget import MidasWidget
@@ -147,7 +147,7 @@ class Midas(object):
 
     def visualize_df_without_spec(self, df_name: str):
         df = self.get_df(df_name)
-        spec = gen_spec(df)
+        spec = gen_spec(df, get_chart_title(df_name))
         if spec:
             # set_data is false because gen_spec already sets the data
             return self.visualize_df_with_spec(df_name, spec, set_data=False)
@@ -425,7 +425,7 @@ class Midas(object):
         if (len(df_info.predicates) > 0):
             # register it
             new_data = df_transformation(get_df_by_predicate(df_info.df, df_info.predicates[-1]))
-            df2_info.visualization.widget.update_data(new_data)
+            df2_info.visualization.widget.replace_data(new_data)
         return
 
 
@@ -436,7 +436,8 @@ class Midas(object):
             # note that we need to assign to a new variable, otherwise it will not load
             set_data_attr(chart_info.vega_spec, df)
         # register the spec to the df
-        w = MidasWidget(chart_info.vega_spec)
+        title = get_chart_title(df_name)
+        w = MidasWidget(title, chart_info.vega_spec)
         # items[node.ind] = items[node.ind]._replace(v=node.v)
         vis = Visualization(chart_info, w)
         self.dfs[df_name] = self.dfs[df_name]._replace(visualization = vis)
