@@ -34,10 +34,11 @@ class MidasWidget(DOMWidget):
 
     widgetID: Int = Int(0).tag(sync=True, config=True)
     
-    def __init__(self, widget_id, spec=None, opt=None, **kwargs):
+    def __init__(self, title:str, widget_id: int, spec=None, opt=None, **kwargs):
         self.widget_id = Int(widget_id)
         kwargs["widgetID"] = widget_id
         super().__init__(**kwargs)
+        self.title = title
         self._spec_source = json.dumps(spec)
         self._opt_source = json.dumps(opt)
         self._has_waited = False

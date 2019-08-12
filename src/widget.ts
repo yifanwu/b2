@@ -1,6 +1,10 @@
+/// <reference path="./external/Jupyter.d.ts" />
+
 import { vegaEmbed } from "./index";
 
-import { DOMWidgetView } from "@jupyter-widgets/base";
+import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base";
+// import {Jupyter} from  "@jupyter/base";
+var events = require("js/base/events");
 import { LogInternalError } from "./utils";
 import {addDataFrame} from "./floater";
 

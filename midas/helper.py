@@ -4,6 +4,9 @@ from typing import cast, Optional
 from .types import OneDimSelectionPredicate, SelectionPredicate, NullSelectionPredicate
 from .constants import CUSTOM_INDEX_NAME
 
+def get_chart_title(df_name: str):
+    # one level of indirection in case we need to change in the future
+    return df_name
 
 def get_df_transform_func_by_index(target_df: DataFrame):
     # basically add a 

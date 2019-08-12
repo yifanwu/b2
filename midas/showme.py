@@ -17,7 +17,7 @@ from .vega_gen.defaults import COUNT_COL_NAME
 
 from .types import ChartInfo, ChartType, Channel, DfTransform
 
-def gen_spec(df: DataFrame) -> Optional[ChartInfo]:
+def gen_spec(df: DataFrame, title: str) -> Optional[ChartInfo]:
     """Implements basic show me like feature
         if there is only one column, try to do a distribution with reasonable binning
         if one categorical, one numeric, barchart
