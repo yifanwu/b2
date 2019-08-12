@@ -51,7 +51,7 @@ export class MidasWidget extends DOMWidgetView {
     this.viewElement = document.createElement("div");
 
     // this.el.appendChild(this.viewElement);
-    addDataFrame(this.viewElement);
+    addDataFrame(this.viewElement, this.model.get("widgetID"));
 
     this.errorElement = document.createElement("div");
     this.errorElement.style.color = "red";

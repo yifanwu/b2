@@ -10,7 +10,7 @@ from .widget_types import UpdateDataMessage, SignalMessage, WidgetMessageType
 
 try:
     from ipywidgets import DOMWidget
-    from traitlets import Unicode
+    from traitlets import Unicode, Int, Bool
 except ImportError as err:
     new_err = ImportError(
         "midas.widget requires ipywidgets, which could not be imported. "
@@ -31,8 +31,12 @@ class MidasWidget(DOMWidget):
     _view_module_version = Unicode('0.0.1').tag(sync=True)
     _spec_source = Unicode('null').tag(sync=True)
     _opt_source = Unicode('null').tag(sync=True)
+
+    widgetID: Int = Int(0).tag(sync=True, config=True)
     
-    def __init__(self, title:str, spec=None, opt=None, **kwargs):
+    def __init__(self, title:str, widget_id: int, spec=None, opt=None, **kwargs):
+        self.widget_id = Int(widget_id)
+        kwargs["widgetID"] = widget_id
         super().__init__(**kwargs)
         self.title = title
         self._spec_source = json.dumps(spec)
