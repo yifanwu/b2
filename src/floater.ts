@@ -2,12 +2,11 @@ import "./floater.css";
 
 import $ from "jquery";
 import "jqueryui";
-import { contains } from "vega-lite/build/src/util";
 
 // TODO: extract HTML class names so there aren't so many strings everywhere
 
 
-export function addDataFrame(element: any, id: Number) {
+export function addDataFrame(element: any, id: number, df_name: string) {
   let myId = `midas-element-${id}`;
   let div = $(`<div id=${myId}/>`);
   div.addClass("midas-element");
@@ -18,19 +17,33 @@ export function addDataFrame(element: any, id: Number) {
     let oldDiv = $(`#${myId}`);
     oldDiv.replaceWith(div);
   }
+  div.append(element);
 
-  let button = $("<button/>", {
+  let get_python_button = $("<button/>", {
+      text: "code",
+      click: () => {
+        const execute = `m.js_get_current_chart_code('${df_name}')`;
+        console.log("clicked, and executing", execute);
+        IPython.notebook.kernel.execute(execute);
+      },
+  });
+  get_python_button.css("align-self", "center");
+  get_python_button.css("margin-right", 0);
+  get_python_button.css("font-family", "monospace");
+
+  div.append(get_python_button);
+
+  let close_button = $("<button/>", {
       text: "x",
       click: () => {
         div.remove();
       },
    });
-   button.css("align-self", "center");
-   button.css("margin-right", 0);
-   button.css("font-family", "monospace");
+   close_button.css("align-self", "center");
+   close_button.css("margin-right", 0);
+   close_button.css("font-family", "monospace");
 
-  div.append(element);
-  div.append(button);
+  div.append(close_button);
 }
 
 function createContainer() {

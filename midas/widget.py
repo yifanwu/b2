@@ -33,10 +33,12 @@ class MidasWidget(DOMWidget):
     _opt_source = Unicode('null').tag(sync=True)
 
     widgetID: Int = Int(0).tag(sync=True, config=True)
+    dfName: Unicode = Unicode('null').tag(sync=True, config=True)
     
-    def __init__(self, title:str, widget_id: int, spec=None, opt=None, **kwargs):
+    def __init__(self, title: str, df_name: str, widget_id: int, spec=None, opt=None, **kwargs):
         self.widget_id = Int(widget_id)
         kwargs["widgetID"] = widget_id
+        kwargs["dfName"] = df_name
         super().__init__(**kwargs)
         self.title = title
         self._spec_source = json.dumps(spec)
