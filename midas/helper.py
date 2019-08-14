@@ -1,7 +1,7 @@
 from pandas import DataFrame
 from typing import cast, Optional
 
-from .types import OneDimSelectionPredicate, SelectionPredicate, NullSelectionPredicate
+from .types import OneDimSelectionPredicate, SelectionPredicate, NullSelectionPredicate, TwoDimSelectionPredicate
 from .constants import CUSTOM_INDEX_NAME
 
 def get_chart_title(df_name: str):
@@ -15,6 +15,21 @@ def get_df_transform_func_by_index(target_df: DataFrame):
         return pd.merge(target_df, df_in, how="inner", on=CUSTOM_INDEX_NAME)
     return transform
 
+def get_df_code(predicate: SelectionPredicate, df_name: str):
+    # note that this code closely mirrors that in get_df_by_predicate
+    t_str = predicate.interaction_time.strftime("%m_%d_%H_%M_%S")
+    meta_data_str=f"""# generated from interaction on `{df_name}` at time {t_str}"""
+    if (isinstance(predicate, OneDimSelectionPredicate)):
+        # FIXME: the story around categorical is not clear
+        _p = cast(OneDimSelectionPredicate, predicate)
+        if (_p.is_categoritcal):
+            return f"""{meta_data_str}\n{df_name}.loc[{df_name}['{predicate.x_column}'].isin({predicate.x})]"""
+        else:
+            return f"""{meta_data_str}\n{df_name}.loc[\n({df_name}['{predicate.x_column}'] < {predicate.x[1]})\n& ({df_name}['{predicate.x_column}'] > {predicate.x[0]})]"""
+    elif(isinstance(predicate, TwoDimSelectionPredicate)):
+        return f"""{meta_data_str}\n{df_name}.loc[\n({df_name}['{predicate.x_column}'] < {predicate.x[1]})\n& ({df_name}['{predicate.x_column}'] > {predicate.x[0]})\n& ({df_name}['{predicate.y_column}'] > {predicate.y[0]})\n& ({df_name}['{predicate.y_column}'] < {predicate.y[1]})\n]"""
+    else:
+        return ""
 
 def get_df_by_predicate(df: DataFrame, predicate: SelectionPredicate):
     """get_selection returns the selection DF

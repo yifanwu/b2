@@ -4,6 +4,10 @@ import { vegaEmbed } from "./index";
 
 import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base";
 // import {Jupyter} from  "@jupyter/base";
+<<<<<<< HEAD
+=======
+// var events = require("js/base/events");
+>>>>>>> master
 import { LogInternalError } from "./utils";
 import {addDataFrame} from "./floater";
 
@@ -50,7 +54,10 @@ export class MidasWidget extends DOMWidgetView {
     this.viewElement = document.createElement("div");
 
     // this.el.appendChild(this.viewElement);
-    addDataFrame(this.viewElement);
+    addDataFrame(this.viewElement,
+      this.model.get("widgetID"),
+      this.model.get("dfName"
+    ));
 
     this.errorElement = document.createElement("div");
     this.errorElement.style.color = "red";

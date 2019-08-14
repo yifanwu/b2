@@ -1,9 +1,9 @@
 import pandas as pd
 import unittest
-# from time import sleep
+from typing import cast
 
 from midas import Midas
-from midas.types import ChartType
+from midas.types import ChartType, TwoDimSelectionPredicate
 
 DF_NAME = 'simple_df'
 DERIVED_DF_NAME = 'derived_df'
@@ -35,8 +35,10 @@ class TestSelections(unittest.TestCase):
                 self.assertEqual(derived_df.shape[1], 1)
                 self.assertEqual(derived_df.iloc[0]['c'], 7)
                 self.assertEqual(len(m.dfs[DF_NAME].predicates), 1)
-                self.assertEqual(m.dfs[DF_NAME].predicates[0].x[0], 2)
-                self.assertEqual(m.dfs[DF_NAME].predicates[0].x_column, 'a')
+                self.assertIsInstance(m.dfs[DF_NAME].predicates[0], TwoDimSelectionPredicate)
+                _p = cast(TwoDimSelectionPredicate, m.dfs[DF_NAME].predicates[1])
+                self.assertEqual(_p.x[0], 2)
+                self.assertEqual(_p.x_column, 'a')
                 # make sure that the visual specs are created for 'derived_df'
                 self.assertIsNotNone(m.dfs[DERIVED_DF_NAME].visualization)
                 self.assertIsNotNone(m.dfs[DERIVED_DF_NAME].visualization.widget)
@@ -55,8 +57,10 @@ class TestSelections(unittest.TestCase):
                 self.assertEqual(derived_df_2.iloc[0]['c'], 3)
                 self.assertEqual(derived_df_2.iloc[1]['c'], 7)
                 self.assertEqual(len(m.dfs[DF_NAME].predicates), 2)
-                self.assertEqual(m.dfs[DF_NAME].predicates[1].x[0], 0)
-                self.assertEqual(m.dfs[DF_NAME].predicates[1].x_column, 'a')
+                self.assertIsInstance(m.dfs[DF_NAME].predicates[1], TwoDimSelectionPredicate)
+                _p = cast(TwoDimSelectionPredicate, m.dfs[DF_NAME].predicates[1])
+                self.assertEqual(_p.x[0], 0)
+                self.assertEqual(_p.x_column, 'a')
             print('unit test completed\n')
         m.new_visualization_from_selection(DF_NAME, DERIVED_DF_NAME, df_trans)
         # note that this has to come after the first callback, since it will otherwise not get called

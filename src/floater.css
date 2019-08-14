@@ -1,19 +1,47 @@
-
-#midas-floater-wrapper {
+#midas-floater-wrapper-fixed {
   position: fixed !important;
-  top: 120px;
-  right: 20px;
-  border: thin solid rgba(0, 0, 0, 0.38);
-  border-radius: 5px;
+  top: 97.5pt;
+  right: 10pt;
+  /* border: thin solid rgba(0, 0, 0, 0.38); */
+  /* border-radius: 5px; */
   padding:10px;
   background-color: #fff;
   z-index: 100;
   display: flex;
   flex-direction: column;
   overflow:hidden;
-  max-height: 80vh;
-  max-width: 600pt;
+  max-height: 80%;
+
+  float: right;
+  width: 35%;
+  /* min-width: 600pt; */
 }
+
+
+#midas-floater-wrapper-scroll {
+  /* position: fixed !important; */
+  /* top: 97.5pt; */
+  /* right: 10pt; */
+  /* border: thin solid rgba(0, 0, 0, 0.38); */
+  /* border-radius: 5px; */
+  padding:10px;
+  background-color: #fff;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow:hidden;
+  max-height: 80%;
+
+  float: right;
+  width: 35%;
+  /* min-width: 600pt; */
+}
+
+#notebook-container {
+  float: left;
+  width: 64%;
+}
+
 #midas-floater-container {
   overflow:scroll;
   text-align: end;
@@ -22,9 +50,16 @@
   padding: 20px;
 }
 
+#notebook {
+  padding-left: 10pt;
+  padding-right: 10pt;
+
+}
+
 .hide-btn{
   float: right;
 }
+
 
 .reload-btn{
   float: right;
