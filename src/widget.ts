@@ -4,7 +4,6 @@ import { vegaEmbed } from "./index";
 
 import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base";
 // import {Jupyter} from  "@jupyter/base";
-var events = require("js/base/events");
 import { LogInternalError } from "./utils";
 import {addDataFrame} from "./floater";
 

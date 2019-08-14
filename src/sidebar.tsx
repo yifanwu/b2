@@ -1,12 +1,26 @@
+import React, { MouseEventHandler, ReactElement } from 'react';
+import ReactDOM from 'react-dom';
+
 import "./floater.css";
 
 import $ from "jquery";
 import "jqueryui";
-import { contains } from "vega-lite/build/src/util";
 
 // TODO: extract HTML class names so there aren't so many strings everywhere
 
 let id = 0;
+
+interface DeleteButtonProps {
+  onClick: MouseEventHandler;
+}
+
+function DeleteButton(props: DeleteButtonProps): ReactElement {
+  return (
+    <button className="delete-button" onClick={props.onClick}>
+      x
+    </button>
+  );
+}
 
 export function addDataFrame(element: any) {
   let myId = `midas-element-${id++}`;
@@ -15,18 +29,9 @@ export function addDataFrame(element: any) {
 
   $("#midas-floater-container").append(div);
 
-  let button = $("<button/>", {
-      text: "x",
-      click: () => {
-        div.remove();
-      },
-   });
-   button.css("align-self", "center");
-   button.css("margin-right", 0);
-   button.css("font-family", "monospace");
+  ReactDOM.render(DeleteButton({onClick: () => div.remove()}), document.getElementById(myId));
 
   div.append(element);
-  div.append(button);
 }
 
 function createContainer() {

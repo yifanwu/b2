@@ -21,9 +21,15 @@
   "dependencies": {
     "@jupyter-widgets/base": "2.0.1",
     "@types/jqueryui": "^1.12.7",
+    "@types/react": "^16.9.1",
+    "@types/react-dom": "^16.8.5",
     "@types/webpack-env": "*",
     "jquery": "^3.4.1",
     "jqueryui": "^1.11.1",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "tslint": "^5.18.0",
+    "tslint-react": "^4.0.0",
     "vega": "5.4.0",
     "vega-embed": "^4.2.1",
     "vega-lite": "3.3.0"
