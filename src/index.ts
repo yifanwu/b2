@@ -1,7 +1,7 @@
 import vegaEmbed, { Mode, EmbedOptions } from "vega-embed";
 import { Spec, View } from "vega";
 import { TopLevelSpec } from "vega-lite";
-import {createFloater} from "./floater";
+import { createFloater } from "./floater";
 
 export { default as vegaEmbed } from "vega-embed";
 

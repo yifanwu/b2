@@ -2,20 +2,23 @@
 from typing import Optional, Dict
 from pandas import DataFrame
 
-from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, Y_PIXEL_SIGNAL, CHART_INNER_HEIGHT, CHART_INNER_WIDTH, SELECTION_SIGNAL, BRUSH_MARK
-from .shared_all import gen_spec_base
+from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, Y_PIXEL_SIGNAL, SELECTION_SIGNAL, BRUSH_MARK, X_DOMAIN_SIGNAL, X_DOMAIN_BY_DATA_SIGNAL, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
+from .shared_all import gen_spec_base, gen_x_domain_signals, gen_y_domain_signals, gen_width_height_signals
+from .data_processing import set_data_attr
 
 
 def gen_scatterplot_spec(x_field: str, y_field: str, data: DataFrame):
-    spec_base = gen_spec_base(data)
+    spec_base = gen_spec_base()
+    set_data_attr(spec_base, data, x_field, y_field)
     spec_base["scales"] = [
         {
             "name": X_SCALE,
             "type": "linear",
             "round": True,
             "nice": True,
-            "zero": True,
-            "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
+            "zero": False,
+            "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
+            # {"data": DEFAULT_DATA_SOURCE, "field": x_field},
             "range": "width"
         },
         {
@@ -23,8 +26,9 @@ def gen_scatterplot_spec(x_field: str, y_field: str, data: DataFrame):
             "type": "linear",
             "round": True,
             "nice": True,
-            "zero": True,
-            "domain": {"data": DEFAULT_DATA_SOURCE, "field": y_field},
+            "zero": False,
+            "domain": {"signal": f"{Y_DOMAIN_SIGNAL} ? {Y_DOMAIN_SIGNAL} : {Y_DOMAIN_BY_DATA_SIGNAL}"},
+            # {"data": DEFAULT_DATA_SOURCE, "field": y_field},
             "range": "height"
         }
     ]
@@ -81,10 +85,10 @@ def gen_scatterplot_spec(x_field: str, y_field: str, data: DataFrame):
             }
         }
     ]
-    spec_base["signals"] = [
-        { "name": "chartWidth", "value": CHART_INNER_WIDTH },
-        { "name": "chartHeight", "value": CHART_INNER_HEIGHT },
-        {
+    spec_base["signals"] = gen_width_height_signals() + \
+        gen_x_domain_signals() + \
+        gen_y_domain_signals() + \
+        [{
             "name": SELECTION_SIGNAL,
             "on": [
                 {

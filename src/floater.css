@@ -88,3 +88,8 @@
   background-color: antiquewhite;
 }
 
+.chart-btns {
+  align-self: center;
+  margin-right: 0;
+  font-family: monospace;
+}

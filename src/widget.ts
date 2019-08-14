@@ -39,7 +39,7 @@ interface WidgetRegisterSignalMessage extends WidgetMessageBase {
   callbacks: SignalCallback[];
 }
 
-type WidgetMessage = WidgetUpdateMessage | WidgetRegisterSignalMessage ;
+// type WidgetMessage = WidgetUpdateMessage | WidgetRegisterSignalMessage ;
 
 export class MidasWidget extends DOMWidgetView {
   // hm, fixme: not sure why this view's type is any???
@@ -49,12 +49,6 @@ export class MidasWidget extends DOMWidgetView {
 
   render() {
     this.viewElement = document.createElement("div");
-
-    // this.el.appendChild(this.viewElement);
-    addDataFrame(this.viewElement,
-      this.model.get("widgetID"),
-      this.model.get("dfName"
-    ));
 
     this.errorElement = document.createElement("div");
     this.errorElement.style.color = "red";
@@ -78,6 +72,14 @@ export class MidasWidget extends DOMWidgetView {
       })
         .then((res: any) => {
           this.view = res.view;
+
+          // this.el.appendChild(this.viewElement);
+          addDataFrame(this.viewElement,
+            this.model.get("widgetID"),
+            this.model.get("dfName"),
+            this.view
+          );
+
           this.send({ type: "display" });
         })
         .catch((err: Error) => console.error(err));
@@ -96,7 +98,6 @@ export class MidasWidget extends DOMWidgetView {
         "return (" + (update.remove || "false") + ")"
       );
       const newValues = update.insert || [];
-      console.log("new values", newValues, "\n");
       const changeSet = this.view
         .changeset()
         .insert(newValues)

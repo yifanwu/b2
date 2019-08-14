@@ -1,27 +1,29 @@
 
-from typing import Optional, Dict
 from pandas import DataFrame
 
-from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, CHART_HEIGHT, BRUSH_MARK
+from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, CHART_HEIGHT, CHART_WIDTH_SIGNAL, CHART_HEIGHT_SIGNAL, CHART_WIDTH, X_DOMAIN_SIGNAL, X_DOMAIN_BY_DATA_SIGNAL, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
 from .shared_one_dim import gen_x_brush_signal, gen_x_brush_mark
-from .shared_all import gen_spec_base
-
+from .shared_all import gen_spec_base, gen_x_domain_signals, gen_y_domain_signals, gen_width_height_signals
 from .defaults import SELECTION_SIGNAL
+from .data_processing import set_data_attr
 
 def gen_bar_chart_spec(x_field: str, y_field: str, data: DataFrame):
-    spec_base = gen_spec_base(data)
+    spec_base = gen_spec_base()
+    set_data_attr(spec_base, data, x_field, y_field)
     spec_base["scales"] = [
         {
             "name": X_SCALE,
             "type": "band",
             "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
+            # "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
             "range": "width",
             "padding": 0.05,
             "round": True
         },
         {
             "name": Y_SCALE,
-            "domain": {"data": DEFAULT_DATA_SOURCE, "field": y_field},
+            # "domain": {"data": DEFAULT_DATA_SOURCE, "field": y_field},
+            "domain": {"signal": f"{Y_DOMAIN_SIGNAL} ? {Y_DOMAIN_SIGNAL} : {Y_DOMAIN_BY_DATA_SIGNAL}"},
             "nice": True,
             "range": "height"
         }
@@ -56,5 +58,6 @@ def gen_bar_chart_spec(x_field: str, y_field: str, data: DataFrame):
         { "orient": "left", "scale": Y_SCALE }
     ]
 
-    spec_base["signals"] = gen_x_brush_signal()
+    spec_base["signals"] = gen_width_height_signals() + \
+        gen_x_brush_signal() + gen_x_domain_signals() + gen_y_domain_signals()
     return spec_base

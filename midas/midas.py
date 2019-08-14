@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from pandas import DataFrame, read_csv, read_json
+from pandas import DataFrame, Series, read_csv, read_json
 from typing import Dict, Optional, List, Callable, Union, cast
 from datetime import datetime, timedelta
 from json import loads
@@ -80,7 +80,9 @@ class Midas(object):
         filled_columns = columns if columns else slice(None, None, None)
         new_df = found.df.loc[filled_rows, filled_columns]
         loc_spec = DFLoc(filled_rows, filled_columns)
-        self.register_df(new_df, new_df_name, DFDerivation(df_name, new_df_name, DerivationType.loc, loc_spec))
+        derivation = DFDerivation(df_name, new_df_name, DerivationType.loc, loc_spec)
+        replace_index = False
+        self.register_df(new_df, new_df_name, derivation, replace_index)
         return new_df
 
 
@@ -99,7 +101,7 @@ class Midas(object):
           return self._next_id()
 
 
-    def register_df(self, df: DataFrame, df_name: str, derivation=None):
+    def register_df(self, df: DataFrame, df_name: str, derivation=None, replace_index=True):
         """pivate method to keep track of dfs
             TODO: make the meta_data work with the objects
         """
@@ -107,13 +109,18 @@ class Midas(object):
         created_on = datetime.now()
         selections: List[SelectionPredicate] = []
         chart_spec = None # to be populated later
-        df.index.map(str).map(lambda x: f"{x}-{df_name}")
-        df.index.name = CUSTOM_INDEX_NAME
+        if replace_index:
+            df.index = df.index.map(str).map(lambda x: f"{x}-{df_name}")
+            df.index.name = CUSTOM_INDEX_NAME
         df_info = DFInfo(df_name, self._get_id(df_name), df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
         self.__show_or_rename_visualization(df_name)
         return
 
+    def register_series(self, series: Series, name: str):
+        # turn it into a df
+        df = series.to_frame()
+        return self.register_df(df, name)
 
     def remove_df(self, df_name: str):
         self.dfs.pop(df_name)
@@ -390,7 +397,7 @@ class Midas(object):
         if (df_interact_name not in self.dfs):
             raise UserError(f"Your interaction based df {df_interact_name} does not exists")
         if (new_df_name in self.dfs):
-            raise UserError(f"Your result based df {df_interact_name} does not exists")
+            raise UserError(f"Your result based df {df_interact_name} alread exists, please chose a new name")
 
         call = DataFrameCall(df_transformation, new_df_name)
         item = TickItem(TickCallbackType.dataframe, call)
@@ -459,7 +466,9 @@ class Midas(object):
         if (set_data):
             df = self.get_df(df_name)
             # note that we need to assign to a new variable, otherwise it will not load
-            set_data_attr(chart_info.vega_spec, df)
+            x_column = chart_info.encodings[Channel.x]
+            y_column = chart_info.encodings[Channel.y]
+            set_data_attr(chart_info.vega_spec, df, x_column, y_column)
         # register the spec to the df
         title = get_chart_title(df_name)
         w = MidasWidget(title, df_name, self.dfs[df_name].df_id, chart_info.vega_spec)

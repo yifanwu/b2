@@ -1,15 +1,19 @@
 import "./floater.css";
+import { View } from "vega";
 
 import $ from "jquery";
 import "jqueryui";
+import { X_SCALE, Y_SCALE, X_DOMAIN_SIGNAL, Y_DOMAIN_SIGNAL } from "./constants";
 
 // TODO: extract HTML class names so there aren't so many strings everywhere
 
+const btnClass = "chart-btns";
 
-export function addDataFrame(element: any, id: number, df_name: string) {
+// TODO: we should really start using React, this is really ugly
+
+export function addDataFrame(element: any, id: number, df_name: string, view: View) {
   let myId = `midas-element-${id}`;
   let div = $(`<div id=${myId}/>`);
-  div.addClass("midas-element");
 
   if ($("#" + myId).length === 0) {
     $("#midas-floater-container").append(div);
@@ -19,31 +23,53 @@ export function addDataFrame(element: any, id: number, df_name: string) {
   }
   div.append(element);
 
-  let get_python_button = $("<button/>", {
+  let buttonDiv = $(`<div/>`).addClass("midas-element");
+  const get_python_button = $("<button/>", {
       text: "code",
       click: () => {
         const execute = `m.js_get_current_chart_code('${df_name}')`;
         console.log("clicked, and executing", execute);
         IPython.notebook.kernel.execute(execute);
       },
-  });
-  get_python_button.css("align-self", "center");
-  get_python_button.css("margin-right", 0);
-  get_python_button.css("font-family", "monospace");
+    }).addClass(btnClass);
+  buttonDiv.append(get_python_button);
 
-  div.append(get_python_button);
+  // TODO: place this next to the y axis
+  const fix_y_scale_button = $("<button/>", {
+      text: "fix y",
+      click: () => {
+        // access the current scale
+        // @ts-ignore
+        const y_scale = view.scale(Y_SCALE);
+        // then set the current scale
+        view.signal(Y_DOMAIN_SIGNAL, y_scale.domain());
+      },
+    }).addClass(btnClass);
+
+  buttonDiv.append(fix_y_scale_button);
+
+  // x is problematic
+  // TODO: place this next to the x axis
+  // const fix_x_scale_button = $("<button/>", {
+  //   text: "fix x",
+  //   click: () => {
+  //     // access the current scale
+  //     const x_scale = view.scale(X_SCALE);
+  //     // then set the current scale
+  //     view.signal(X_DOMAIN_SIGNAL, x_scale.domain());
+  //   },
+  // }).addClass(btnClass);
+
+  // buttonDiv.append(fix_x_scale_button);
 
   let close_button = $("<button/>", {
       text: "x",
       click: () => {
         div.remove();
       },
-   });
-   close_button.css("align-self", "center");
-   close_button.css("margin-right", 0);
-   close_button.css("font-family", "monospace");
-
-  div.append(close_button);
+    }).addClass(btnClass);
+  buttonDiv.append(close_button);
+  div.append(buttonDiv);
 }
 
 function createContainer() {

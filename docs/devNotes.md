@@ -13,3 +13,7 @@ When the code is written, the types of the chart could be inferred even if the d
 ## References
 
 https://testnb.readthedocs.io/en/latest/examples/Notebook/Distributing%20Jupyter%20Extensions%20as%20Python%20Packages.html
+
+## Hacks
+
+Added `view(name: string): any;` to `vega-typings/types/runtime/index.d.ts`.
