@@ -1,17 +1,34 @@
-import React, { MouseEventHandler, ReactElement } from 'react';
-import ReactDOM from 'react-dom';
+import React, { MouseEventHandler, ReactElement } from "react";
+import ReactDOM from "react-dom";
 
 import "./floater.css";
 
 import $ from "jquery";
 import "jqueryui";
+import { any } from "prop-types";
 
 // TODO: extract HTML class names so there aren't so many strings everywhere
 
-let id = 0;
 
 interface DeleteButtonProps {
   onClick: MouseEventHandler;
+}
+
+interface ContainerState {
+  elements: ContainerElementState[];
+}
+
+interface ContainerElementState {
+  key: number;
+  element: string;
+  name: string;
+}
+
+interface MidasElementProps {
+  key: number;
+  element: any;
+  onClick: MouseEventHandler;
+  name: string;
 }
 
 function DeleteButton(props: DeleteButtonProps): ReactElement {
@@ -22,32 +39,109 @@ function DeleteButton(props: DeleteButtonProps): ReactElement {
   );
 }
 
-export function addDataFrame(element: any) {
-  let myId = `midas-element-${id++}`;
+function MidasElement(props: MidasElementProps) {
+  return (
+    <div className={`midas-element-${props.key}`}>
+      <p>test</p>
+    </div>
+  );
+}
+
+class MidasContainer extends React.Component<any, ContainerState> {
+  constructor(props?: any) {
+    super(props);
+    this.state = {
+      elements: [],
+    };
+  }
+
+  addDataFrame(element: any, key: number, dfName: string) {
+    let newElements = this.state.elements.concat([{
+      element: JSON.stringify(element),
+      key: key,
+      name: dfName,
+    }]);
+
+    this.setState({elements: newElements});
+    console.log("state", this.state);
+  }
+
+  render() {
+    return (
+      <div id="midas-floater-container">
+        {this.state.elements.map(({key, element, name}) => (
+          <MidasElement
+            key={key}
+            element={element}
+            name={name}
+            onClick={() => 3}/>
+        ))}
+      </div>
+    );
+  }
+}
+
+// @ts-ignore
+let container: MidasContainer = <MidasContainer/>;
+
+export function addDataFrame(element: any, id: number, df_name: string) {
+  console.log("The container is ", container);
+  if (container != null) {
+    container.addDataFrame(element, id, df_name);
+  }
+}
+
+function addDataFrameold(element: any, id: number, df_name: string) {
+  let myId = `midas-element-${id}`;
   let div = $(`<div id=${myId}/>`);
   div.addClass("midas-element");
 
-  $("#midas-floater-container").append(div);
+  if ($("#" + myId).length === 0) {
+    $("#midas-floater-container").append(div);
+    console.log("Appending div...");
+  } else {
+    let oldDiv = $(`#${myId}`);
+    oldDiv.replaceWith(div);
+    console.log("Replacing div...");
+  }
 
-  ReactDOM.render(DeleteButton({onClick: () => div.remove()}), document.getElementById(myId));
+  let get_python_button = $("<button/>", {
+    text: "codeaaaa",
+    click: () => {
+      const execute = `m.js_get_current_chart_code('${df_name}')`;
+      console.log("clicked, and executing", execute);
+      IPython.notebook.kernel.execute(execute);
+    },
+  });
+  get_python_button.css("align-self", "center");
+  get_python_button.css("margin-right", 0);
+  get_python_button.css("font-family", "monospace");
+
+  div.append(get_python_button);
+  console.log("appending python button...");
+
+//  ReactDOM.render(DeleteButton({ onClick: () => div.remove() }), document.getElementById(myId));
 
   div.append(element);
-}
-
-function createContainer() {
-  let container = $("<div id=\"midas-floater-container\"/>");
-  return container;
 }
 
 export function createFloater() {
   let floater = $("<div id=\"midas-floater-wrapper\"/>");
 
+
   $("body").append(floater);
 
-  makeResizable();
-  makeDraggable();
-  floater.append(makeHeader);
-  floater.append(createContainer);
+
+  // @ts-ignore
+  container = <MidasContainer/>;
+
+  // @ts-ignore
+  ReactDOM.render(container, document.getElementById("midas-floater-wrapper"));
+
+  //  makeResizable();
+  //  makeDraggable();
+  // floater.append(makeHeader);
+//  floater.append(createContainer);
 
   $("#midas-floater-wrapper").css("position", "fixed");
 

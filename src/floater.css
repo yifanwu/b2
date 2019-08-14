@@ -1,4 +1,4 @@
-#midas-floater-wrapper-fixed {
+#midas-floater-wrapper {
   position: fixed !important;
   top: 97.5pt;
   right: 10pt;
@@ -88,3 +88,8 @@
   background-color: antiquewhite;
 }
 
+.delete-button {
+  align-self: right;
+  margin-right: 0;
+  font-family: monospace;
+}

@@ -4,12 +4,9 @@ import { vegaEmbed } from "./index";
 
 import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base";
 // import {Jupyter} from  "@jupyter/base";
-<<<<<<< HEAD
-=======
 // var events = require("js/base/events");
->>>>>>> master
 import { LogInternalError } from "./utils";
-import {addDataFrame} from "./floater";
+import {addDataFrame} from "./sidebar";
 
 interface WidgetUpdate {
   key: string;
