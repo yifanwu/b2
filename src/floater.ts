@@ -11,6 +11,8 @@ const btnClass = "chart-btns";
 
 // TODO: we should really start using React, this is really ugly
 
+// HTML
+
 export function addDataFrame(element: any, id: number, df_name: string, view: View) {
   let myId = `midas-element-${id}`;
   let div = $(`<div id=${myId}/>`);

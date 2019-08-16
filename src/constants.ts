@@ -1,3 +1,5 @@
+export const DEBOUNCE_RATE = 100;
+
 // need to keep this in sync with the defaults.py file
 //   maybe consider changing this to a JSON file for better synchronization
 
@@ -14,7 +16,7 @@ export const Y_SCALE = "yscale";
 export const BRUSH_MARK = "brushMark";
 export const X_DOMAIN_SIGNAL = "xDomain";
 export const Y_DOMAIN_SIGNAL = "yDomain";
-export const X_DOMAIN_BY_DATA_SIGNAL = "xDomainDerived";
+// export const X_DOMAIN_BY_DATA_SIGNAL = "xDomainDerived";
 export const Y_DOMAIN_BY_DATA_SIGNAL = "yDomainDerived";
 export const CHART_WIDTH_SIGNAL = "chartWidth";
 export const CHART_HEIGHT_SIGNAL = "chartHeight";

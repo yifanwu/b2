@@ -1,11 +1,11 @@
 
 from pandas import DataFrame
 
-from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, CHART_HEIGHT, CHART_WIDTH_SIGNAL, CHART_HEIGHT_SIGNAL, CHART_WIDTH, X_DOMAIN_SIGNAL, X_DOMAIN_BY_DATA_SIGNAL, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
+from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, CHART_HEIGHT, CHART_WIDTH_SIGNAL, CHART_HEIGHT_SIGNAL, CHART_WIDTH, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
 from .shared_all import gen_spec_base
 from .shared_one_dim import gen_x_brush_signal, gen_x_brush_mark
 from .data_processing import sanitize_dataframe
-from .shared_all import gen_spec_base, gen_x_domain_signals, gen_y_domain_signals, gen_width_height_signals
+from .shared_all import gen_spec_base, gen_y_domain_signals, gen_width_height_signals
 
 # note that if we don't specify, it's automatically inferred
 # :%Y-%m-%d
@@ -34,8 +34,8 @@ def gen_linechart_spec(x_field: str, y_field: str, data: DataFrame, date_format:
             "name": X_SCALE,
             "type": "time",
             "zero": False,
-            # "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
-            "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
+            "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
+            # "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
             "range": "width"
         },
         {
@@ -84,7 +84,6 @@ def gen_linechart_spec(x_field: str, y_field: str, data: DataFrame, date_format:
     ]
     spec_base["signals"] = gen_width_height_signals() + \
          gen_x_brush_signal() + \
-        gen_x_domain_signals() + \
         gen_y_domain_signals()
     
     return spec_base

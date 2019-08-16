@@ -41,6 +41,7 @@ module.exports = [
       libraryTarget: outputLibraryTarget
     },
     externals: {
+      "vega": "vega",
       "@jupyter-widgets/base": "@jupyter-widgets/base",
       "./index": "nbextensions/midas/index"
     }

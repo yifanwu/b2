@@ -1,7 +1,7 @@
 # taken from https://github.com/vega/ipyvega/blob/master/vega/utils.py
 
 import codecs
-import os.path
+from os import path
 
 from typing import Tuple, List
 from pandas import DataFrame
@@ -22,11 +22,15 @@ except ImportError as err:
     def in_ipynb():
         return False
 
-def abs_path(path):
+def abs_path(p: str):
     """Make path absolute."""
-    return os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        path)
+    return path.join(
+        path.dirname(path.abspath(__file__)),
+        p)
+
+def check_path(p: str):
+    if not path.exists(p):
+        raise UserWarning(f"The path you provided, {p} does not exists")
 
 
 def get_content(path):

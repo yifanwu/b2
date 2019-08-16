@@ -13,11 +13,11 @@ except ImportError as err:
     display = lambda x: None
     logging = lambda x, y: None
 
-from .config import THROTTLE_RATE_MS
+# from .config import DEBOUNCE_RATE_MS
 from .errors import NullValueError, DfNotFoundError, InternalLogicalError, UserError, \
     report_error_to_user, logging, debug_log, report_error_to_user, \
     check_not_null
-from .utils import get_min_max_tuple_from_list
+from .utils import get_min_max_tuple_from_list, check_path
 from .helper import get_df_by_predicate, get_df_transform_func_by_index, get_chart_title, get_df_code
 from .showme import gen_spec, set_data_attr
 from .vega_gen.defaults import SELECTION_SIGNAL
@@ -50,8 +50,8 @@ class Midas(object):
         self.tick_funcs = {}
         self.m_name: str = m_name
         self.current_tick: int = 0
-        self.is_processing_tick: bool = False
-        self.tick_queue: List[TickSpec] = []
+        # self.is_processing_tick: bool = False
+        self.tick_log: List[TickSpec] = []
         # TODO: maybe we can just change the DataFrame here...
         # self._pandas_magic()
 
@@ -131,14 +131,17 @@ class Midas(object):
 
 
     def read_json(self, path: str, df_name: str, **kwargs):
+        check_path(path)
         df = read_json(path, kwargs)
         self.register_df(df, df_name)
         return df
 
 
     def read_csv(self, path: str, df_name: str, **kwargs):
+        check_path(path)
         df = read_csv(path, kwargs)
         # meta_data = DfMetaData(time_created = datetime.now())
+        # note that if it's via read_csv, it problably has a new index
         self.register_df(df, df_name)
         return df
 
@@ -180,26 +183,26 @@ class Midas(object):
 
 
     def _tick(self, df_name: str, history_index: int):
-        if self.is_processing_tick:
+        # if self.is_processing_tick:
             # see if we need to throttle
             # check the last item on the queue
-            if (len(self.tick_queue) > 0):
-                if (self.tick_queue[-1].start_time > datetime.now() - timedelta(milliseconds = THROTTLE_RATE_MS)):
-                    # don't even add to tick
-                    logging("throttled", df_name)
-                    return
+            # if (len(self.tick_queue) > 0):
+            #     if (self.tick_queue[-1].start_time > datetime.now() - timedelta(milliseconds = DEBOUNCE_RATE_MS)):
+            #         # don't even add to tick
+            #         logging("throttled", df_name)
+            #         return TickResultType.debounced
             
             # put on queue and return
-            logging("tick", f"queuing {df_name} at {history_index}")
-            self.tick_queue.append(TickSpec(df_name, history_index, datetime.now()))
-            return
+        # logging("tick", f"queuing {df_name} at {history_index}")
+        self.tick_log.append(TickSpec(df_name, history_index, datetime.now()))
+        # return TickResultType.queued
 
         logging("tick", f"processing {df_name} with history {history_index}")
-        self.is_processing_tick = True
+        # self.is_processing_tick = True
         print("actually processing")
         self._process_tick(df_name, history_index)
-        self.is_processing_tick = False
-
+        # self.is_processing_tick = False
+        return
 
     def _process_tick(self, df_name: str, history_index: int):
         self.current_tick += 1
@@ -208,6 +211,7 @@ class Midas(object):
         predicate, df_info = self._get_selection_by_predicate(df_name, history_index)
         if not predicate:
             return
+        # TODO check if predicate the same as before
         lineage_data: DataFrame = None
         items = self.tick_funcs.get(df_name)
         logging("tick", f"for predicate{predicate}")
@@ -251,12 +255,12 @@ class Midas(object):
                     else:
                         raise UserError("Transformation result was not defined")
 
-        
+        # since python is synchronous, we don't need a queue...
         # if queue is not empty, invoke it
-        if (len(self.tick_queue) > 0):
-            # push the first one off, FIFO
-            to_process = self.tick_queue.pop(0)
-            self._process_tick(to_process.df_name, to_process.history_index)
+        # if (len(self.tick_queue) > 0):
+        #     # push the first one off, FIFO
+        #     to_process = self.tick_queue.pop(0)
+        #     self._process_tick(to_process.df_name, to_process.history_index)
         return
 
 
@@ -305,10 +309,11 @@ class Midas(object):
 
             history_index = len(df_info.predicates)
             df_info.predicates.append(predicate)
-            self._tick(df_name, history_index)
+            return self._tick(df_name, history_index)
         else:
-            raise InternalLogicalError("Should already be defined")
-        return
+            print("Should already be defined")
+            # raise InternalLogicalError
+            return
         
 
     def _get_selection_by_predicate(self, df_name: str, history_index: int):

@@ -6,7 +6,8 @@ import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base
 // import {Jupyter} from  "@jupyter/base";
 // var events = require("js/base/events");
 import { LogInternalError } from "./utils";
-import {addDataFrame} from "./floater";
+import { addDataFrame } from "./floater";
+import { DEBOUNCE_RATE } from "./constants";
 
 interface WidgetUpdate {
   key: string;
@@ -37,6 +38,12 @@ interface SignalCallback {
 
 interface WidgetRegisterSignalMessage extends WidgetMessageBase {
   callbacks: SignalCallback[];
+}
+
+const casted_window = (window as any);
+if (typeof casted_window.lastInvoked === "undefined") {
+  casted_window.lastInvoked = new Date();
+  casted_window.lastInvokedTimer = null;
 }
 
 // type WidgetMessage = WidgetUpdateMessage | WidgetRegisterSignalMessage ;
@@ -110,7 +117,20 @@ export class MidasWidget extends DOMWidgetView {
       checkView();
       // we know that there are two arguments, name and value
       const cb = new Function("name", "value", signalCallback.callback);
-      this.view.addSignalListener(signalCallback.signal, cb);
+      const wrapped = (name: any, value: any) => {
+        const n = new Date();
+        const l = (window as any).lastInvoked;
+        (window as any).lastInvoked = n;
+        if (l) {
+          if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
+            clearTimeout((window as any).lastInvokedTimer);
+          }
+          (window as any).lastInvokedTimer = setTimeout(() => cb(name, value), DEBOUNCE_RATE);
+        } else {
+          throw Error("global times should be kept");
+        }
+      };
+      this.view.addSignalListener(signalCallback.signal, wrapped);
     };
 
     this.model.on("change:_spec_source", reembed);

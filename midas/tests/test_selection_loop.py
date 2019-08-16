@@ -36,7 +36,7 @@ class TestSelections(unittest.TestCase):
                 self.assertEqual(derived_df.iloc[0]['c'], 7)
                 self.assertEqual(len(m.dfs[DF_NAME].predicates), 1)
                 self.assertIsInstance(m.dfs[DF_NAME].predicates[0], TwoDimSelectionPredicate)
-                _p = cast(TwoDimSelectionPredicate, m.dfs[DF_NAME].predicates[1])
+                _p = cast(TwoDimSelectionPredicate, m.dfs[DF_NAME].predicates[0])
                 self.assertEqual(_p.x[0], 2)
                 self.assertEqual(_p.x_column, 'a')
                 # make sure that the visual specs are created for 'derived_df'

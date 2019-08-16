@@ -12,6 +12,13 @@ Note that namedtuples are immutable, so we'll basically
 # hack
 VegaSpecType = Dict[str, Any]
 
+# class TickResultType(Enum):
+#     debounced = "debounced"
+#     queued = "queued"
+#     processed = "processed"
+#     error = "error"
+
+
 class ChartType(Enum):
     bar_categorical = "bar_categorical"
     bar_linear = "bar_linear"
