@@ -18,6 +18,14 @@ VegaSpecType = Dict[str, Any]
 #     processed = "processed"
 #     error = "error"
 
+class TickIOType(Enum):
+    predicate = "predicate"
+    data = "data"
+    void = "void"
+# class BindingOutputType(Enum):
+#     side_effect = "side_effect"
+#     data = "data"
+
 
 class ChartType(Enum):
     bar_categorical = "bar_categorical"
@@ -39,9 +47,9 @@ class DerivationType(Enum):
     black_box = "black_box"
 
 
-class TickCallbackType(Enum):
-    dataframe = "dataframe"
-    predicate = "predicate"
+# class TickCallbackType(Enum):
+#     dataframe = "dataframe"
+#     predicate = "predicate"
 
 
 class DfTransform(Enum):
@@ -105,21 +113,32 @@ class OneDimSelectionPredicate(NamedTuple):
 
 SelectionPredicate = Union[TwoDimSelectionPredicate, OneDimSelectionPredicate, NullSelectionPredicate]
 
+# four kinds of callbacks that the developer could add to
 PredicateCallback = Callable[[SelectionPredicate], None]
+DataFrameCallback =  Callable[[DataFrame], None]
+DataFrameToDataFrameCallback = Callable[[DataFrame], DataFrame]
+PredicateToDataFrameCallback = Callable[[SelectionPredicate], DataFrame]
 
+# class DataFrameCall(NamedTuple):
+#     func: Callable[[DataFrame], DataFrame]
+#     target_df: str
 
-class DataFrameCall(NamedTuple):
-    func: Callable[[DataFrame], DataFrame]
-    target_df: str
-
-class PredicateCall(NamedTuple):
-    func: PredicateCallback
+# class PredicateCall(NamedTuple):
+#     func: 
     
-
 class TickItem(NamedTuple):
-    callback_type: TickCallbackType
-    call: Union[DataFrameCall, PredicateCall]
-    throttle_rate: Optional[float] = None
+    """[summary]
+    
+    Arguments:
+        param_type {[BindingParamType]} -- [description]
+        output_type {BindingOutputType}
+        call
+        target_df(optional)
+    """
+    param_type: TickIOType
+    output_type: TickIOType
+    call: Union[PredicateCallback, DataFrameCallback, DataFrameToDataFrameCallback, PredicateToDataFrameCallback]
+    target_df: Optional[str]
     last_called: Optional[datetime] = None
 
 

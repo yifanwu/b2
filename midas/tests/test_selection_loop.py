@@ -3,7 +3,7 @@ import unittest
 from typing import cast
 
 from midas import Midas
-from midas.types import ChartType, TwoDimSelectionPredicate
+from midas.types import ChartType, TwoDimSelectionPredicate, TickIOType
 
 DF_NAME = 'simple_df'
 DERIVED_DF_NAME = 'derived_df'
@@ -62,9 +62,9 @@ class TestSelections(unittest.TestCase):
                 self.assertEqual(_p.x[0], 0)
                 self.assertEqual(_p.x_column, 'a')
             print('unit test completed\n')
-        m.new_visualization_from_selection(DF_NAME, DERIVED_DF_NAME, df_trans)
+        m.bind(TickIOType.data, TickIOType.data, DF_NAME, DERIVED_DF_NAME)(df_trans)
         # note that this has to come after the first callback, since it will otherwise not get called
-        m.add_callback_to_selection(DF_NAME, cb)
+        m.bind(TickIOType.predicate, TickIOType.void, DF_NAME)(cb)
         cb_items = m.tick_funcs.get(DF_NAME)
         self.assertIsNotNone(cb_items)
         if cb_items:
