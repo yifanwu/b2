@@ -1,14 +1,23 @@
 import React, { MouseEventHandler, ReactElement } from "react";
 import ReactDOM from "react-dom";
+import { SortableContainer, SortableElement } from 'react-sortable-hoc';
+import arrayMove from 'array-move';
 
 import "./floater.css";
 
 import $ from "jquery";
 import "jqueryui";
-import { any } from "prop-types";
 
 // TODO: extract HTML class names so there aren't so many strings everywhere
 
+export function makeElementId(id: number, includeSelector: boolean = false) {
+  let toReturn = `midas-element-${id}`;
+  return includeSelector ? "#" + toReturn : toReturn;
+}
+
+declare global {
+  interface Window { sidebar: MidasContainer; }
+}
 
 interface DeleteButtonProps {
   onClick: MouseEventHandler;
@@ -19,32 +28,62 @@ interface ContainerState {
 }
 
 interface ContainerElementState {
-  key: number;
-  element: string;
+  id: number;
   name: string;
 }
 
 interface MidasElementProps {
-  key: number;
-  element: any;
+  id: number;
   onClick: MouseEventHandler;
   name: string;
 }
 
+interface MidasElementState {
+  hidden: boolean;
+}
+
 function DeleteButton(props: DeleteButtonProps): ReactElement {
   return (
-    <button className="delete-button" onClick={props.onClick}>
+    <button className="midas-header-button" onClick={props.onClick}>
       x
     </button>
   );
 }
 
-function MidasElement(props: MidasElementProps) {
-  return (
-    <div className={`midas-element-${props.key}`}>
-      <p>test</p>
-    </div>
-  );
+
+class MidasElement extends React.Component<MidasElementProps, MidasElementState> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hidden: false };
+  }
+
+  toggleHiddenStatus() {
+    this.setState(prevState => {
+      return { hidden: !prevState.hidden };
+    });
+  }
+
+  render() {
+    return (
+      <div className="midas-element">
+        <div className="midas-header">
+          <span className="midas-title">{this.props.name}</span>
+          <div className="midas-header-options"></div>
+          <button
+            className={"midas-header-button"}
+            onClick={() => this.toggleHiddenStatus()}>
+            {this.state.hidden ? "+" : "-"}
+          </button>
+
+          <DeleteButton onClick={this.props.onClick} />
+        </div>
+        <div
+          id={makeElementId(this.props.id)}
+          style={this.state.hidden ? { display: "none" } : {}}
+        />
+      </div>
+    );
+  }
 }
 
 class MidasContainer extends React.Component<any, ContainerState> {
@@ -55,132 +94,89 @@ class MidasContainer extends React.Component<any, ContainerState> {
     };
   }
 
-  addDataFrame(element: any, key: number, dfName: string) {
+  addDataFrame(key: number, dfName: string) {
+    let shouldReturn = false;
+    this.state.elements.forEach(({ name, id }) => {
+      if (id === key) {
+        shouldReturn = true;
+      }
+    });
+
+    if (shouldReturn) return;
+
     let newElements = this.state.elements.concat([{
-      element: JSON.stringify(element),
-      key: key,
+      id: key,
       name: dfName,
     }]);
 
-    this.setState({elements: newElements});
-    console.log("state", this.state);
+    this.setState({ elements: newElements });
+  }
+
+  removeDataFrame(key: number) {
+    this.setState(prevState => {
+      return {
+        elements: prevState.elements.filter(e => (e.id !== key))
+      };
+    });
   }
 
   render() {
+
     return (
       <div id="midas-floater-container">
-        {this.state.elements.map(({key, element, name}) => (
-          <MidasElement
-            key={key}
-            element={element}
-            name={name}
-            onClick={() => 3}/>
+            {this.state.elements.map(({ id, name }, index) => (
+              <MidasElement id= { id } key = { id } name = { name } onClick = {() => this.removeDataFrame(id)} />
         ))}
       </div>
     );
   }
 }
 
-// @ts-ignore
-let container: MidasContainer = <MidasContainer/>;
-
-export function addDataFrame(element: any, id: number, df_name: string) {
-  console.log("The container is ", container);
-  if (container != null) {
-    container.addDataFrame(element, id, df_name);
+export function addDataFrame(id: number, df_name: string) {
+  if (window.sidebar === undefined) {
+    return;
   }
+  window.sidebar.addDataFrame(id, df_name);
 }
 
-function addDataFrameold(element: any, id: number, df_name: string) {
-  let myId = `midas-element-${id}`;
-  let div = $(`<div id=${myId}/>`);
-  div.addClass("midas-element");
+function makeResizer(divToResize: JQuery<HTMLElement>) {
 
-  if ($("#" + myId).length === 0) {
-    $("#midas-floater-container").append(div);
-    console.log("Appending div...");
-  } else {
-    let oldDiv = $(`#${myId}`);
-    oldDiv.replaceWith(div);
-    console.log("Replacing div...");
-  }
+  let resizer = $("<div id=\"resizer\">");
+  divToResize.append(resizer);
 
-  let get_python_button = $("<button/>", {
-    text: "codeaaaa",
-    click: () => {
-      const execute = `m.js_get_current_chart_code('${df_name}')`;
-      console.log("clicked, and executing", execute);
-      IPython.notebook.kernel.execute(execute);
-    },
+  resizer.on("mousedown", (e) => {
+    let x = e.clientX;
+    let originalWidth = divToResize.width();
+    let originalWidth2 = $("#midas-react-wrapper").width();
+
+    $(window).on("mousemove", (e) => {
+      let delta = x - e.clientX;
+      console.log(delta);
+      divToResize.width((_, currentWidth) => originalWidth + delta);
+      $("#midas-react-wrapper").width(originalWidth2 + delta);
+    });
   });
-  get_python_button.css("align-self", "center");
-  get_python_button.css("margin-right", 0);
-  get_python_button.css("font-family", "monospace");
 
-  div.append(get_python_button);
-  console.log("appending python button...");
-
-//  ReactDOM.render(DeleteButton({ onClick: () => div.remove() }), document.getElementById(myId));
-
-  div.append(element);
+  $(window).on("mouseup", () => {
+    $(window).off("mousemove");
+  });
 }
 
 export function createFloater() {
   let floater = $("<div id=\"midas-floater-wrapper\"/>");
+  let reactWrapper = $("<div id=\"midas-react-wrapper\">");
+
+  makeResizer(floater);
+
+  floater.append(reactWrapper);
+
+  $("#notebook").append(floater);
 
 
-  $("body").append(floater);
+  ReactDOM.render(<MidasContainer ref={(comp) => window.sidebar = comp} />, document.getElementById("midas-react-wrapper"));
 
-
-  // @ts-ignore
-  container = <MidasContainer/>;
-
-  // @ts-ignore
-  ReactDOM.render(container, document.getElementById("midas-floater-wrapper"));
-
-  //  makeResizable();
-  //  makeDraggable();
-  // floater.append(makeHeader);
-//  floater.append(createContainer);
-
-  $("#midas-floater-wrapper").css("position", "fixed");
-
+  // $("#midas-floater-wrapper").css("position", "fixed");
   $("#midas-floating-container").height($("#midas-floater-wrapper").innerHeight);
 }
 
-function makeHeader() {
-  return $("<div id=\"midas-floater-header\">")
-    .addClass("header")
-    .text("Midas Monitor");
-}
-
-function makeDraggable() {
-  $("#midas-floater-wrapper").draggable({
-    drag: function (event: any, ui: any) { },
-    start: function (event: any, ui: any) {
-      $(this).width($(this).width());
-    },
-    stop: function (event: any, ui: any) {
-      $("#midas-floater-wrapper").css("position", "fixed");
-
-    },
-    handle: "#midas-floater-header"
-  });
-}
-
-function makeResizable() {
-  $("#midas-floater-wrapper").resizable({
-    resize: function (event: any, ui: any) {
-      // $('#varInspector').height($('#varInspector-wrapper').height() - $('#varInspector-header').height());
-    },
-    start: function (event: any, ui: any) {
-      // $(this).width($(this).width());
-      $(this).css("position", "fixed");
-    },
-    stop: function (event: any, ui: any) {
-      // Ensure position is fixed (again)
-      $(this).css("position", "fixed");
-    }
-  });
-}
 

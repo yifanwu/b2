@@ -1,7 +1,5 @@
 /// <reference path="./external/Jupyter.d.ts" />
-
 import { vegaEmbed } from "./index";
-
 import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base";
 // import {Jupyter} from  "@jupyter/base";
 // var events = require("js/base/events");
@@ -44,18 +42,15 @@ type WidgetMessage = WidgetUpdateMessage | WidgetRegisterSignalMessage ;
 export class MidasWidget extends DOMWidgetView {
   // hm, fixme: not sure why this view's type is any???
   view: any;
-  viewElement: any;
+  viewElement: HTMLDivElement;
   errorElement: any;
 
   render() {
-    this.viewElement = document.createElement("div");
+    // this.viewElement = document.createElement("div");
+    let widgetID = this.model.get("widgetID");
 
     // this.el.appendChild(this.viewElement);
-    addDataFrame(this.viewElement,
-      this.model.get("widgetID"),
-      this.model.get("dfName"
-    ));
-
+    addDataFrame(widgetID, this.model.get("dfName"));
     this.errorElement = document.createElement("div");
     this.errorElement.style.color = "red";
     this.el.appendChild(this.errorElement);
@@ -72,7 +67,7 @@ export class MidasWidget extends DOMWidgetView {
         return;
       }
 
-      vegaEmbed(this.viewElement, spec, {
+      vegaEmbed(`#midas-element-${widgetID}`, spec, {
         loader: { http: { credentials: "same-origin" } },
         ...opt
       })
