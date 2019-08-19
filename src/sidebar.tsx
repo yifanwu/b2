@@ -25,6 +25,7 @@ interface DeleteButtonProps {
 
 interface ContainerState {
   elements: ContainerElementState[];
+  idToCell: Map<string, number>;
 }
 
 interface ContainerElementState {
@@ -36,6 +37,7 @@ interface MidasElementProps {
   id: number;
   onClick: MouseEventHandler;
   name: string;
+  getCellIndex: Function;
 }
 
 interface MidasElementState {
@@ -63,6 +65,11 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
     });
   }
 
+  selectCell() {
+    let index = Jupyter.notebook.find_cell_index(Jupyter.notebook.get_msg_cell(this.props.getCellIndex()));
+    Jupyter.notebook.select(index);
+  }
+  
   render() {
     return (
       <div className="midas-element">
@@ -71,12 +78,17 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
           <div className="midas-header-options"></div>
           <button
             className={"midas-header-button"}
+            onClick={() => this.selectCell()}
+          >Code</button>
+          <button
+            className={"midas-header-button"}
             onClick={() => this.toggleHiddenStatus()}>
             {this.state.hidden ? "+" : "-"}
           </button>
 
           <DeleteButton onClick={this.props.onClick} />
         </div>
+
         <div
           id={makeElementId(this.props.id)}
           style={this.state.hidden ? { display: "none" } : {}}
@@ -91,7 +103,22 @@ class MidasContainer extends React.Component<any, ContainerState> {
     super(props);
     this.state = {
       elements: [],
+      idToCell: new Map(),
     };
+  }
+
+  getCellIndex(name: string) {
+    return this.state.idToCell[name];
+  }
+
+  setIdToCell(name: string, cell: number) {
+    this.setState((prevState) => {
+      prevState.idToCell[name] = cell;
+      return {
+        elements: prevState.elements,
+        idToCell: prevState.idToCell,
+      };
+    });
   }
 
   addDataFrame(key: number, dfName: string) {
@@ -121,11 +148,10 @@ class MidasContainer extends React.Component<any, ContainerState> {
   }
 
   render() {
-
     return (
       <div id="midas-floater-container">
             {this.state.elements.map(({ id, name }, index) => (
-              <MidasElement id= { id } key = { id } name = { name } onClick = {() => this.removeDataFrame(id)} />
+              <MidasElement id= { id } key = { id } name = { name } onClick = {() => this.removeDataFrame(id)} getCellIndex = { () => this.getCellIndex(name)}/>
         ))}
       </div>
     );
@@ -162,6 +188,24 @@ function makeResizer(divToResize: JQuery<HTMLElement>) {
   });
 }
 
+function makeComm() {
+  Jupyter.notebook.kernel.comm_manager.register_target('midas-cell-comm',
+  function(comm: any, msg: any) {
+      // comm is the frontend comm instance
+      // msg is the comm_open message, which can carry data
+
+      // Register handlers for later messages:
+      comm.on_msg(function(msg: any) {
+        let cellId = msg.parent_header.msg_id;
+
+        console.log(msg.content.data.name, cellId);
+        window.sidebar.setIdToCell(msg.content.data.name, cellId);
+      });
+      comm.on_close(function(msg: any) {});
+  });
+
+}
+
 export function createFloater() {
   let floater = $("<div id=\"midas-floater-wrapper\"/>");
   let reactWrapper = $("<div id=\"midas-react-wrapper\">");
@@ -174,6 +218,9 @@ export function createFloater() {
 
 
   ReactDOM.render(<MidasContainer ref={(comp) => window.sidebar = comp} />, document.getElementById("midas-react-wrapper"));
+
+  makeComm();
+
 
   // $("#midas-floater-wrapper").css("position", "fixed");
   $("#midas-floating-container").height($("#midas-floater-wrapper").innerHeight);

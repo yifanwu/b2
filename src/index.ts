@@ -7,6 +7,7 @@ export { default as vegaEmbed } from "vega-embed";
 
 export function load_ipython_extension() {
   createFloater();
+
 }
 
 function javascriptIndex(selector: string, outputs: any) {
