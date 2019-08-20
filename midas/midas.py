@@ -4,6 +4,9 @@ from typing import Dict, Optional, List, Callable, Union, cast
 from datetime import datetime, timedelta
 from json import loads
 import ipywidgets
+from IPython import get_ipython
+from IPython.core.magic import (Magics, magics_class, line_magic,
+                                cell_magic, line_cell_magic)
 from pyperclip import copy
 from ipykernel.comm import Comm
 
@@ -15,7 +18,7 @@ except ImportError as err:
     logging = lambda x, y: None
 
 # from .config import DEBOUNCE_RATE_MS
-from .instructions import HELP_ISNTRUCTION
+from .instructions import HELP_INSTRUCTION
 from .errors import NullValueError, DfNotFoundError, InternalLogicalError, UserError, \
     report_error_to_user, logging, debug_log, report_error_to_user, \
     check_not_null
@@ -36,21 +39,22 @@ from .types import DFInfo, ChartType, ChartInfo, TickSpec, DfTransform, \
 CUSTOM_FUNC_PREFIX = "__m_"
 MIDAS_INSTANCE_NAME = "m"
 
-class Midas(object):
+@magics_class
+class Midas(Magics):
     """[summary]
     
     functions prefixed with "js_" is invoked by the js layer.
     """
-    dfs: Dict[str, DFInfo]
-    tick_funcs: Dict[str, List[TickItem]]
-    joins: List[JoinInfo]
-    nextId: int
+    # dfs: Dict[str, DFInfo]
+    # tick_funcs: Dict[str, List[TickItem]]
+    # joins: List[JoinInfo]
+    # nextId: int
 
-    def __init__(self, m_name=MIDAS_INSTANCE_NAME):
+    def __init__(self, shell):
+        super(Midas, self).__init__(shell)
         self.nextId = 0
         self.dfs = {}
         self.tick_funcs = {}
-        self.m_name: str = m_name
         self.current_tick: int = 0
         # self.is_processing_tick: bool = False
         self.tick_log: List[TickSpec] = []
@@ -63,6 +67,112 @@ class Midas(object):
       self.nextId += 1
       return to_return
         
+    # -------------------------------------------------------------------------------
+    # DEFINITELY INTERNAL
+
+    def _has_df(self, df_name: str):
+        if (df_name in self.dfs):
+            return True
+        else:
+            return False
+
+
+    def _get_id(self, df_name: str):
+        if self._has_df(df_name):
+          return self.dfs[df_name].df_id
+        else:
+          return self._next_id()
+
+    def _get_selection_by_predicate(self, df_name: str, history_index: int):
+        df_info = self.dfs[df_name]
+        check_not_null(df_info)
+        if (len(df_info.predicates) > history_index):
+            predicate = df_info.predicates[history_index]
+            return predicate, df_info
+        else:
+            raise DfNotFoundError(df_name)
+
+    def _add_to_tick(self, df_name: str, item: TickItem):
+        logging("_add_to_tick", f" called{df_name}\n{item}")
+        if (df_name in self.tick_funcs):
+            self.tick_funcs[df_name].append(item)
+        else:
+            self.tick_funcs[df_name] = [item]
+
+    def __show_or_rename_visualization(self, df_name: str):
+        return self.visualize_df_without_spec(df_name)
+    
+    # -------------------------------------------------------------------------------
+    # MOSTLY INTERNAL
+
+    def get_df(self, df_name: str):
+        # all the dfs are named via the global var so we can manipulate without worrying about reference changes!
+        if (df_name in self.dfs):
+            return self.dfs[df_name].df
+        else:
+            return None
+        # why not self.dfs.get(df_name)?
+
+
+    # note that spec is defaulted to none without the Optional signature because there is no typing for JSON.
+    def visualize_df(self, df_name: str, spec: Optional[ChartInfo]=None):
+        # generate default spec
+        if spec:
+            return self.visualize_df_with_spec(df_name, spec, set_data = True)
+        else:
+            # see if it's stored
+            vis = self.dfs[df_name].visualization
+            if vis:
+                stored_info = vis.chart_info
+            else:
+                raise NullValueError('visualization should be set by now')
+            if (stored_info != None):
+                return self.visualize_df_with_spec(df_name, stored_info, set_data = True)
+            return self.visualize_df_without_spec(df_name)
+
+
+    def visualize_df_without_spec(self, df_name: str):
+        df = self.get_df(df_name)
+        spec = gen_spec(df, get_chart_title(df_name))
+        if spec:
+            # set_data is false because gen_spec already sets the data
+            return self.visualize_df_with_spec(df_name, spec, set_data=False)
+        else:
+            # TODO: add better explanations
+            report_error_to_user("we could not generat the spec")
+
+
+
+    # spec: VegaSpecType, encodings: Dict[Channel, str], chart_type: ChartType
+    def visualize_df_with_spec(self, df_name: str, chart_info: ChartInfo, set_data=False):
+        if (set_data):
+            df = self.get_df(df_name)
+            # note that we need to assign to a new variable, otherwise it will not load
+            x_column = chart_info.encodings[Channel.x]
+            y_column = chart_info.encodings[Channel.y]
+            set_data_attr(chart_info.vega_spec, df, x_column, y_column)
+        # register the spec to the df
+        title = get_chart_title(df_name)
+        w = MidasWidget(title, df_name, self.dfs[df_name].df_id, chart_info.vega_spec)
+        # items[node.ind] = items[node.ind]._replace(v=node.v)
+        vis = Visualization(chart_info, w)
+        self.dfs[df_name] = self.dfs[df_name]._replace(visualization = vis)
+        # note that we use a custom prefix to avoid accidentally overwrriting a user defined function
+        cb = f"""
+            var {CUSTOM_FUNC_PREFIX}val_str = JSON.stringify(value);
+            var pythonCommand = `{CUSTOM_INDEX_NAME}.js_add_selection("{df_name}", '${{{CUSTOM_FUNC_PREFIX}val_str}}')`;
+            console.log("calling", pythonCommand);
+            IPython.notebook.kernel.execute(pythonCommand)
+        """
+        w.register_signal_callback(SELECTION_SIGNAL, cb)
+        out = ipywidgets.Output(layout={'border': '1px solid black'})
+
+        with out:
+          display(w)
+
+        return w
+
+    # METHODS EXPOSED TO USERS
     def loc(self, df_name: str, new_df_name: str, rows: Optional[Union[slice, List[int]]] = None, columns: Optional[Union[slice, List[str]]] = None) -> DataFrame:
         """this is a wrapper around the DataFrame `loc` function so that Midas will
         help keep track
@@ -86,21 +196,6 @@ class Midas(object):
         replace_index = False
         self.register_df(new_df, new_df_name, derivation, replace_index)
         return new_df
-
-
-    def get_df(self, df_name: str):
-        # all the dfs are named via the global var so we can manipulate without worrying about reference changes!
-        if (df_name in self.dfs):
-            return self.dfs[df_name].df
-        else:
-            return None
-        # why not self.dfs.get(df_name)?
-
-    def _get_id(self, df_name: str):
-        if self._has_df(df_name):
-          return self.dfs[df_name].df_id
-        else:
-          return self._next_id()
 
 
     def register_df(self, df: DataFrame, df_name: str, derivation=None, replace_index=True):
@@ -132,10 +227,6 @@ class Midas(object):
         self.dfs.pop(df_name)
 
 
-    def __show_or_rename_visualization(self, df_name: str):
-        return self.visualize_df_without_spec(df_name)
-
-
     def read_json(self, path: str, df_name: str, **kwargs):
         check_path(path)
         df = read_json(path, kwargs)
@@ -150,42 +241,6 @@ class Midas(object):
         # note that if it's via read_csv, it problably has a new index
         self.register_df(df, df_name)
         return df
-
-
-    def get_df_to_visualize_from_context(self):
-        # if (df_name == None):
-        #     df = self.get_df_to_visualize_from_context()
-        # el
-        
-        raise NotImplementedError()
-
-
-    # note that spec is defaulted to none without the Optional signature because there is no typing for JSON.
-    def visualize_df(self, df_name: str, spec: Optional[ChartInfo]=None):
-        # generate default spec
-        if spec:
-            return self.visualize_df_with_spec(df_name, spec, set_data = True)
-        else:
-            # see if it's stored
-            vis = self.dfs[df_name].visualization
-            if vis:
-                stored_info = vis.chart_info
-            else:
-                raise NullValueError('visualization should be set by now')
-            if (stored_info != None):
-                return self.visualize_df_with_spec(df_name, stored_info, set_data = True)
-            return self.visualize_df_without_spec(df_name)
-
-
-    def visualize_df_without_spec(self, df_name: str):
-        df = self.get_df(df_name)
-        spec = gen_spec(df, get_chart_title(df_name))
-        if spec:
-            # set_data is false because gen_spec already sets the data
-            return self.visualize_df_with_spec(df_name, spec, set_data=False)
-        else:
-            # TODO: add better explanations
-            report_error_to_user("we could not generat the spec")
 
 
     def _tick(self, df_name: str, history_index: int):
@@ -317,15 +372,6 @@ class Midas(object):
             return
         
 
-    def _get_selection_by_predicate(self, df_name: str, history_index: int):
-        df_info = self.dfs[df_name]
-        check_not_null(df_info)
-        if (len(df_info.predicates) > history_index):
-            predicate = df_info.predicates[history_index]
-            return predicate, df_info
-        else:
-            raise DfNotFoundError(df_name)
-
 
     def get_current_selection(self, df_name: str, option: str="predicate"):
         """[summary]
@@ -348,37 +394,12 @@ class Midas(object):
         else:
             return None
 
-
-
-    def get_selection_history(self, df_name: str):
-        found = self.dfs[df_name]
-        if (found != None):
-            return found.predicates
-        else:
-            return None 
-
-
-    def _add_to_tick(self, df_name: str, item: TickItem):
-        logging("_add_to_tick", f" called{df_name}\n{item}")
-        if (df_name in self.tick_funcs):
-            self.tick_funcs[df_name].append(item)
-        else:
-            self.tick_funcs[df_name] = [item]
-
-
-
-    def _has_df(self, df_name: str):
-        if (df_name in self.dfs):
-            return True
-        else:
-            return False
-        
     @staticmethod
     def help():
-        print(HELP_ISNTRUCTION)
+        print(HELP_INSTRUCTION)
 
 
-    # this will be a decorator
+    # decorator
     def bind(self, param_type: Union[TickIOType, str], output_type: Union[TickIOType, str], df_interact_name: str, target_df: Optional[str]=None):
         if not (self._has_df(df_interact_name)):
             raise DfNotFoundError(f"{df_interact_name} is not in the collection of {self.dfs.keys()}")
@@ -402,7 +423,7 @@ class Midas(object):
         self.joins.append(join_info)
 
 
-    def addFacet(self, df_name: str, facet_column: str):
+    def add_facet(self, df_name: str, facet_column: str):
         # 
         raise NotImplementedError()
 
@@ -446,34 +467,42 @@ class Midas(object):
             df2_info.visualization.widget.replace_data(new_data)
         return
 
-
-    # spec: VegaSpecType, encodings: Dict[Channel, str], chart_type: ChartType
-    def visualize_df_with_spec(self, df_name: str, chart_info: ChartInfo, set_data=False):
-        if (set_data):
-            df = self.get_df(df_name)
-            # note that we need to assign to a new variable, otherwise it will not load
-            x_column = chart_info.encodings[Channel.x]
-            y_column = chart_info.encodings[Channel.y]
-            set_data_attr(chart_info.vega_spec, df, x_column, y_column)
-        # register the spec to the df
-        title = get_chart_title(df_name)
-        w = MidasWidget(title, df_name, self.dfs[df_name].df_id, chart_info.vega_spec)
-        # items[node.ind] = items[node.ind]._replace(v=node.v)
-        vis = Visualization(chart_info, w)
-        self.dfs[df_name] = self.dfs[df_name]._replace(visualization = vis)
-        # note that we use a custom prefix to avoid accidentally overwrriting a user defined function
-        cb = f"""
-            var {CUSTOM_FUNC_PREFIX}val_str = JSON.stringify(value);
-            var pythonCommand = `{self.m_name}.js_add_selection("{df_name}", '${{{CUSTOM_FUNC_PREFIX}val_str}}')`;
-            console.log("calling", pythonCommand);
-            IPython.notebook.kernel.execute(pythonCommand)
+    # -------------------------------------------------------------------------------------
+    # magics
+    @cell_magic
+    def reactive(self, df_name: str, line, cell=None):
+        """react_to is a cell or line magic (based on how many '%' were specified)
+        
+        Arguments:
+            df_name {str} -- the visualization whose 
         """
-        w.register_signal_callback(SELECTION_SIGNAL, cb)
-        out = ipywidgets.Output(layout={'border': '1px solid black'})
+        # for now, just do a regex for what df_names are mentioned
+        # and re-run the cell
+    @cell_magic
+    def test(self, line: str, cell: str):
+        print("cell", cell)
+        print("line", line)
+        print("executing with shell with import")
+        # exec(cell)
+        # hack
+        with_import = "import pandas as pd\n"+cell
+        shell = get_ipython().get_ipython()
+        shell.run_cell(with_import)
+    @cell_magic
+    def state(self, line: str, cell: str):
+        if hasattr(self, 'k'):
+            self.k += 1
+            print(self.k)
+        else:
+            self.k = 1
+            print(self.k)
 
-        with out:
-          display(w)
 
-        return w
+
+def load_ipython_extension(ipython):
+# ip = get_ipython()
+    magics = Midas(ipython)
+    ipython.register_magics(magics)
+
 
 __all__ = ['Midas']

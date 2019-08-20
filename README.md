@@ -1,8 +1,17 @@
 # Midas, Fast Custom Visualization Interaction in Notebooks
 
-Modeled after [ipyvega](https://github.com/vega/ipyvega).
+## Installation Guide
 
-## Developers
+To follow the example notebooks, note that you should add the followign to your Ipython config file (as it expects the extension to be autoloaded)
+
+```python
+c.InteractiveShellApp.extensions = [
+    'midas'
+]
+```
+
+
+## Developement Guide
 
 Install requirements: `pip install -r requirements.txt`
 

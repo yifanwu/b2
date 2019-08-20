@@ -1,3 +1,3 @@
-HELP_ISNTRUCTION = """
+HELP_INSTRUCTION = """
 > bind()
 """
