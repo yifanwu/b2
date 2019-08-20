@@ -114,3 +114,9 @@
   align-self: left;
   margin: 5pt;
 }
+
+.chart-btns {
+  align-self: center;
+  margin-right: 0;
+  font-family: monospace;
+}

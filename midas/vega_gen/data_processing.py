@@ -1,12 +1,12 @@
 from typing import Dict, Optional
 from pandas import DataFrame, Series, cut
 
-from .defaults import DEFAULT_DATA_SOURCE, COUNT_COL_NAME
-
-
-def set_data_attr(spec_base: Dict, data: DataFrame) -> Dict:
+from .defaults import DEFAULT_DATA_SOURCE, COUNT_COL_NAME, Y_DOMAIN_BY_DATA_SIGNAL
+from midas.types import ChartInfo, Channel
+# chart_info: ChartInfo
+def set_data_attr(spec_base: Dict, data: DataFrame, x_column: str, y_column: str) -> Dict:
     """set_data_attr takes the df and transformes it into Dict object shape for serialization
-    
+    will also create transforms that are populated to signals
     Arguments:
         spec_base {Dict} -- [description]
         data {DataFrame} -- [description]
@@ -15,9 +15,23 @@ def set_data_attr(spec_base: Dict, data: DataFrame) -> Dict:
         Dict -- [description]
     """
     sanitzied_df = sanitize_dataframe(data)
+    # spec_base = chart_info.vega_spec
+
     spec_base["data"] = [{
         "name": DEFAULT_DATA_SOURCE,
-        "values": sanitzied_df.to_dict(orient='records')
+        "values": sanitzied_df.to_dict(orient='records'),
+        "transform": [
+            # {
+            #     "type": "extent",
+            #     "field": x_column,
+            #     "signal": X_DOMAIN_BY_DATA_SIGNAL
+            # },
+            {
+                "type": "extent",
+                "field": y_column,
+                "signal": Y_DOMAIN_BY_DATA_SIGNAL
+            }
+        ]
     }]
     return spec_base
 

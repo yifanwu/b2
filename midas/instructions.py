@@ -1,0 +1,3 @@
+HELP_ISNTRUCTION = """
+> bind()
+"""

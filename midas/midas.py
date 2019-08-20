@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from pandas import DataFrame, read_csv, read_json
+from pandas import DataFrame, Series, read_csv, read_json
 from typing import Dict, Optional, List, Callable, Union, cast
 from datetime import datetime, timedelta
 from json import loads
@@ -14,11 +14,12 @@ except ImportError as err:
     display = lambda x: None
     logging = lambda x, y: None
 
-from .config import THROTTLE_RATE_MS
+# from .config import DEBOUNCE_RATE_MS
+from .instructions import HELP_ISNTRUCTION
 from .errors import NullValueError, DfNotFoundError, InternalLogicalError, UserError, \
     report_error_to_user, logging, debug_log, report_error_to_user, \
     check_not_null
-from .utils import get_min_max_tuple_from_list
+from .utils import get_min_max_tuple_from_list, check_path, get_random_string
 from .helper import get_df_by_predicate, get_df_transform_func_by_index, get_chart_title, get_df_code
 from .showme import gen_spec, set_data_attr
 from .vega_gen.defaults import SELECTION_SIGNAL
@@ -29,8 +30,8 @@ from .types import DFInfo, ChartType, ChartInfo, TickSpec, DfTransform, \
     TwoDimSelectionPredicate, OneDimSelectionPredicate, NullSelectionPredicate, \
     SelectionPredicate, Channel, DFDerivation, DerivationType, \
     DFLoc, TickItem, JoinInfo, Visualization, \
-    PredicateCallback, TickCallbackType, DataFrameCall, PredicateCall
-    
+    PredicateCallback, DataFrameCallback, PredicateToDataFrameCallback, DataFrameToDataFrameCallback, \
+    TickIOType    
 
 CUSTOM_FUNC_PREFIX = "__m_"
 MIDAS_INSTANCE_NAME = "m"
@@ -51,8 +52,8 @@ class Midas(object):
         self.tick_funcs = {}
         self.m_name: str = m_name
         self.current_tick: int = 0
-        self.is_processing_tick: bool = False
-        self.tick_queue: List[TickSpec] = []
+        # self.is_processing_tick: bool = False
+        self.tick_log: List[TickSpec] = []
         # TODO: maybe we can just change the DataFrame here...
         # self._pandas_magic()
 
@@ -81,7 +82,9 @@ class Midas(object):
         filled_columns = columns if columns else slice(None, None, None)
         new_df = found.df.loc[filled_rows, filled_columns]
         loc_spec = DFLoc(filled_rows, filled_columns)
-        self.register_df(new_df, new_df_name, DFDerivation(df_name, new_df_name, DerivationType.loc, loc_spec))
+        derivation = DFDerivation(df_name, new_df_name, DerivationType.loc, loc_spec)
+        replace_index = False
+        self.register_df(new_df, new_df_name, derivation, replace_index)
         return new_df
 
 
@@ -100,7 +103,7 @@ class Midas(object):
           return self._next_id()
 
 
-    def register_df(self, df: DataFrame, df_name: str, derivation=None):
+    def register_df(self, df: DataFrame, df_name: str, derivation=None, replace_index=True):
         """pivate method to keep track of dfs
             TODO: make the meta_data work with the objects
         """
@@ -108,8 +111,9 @@ class Midas(object):
         created_on = datetime.now()
         selections: List[SelectionPredicate] = []
         chart_spec = None # to be populated later
-        df.index.map(str).map(lambda x: f"{x}-{df_name}")
-        df.index.name = CUSTOM_INDEX_NAME
+        if replace_index:
+            df.index = df.index.map(str).map(lambda x: f"{x}-{df_name}")
+            df.index.name = CUSTOM_INDEX_NAME
         df_info = DFInfo(df_name, self._get_id(df_name), df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
         self.__show_or_rename_visualization(df_name)
@@ -119,6 +123,10 @@ class Midas(object):
 
         return
 
+    def register_series(self, series: Series, name: str):
+        # turn it into a df
+        df = series.to_frame()
+        return self.register_df(df, name)
 
     def remove_df(self, df_name: str):
         self.dfs.pop(df_name)
@@ -129,14 +137,17 @@ class Midas(object):
 
 
     def read_json(self, path: str, df_name: str, **kwargs):
+        check_path(path)
         df = read_json(path, kwargs)
         self.register_df(df, df_name)
         return df
 
 
     def read_csv(self, path: str, df_name: str, **kwargs):
+        check_path(path)
         df = read_csv(path, kwargs)
         # meta_data = DfMetaData(time_created = datetime.now())
+        # note that if it's via read_csv, it problably has a new index
         self.register_df(df, df_name)
         return df
 
@@ -178,26 +189,11 @@ class Midas(object):
 
 
     def _tick(self, df_name: str, history_index: int):
-        if self.is_processing_tick:
-            # see if we need to throttle
-            # check the last item on the queue
-            if (len(self.tick_queue) > 0):
-                if (self.tick_queue[-1].start_time > datetime.now() - timedelta(milliseconds = THROTTLE_RATE_MS)):
-                    # don't even add to tick
-                    logging("throttled", df_name)
-                    return
-            
-            # put on queue and return
-            logging("tick", f"queuing {df_name} at {history_index}")
-            self.tick_queue.append(TickSpec(df_name, history_index, datetime.now()))
-            return
-
+        self.tick_log.append(TickSpec(df_name, history_index, datetime.now()))
         logging("tick", f"processing {df_name} with history {history_index}")
-        self.is_processing_tick = True
         print("actually processing")
         self._process_tick(df_name, history_index)
-        self.is_processing_tick = False
-
+        return
 
     def _process_tick(self, df_name: str, history_index: int):
         self.current_tick += 1
@@ -206,56 +202,67 @@ class Midas(object):
         predicate, df_info = self._get_selection_by_predicate(df_name, history_index)
         if not predicate:
             return
+        # TODO check if predicate the same as before
         lineage_data: DataFrame = None
         items = self.tick_funcs.get(df_name)
         logging("tick", f"for predicate{predicate}")
+        def update_df(new_data: DataFrame, target_df: str):
+            if (new_data is not None) and (len(new_data.index) > 0):
+                # register data if this is the first time that this is called
+                if not self._has_df(target_df):
+                    self.register_df(new_data, target_df)
+                else:
+                    # see if we need to do any transforms..
+                    vis_data = new_data
+                    # we need to look up the target...
+                    df_target_additional_transforms = self.dfs[target_df].visualization.chart_info.additional_transforms
+                    if (df_target_additional_transforms == DfTransform.categorical_distribution):
+                        first_col = new_data.columns.values[0]
+                        vis_data = get_categorical_distribution(new_data[first_col], first_col)
+                    elif (df_target_additional_transforms == DfTransform.numeric_distribution):
+                        first_col = new_data.columns.values[0]
+                        vis_data = get_numeric_distribution(new_data[first_col], first_col)
+
+                    # update the data in store
+                    self.set_df_data(target_df, new_data)
+                    # send the update
+                    vis = self.dfs[target_df].visualization
+                    if vis:
+                        vis.widget.replace_data(vis_data)
+            else:
+                report_error_to_user(f"Transformation result on {df_name} was empty")
+
+        def process_item(lineage_data: DataFrame,
+            output_type: TickIOType,
+            param_type: TickIOType,
+            _call: Union[PredicateCallback, DataFrameCallback,
+                         DataFrameToDataFrameCallback, PredicateToDataFrameCallback],
+            target_df: Optional[str] = None):
+            if (output_type == TickIOType.data) and (not target_df):
+                raise InternalLogicalError("target_df should be defined")
+            if (param_type == TickIOType.data) and (lineage_data is None):
+                    lineage_data = get_df_by_predicate(df_info.df, predicate)
+
+            _target_df = target_df if target_df else "ERROR" # hack to make pyright happy
+            if (output_type == TickIOType.data) and (param_type == TickIOType.data):
+                new_data = _call(lineage_data)
+                update_df(new_data, _target_df)
+            elif (output_type == TickIOType.data) and (param_type == TickIOType.predicate):
+                new_data = _call(lineage_data)
+                update_df(new_data, _target_df)
+            elif (output_type == TickIOType.void) and (param_type == TickIOType.predicate):
+                return _call(predicate)
+            elif (output_type == TickIOType.void) and (param_type == TickIOType.data):
+                if lineage_data is None:
+                    lineage_data = get_df_by_predicate(df_info.df, predicate)
+                return _call(lineage_data)
+            else:
+                raise InternalLogicalError(f"not all cases handled: {output_type}, {param_type}")
+
+        # now run
         if items:
             for _, i in enumerate(items):
-                logging("  callback", f"{i}")
-                if (i.callback_type == TickCallbackType.predicate):
-                    i.call.func(predicate)
-                else:
-                    _call = cast(DataFrameCall, i.call)
-                    if lineage_data is None:
-                        lineage_data = get_df_by_predicate(df_info.df, predicate)
-                    new_data = _call.func(lineage_data)
-                    
-                    # only update if this is not null
-                    if new_data is not None:
-                        if (len(new_data.index) > 0):
-                            # register data if this is the first time that this is called
-                            if not self._has_df(_call.target_df):
-                                self.register_df(new_data, _call.target_df)
-                            else:
-                                # see if we need to do any transforms..
-                                vis_data = new_data
-                                # we need to look up the target...
-                                df_target_additional_transforms = self.dfs[_call.target_df].visualization.chart_info.additional_transforms
-                                if (df_target_additional_transforms == DfTransform.categorical_distribution):
-                                    first_col = new_data.columns.values[0]
-                                    vis_data = get_categorical_distribution(new_data[first_col], first_col)
-                                elif (df_target_additional_transforms == DfTransform.numeric_distribution):
-                                    first_col = new_data.columns.values[0]
-                                    vis_data = get_numeric_distribution(new_data[first_col], first_col)
-
-                                # update the data in store
-                                self.set_df_data(_call.target_df, new_data)
-                                # send the update
-                                vis = self.dfs[_call.target_df].visualization
-                                if vis:
-                                    vis.widget.replace_data(vis_data)
-                        else:
-                            report_error_to_user(f"Transformation result on {df_name} was empty")
-                    else:
-                        raise UserError("Transformation result was not defined")
-
-        
-        # if queue is not empty, invoke it
-        if (len(self.tick_queue) > 0):
-            # push the first one off, FIFO
-            to_process = self.tick_queue.pop(0)
-            self._process_tick(to_process.df_name, to_process.history_index)
-        return
+                process_item(lineage_data, i.output_type, i.param_type, i.call, i.target_df)
 
 
     def set_df_data(self, df_name: str, df: DataFrame):
@@ -303,10 +310,11 @@ class Midas(object):
 
             history_index = len(df_info.predicates)
             df_info.predicates.append(predicate)
-            self._tick(df_name, history_index)
+            return self._tick(df_name, history_index)
         else:
-            raise InternalLogicalError("Should already be defined")
-        return
+            print("Should already be defined")
+            # raise InternalLogicalError
+            return
         
 
     def _get_selection_by_predicate(self, df_name: str, history_index: int):
@@ -358,20 +366,6 @@ class Midas(object):
             self.tick_funcs[df_name] = [item]
 
 
-    def add_callback_to_selection(self,
-        df_name: str,
-        cb: PredicateCallback
-      ):
-        # first make sure that the df is in
-        if not (self._has_df(df_name)):
-
-            raise DfNotFoundError(f"{df_name} is not in the collection of {self.dfs.keys()}")
-        # we'll put this inside the python so it's not all generated by the janky JS
-        call = PredicateCall(cb)
-        item = TickItem(TickCallbackType.predicate, call)
-        self._add_to_tick(df_name, item)
-
-        return
 
     def _has_df(self, df_name: str):
         if (df_name in self.dfs):
@@ -379,35 +373,28 @@ class Midas(object):
         else:
             return False
         
-    
-    def new_visualization_from_selection(self, df_interact_name: str, new_df_name: str, df_transformation: Callable[[DataFrame], DataFrame]):
-        """
-        This is used for blackbox style visualizations
-    
-        Arguments:
-            df_interact_name {str} -- specify the interaction whose selection will be used as the basis
-            new_df_name {str} -- [description]
-            df_transformation {Callable[[DataFrame], DataFrame]} -- [description]
-        
-        Raises:
-            NotImplementedError: [description]
-        """
-        if (df_interact_name not in self.dfs):
-            raise UserError(f"Your interaction based df {df_interact_name} does not exists")
-        if (new_df_name in self.dfs):
-            raise UserError(f"Your result based df {df_interact_name} does not exists")
+    @staticmethod
+    def help():
+        print(HELP_ISNTRUCTION)
 
-        call = DataFrameCall(df_transformation, new_df_name)
-        item = TickItem(TickCallbackType.dataframe, call)
-        self._add_to_tick(df_interact_name, item)
+
+    # this will be a decorator
+    def bind(self, param_type: Union[TickIOType, str], output_type: Union[TickIOType, str], df_interact_name: str, target_df: Optional[str]=None):
+        if not (self._has_df(df_interact_name)):
+            raise DfNotFoundError(f"{df_interact_name} is not in the collection of {self.dfs.keys()}")
+        if target_df and (target_df in self.dfs):
+            raise UserError(f"Your result based df {df_interact_name} alread exists, please chose a new name")
         
-        # also see if the selection has already been made, if it has
-        df_info = self.dfs[df_interact_name]
-        if (len(df_info.predicates) > 0):
-            # register it
-            new_data = df_transformation(get_df_by_predicate(df_info.df, df_info.predicates[-1]))
-            self.register_df(new_data, new_df_name)
-        return
+        _param_type = cast(TickIOType, TickIOType[param_type] if (type(param_type) == str) else param_type)
+        _output_type = cast(TickIOType, TickIOType[output_type] if (type(param_type) == str) else output_type)
+        def decorator(call):
+            nonlocal target_df
+            if (_output_type == TickIOType.data) and (not target_df):
+                rand_hash = get_random_string(4)
+                target_df = f"{call.__name__}_on_{df_interact_name}_{rand_hash}"
+            item = TickItem(_param_type, _output_type, call, target_df)
+            self._add_to_tick(df_interact_name, item)
+        return decorator
 
 
     def register_join_info(self, dfs: List[str], join_columns: List[str]):
@@ -447,8 +434,9 @@ class Midas(object):
         df2_info = self.dfs[df2_name]
         df2 = df2_info.df
         df_transformation = get_df_transform_func_by_index(df2)
-        call = DataFrameCall(df_transformation, df2_name)
-        item = TickItem(TickCallbackType.dataframe, call)
+        # call = DataFrameCall(df_transformation, df2_name)
+        target_df = df2_name
+        item = TickItem(TickIOType.data, TickIOType.data, df_transformation, target_df)
         self._add_to_tick(df1_name, item)
         # update if there is already a selection
         df_info = self.dfs[df1_name]
@@ -464,7 +452,9 @@ class Midas(object):
         if (set_data):
             df = self.get_df(df_name)
             # note that we need to assign to a new variable, otherwise it will not load
-            set_data_attr(chart_info.vega_spec, df)
+            x_column = chart_info.encodings[Channel.x]
+            y_column = chart_info.encodings[Channel.y]
+            set_data_attr(chart_info.vega_spec, df, x_column, y_column)
         # register the spec to the df
         title = get_chart_title(df_name)
         w = MidasWidget(title, df_name, self.dfs[df_name].df_id, chart_info.vega_spec)

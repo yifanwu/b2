@@ -5,6 +5,7 @@ import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base
 // var events = require("js/base/events");
 import { LogInternalError } from "./utils";
 import {addDataFrame} from "./sidebar";
+import { DEBOUNCE_RATE } from "./constants";
 
 interface WidgetUpdate {
   key: string;
@@ -37,7 +38,13 @@ interface WidgetRegisterSignalMessage extends WidgetMessageBase {
   callbacks: SignalCallback[];
 }
 
-type WidgetMessage = WidgetUpdateMessage | WidgetRegisterSignalMessage ;
+const casted_window = (window as any);
+if (typeof casted_window.lastInvoked === "undefined") {
+  casted_window.lastInvoked = new Date();
+  casted_window.lastInvokedTimer = null;
+}
+
+// type WidgetMessage = WidgetUpdateMessage | WidgetRegisterSignalMessage ;
 
 export class MidasWidget extends DOMWidgetView {
   // hm, fixme: not sure why this view's type is any???
@@ -51,6 +58,7 @@ export class MidasWidget extends DOMWidgetView {
 
     // this.el.appendChild(this.viewElement);
     addDataFrame(widgetID, this.model.get("dfName"));
+
     this.errorElement = document.createElement("div");
     this.errorElement.style.color = "red";
     this.el.appendChild(this.errorElement);
@@ -73,6 +81,14 @@ export class MidasWidget extends DOMWidgetView {
       })
         .then((res: any) => {
           this.view = res.view;
+
+          // this.el.appendChild(this.viewElement);
+          // addDataFrame(this.viewElement,
+          //   this.model.get("widgetID"),
+          //   this.model.get("dfName"),
+          //   this.view
+          // );
+
           this.send({ type: "display" });
         })
         .catch((err: Error) => console.error(err));
@@ -91,7 +107,6 @@ export class MidasWidget extends DOMWidgetView {
         "return (" + (update.remove || "false") + ")"
       );
       const newValues = update.insert || [];
-      console.log("new values", newValues, "\n");
       const changeSet = this.view
         .changeset()
         .insert(newValues)
@@ -104,7 +119,20 @@ export class MidasWidget extends DOMWidgetView {
       checkView();
       // we know that there are two arguments, name and value
       const cb = new Function("name", "value", signalCallback.callback);
-      this.view.addSignalListener(signalCallback.signal, cb);
+      const wrapped = (name: any, value: any) => {
+        const n = new Date();
+        const l = (window as any).lastInvoked;
+        (window as any).lastInvoked = n;
+        if (l) {
+          if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
+            clearTimeout((window as any).lastInvokedTimer);
+          }
+          (window as any).lastInvokedTimer = setTimeout(() => cb(name, value), DEBOUNCE_RATE);
+        } else {
+          throw Error("global times should be kept");
+        }
+      };
+      this.view.addSignalListener(signalCallback.signal, wrapped);
     };
 
     this.model.on("change:_spec_source", reembed);
