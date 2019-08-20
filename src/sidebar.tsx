@@ -1,7 +1,5 @@
 import React, { MouseEventHandler, ReactElement } from "react";
 import ReactDOM from "react-dom";
-import { SortableContainer, SortableElement } from 'react-sortable-hoc';
-import arrayMove from 'array-move';
 
 import "./floater.css";
 
@@ -10,10 +8,6 @@ import "jqueryui";
 
 // TODO: extract HTML class names so there aren't so many strings everywhere
 
-export function makeElementId(id: number, includeSelector: boolean = false) {
-  let toReturn = `midas-element-${id}`;
-  return includeSelector ? "#" + toReturn : toReturn;
-}
 
 declare global {
   interface Window { sidebar: MidasContainer; }
@@ -37,11 +31,17 @@ interface MidasElementProps {
   id: number;
   onClick: MouseEventHandler;
   name: string;
-  getCellIndex: Function;
+  getCellId: Function;
 }
 
 interface MidasElementState {
   hidden: boolean;
+}
+
+
+export function makeElementId(id: number, includeSelector: boolean = false) {
+  let toReturn = `midas-element-${id}`;
+  return includeSelector ? "#" + toReturn : toReturn;
 }
 
 function DeleteButton(props: DeleteButtonProps): ReactElement {
@@ -52,7 +52,10 @@ function DeleteButton(props: DeleteButtonProps): ReactElement {
   );
 }
 
-
+/**
+ * Contains the visualization as well as a header with actions to minimize,
+ * delete, or find the corresponding cell of the visualization.
+ */
 class MidasElement extends React.Component<MidasElementProps, MidasElementState> {
   constructor(props: any) {
     super(props);
@@ -66,10 +69,11 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
   }
 
   selectCell() {
-    let index = Jupyter.notebook.find_cell_index(Jupyter.notebook.get_msg_cell(this.props.getCellIndex()));
+    let cell = Jupyter.notebook.get_msg_cell(this.props.getCellId());
+    let index = Jupyter.notebook.find_cell_index(cell);
     Jupyter.notebook.select(index);
   }
-  
+
   render() {
     return (
       <div className="midas-element">
@@ -85,8 +89,12 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
             onClick={() => this.toggleHiddenStatus()}>
             {this.state.hidden ? "+" : "-"}
           </button>
+          <button
+            className={"midas-header-button"}
+            onClick={() => this.props.onClick}>
+          </button>
 
-          <DeleteButton onClick={this.props.onClick} />
+          {/* <DeleteButton onClick={this.props.onClick} /> */}
         </div>
 
         <div
@@ -107,7 +115,7 @@ class MidasContainer extends React.Component<any, ContainerState> {
     };
   }
 
-  getCellIndex(name: string) {
+  getCellId(name: string) {
     return this.state.idToCell[name];
   }
 
@@ -151,7 +159,7 @@ class MidasContainer extends React.Component<any, ContainerState> {
     return (
       <div id="midas-floater-container">
             {this.state.elements.map(({ id, name }, index) => (
-              <MidasElement id= { id } key = { id } name = { name } onClick = {() => this.removeDataFrame(id)} getCellIndex = { () => this.getCellIndex(name)}/>
+              <MidasElement id= { id } key = { id } name = { name } onClick = {() => this.removeDataFrame(id)} getCellId = { () => this.getCellId(name)}/>
         ))}
       </div>
     );
