@@ -1,12 +1,13 @@
 import vegaEmbed, { Mode, EmbedOptions } from "vega-embed";
 import { Spec, View } from "vega";
 import { TopLevelSpec } from "vega-lite";
-import { createFloater } from "./floater";
+import {createSidebar} from "./sidebar";
 
 export { default as vegaEmbed } from "vega-embed";
 
 export function load_ipython_extension() {
-  createFloater();
+  createSidebar();
+
 }
 
 function javascriptIndex(selector: string, outputs: any) {

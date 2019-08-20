@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from json import loads
 import ipywidgets
 from pyperclip import copy
+from ipykernel.comm import Comm
 
 try:
     from IPython.display import display
@@ -116,6 +117,10 @@ class Midas(object):
         df_info = DFInfo(df_name, self._get_id(df_name), df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
         self.__show_or_rename_visualization(df_name)
+
+        my_comm = Comm(target_name='midas-cell-comm')
+        my_comm.send({'name': df_name})
+
         return
 
     def register_series(self, series: Series, name: str):

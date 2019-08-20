@@ -1,13 +1,11 @@
 /// <reference path="./external/Jupyter.d.ts" />
-
 import { vegaEmbed } from "./index";
-
 import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base";
 // import {Jupyter} from  "@jupyter/base";
 // var events = require("js/base/events");
 import { LogInternalError } from "./utils";
-import { addDataFrame } from "./floater";
-import { DEBOUNCE_RATE } from "./constants";
+import {addDataFrame} from "./sidebar";
+import { DEBOUNCE_RATE, Y_SCALE, Y_DOMAIN_SIGNAL } from "./constants";
 
 interface WidgetUpdate {
   key: string;
@@ -51,11 +49,14 @@ if (typeof casted_window.lastInvoked === "undefined") {
 export class MidasWidget extends DOMWidgetView {
   // hm, fixme: not sure why this view's type is any???
   view: any;
-  viewElement: any;
+  viewElement: HTMLDivElement;
   errorElement: any;
 
   render() {
-    this.viewElement = document.createElement("div");
+    // this.viewElement = document.createElement("div");
+    let widgetID = this.model.get("widgetID");
+
+    // this.el.appendChild(this.viewElement);
 
     this.errorElement = document.createElement("div");
     this.errorElement.style.color = "red";
@@ -73,7 +74,7 @@ export class MidasWidget extends DOMWidgetView {
         return;
       }
 
-      vegaEmbed(this.viewElement, spec, {
+      vegaEmbed(`#midas-element-${widgetID}`, spec, {
         loader: { http: { credentials: "same-origin" } },
         ...opt
       })
@@ -81,11 +82,11 @@ export class MidasWidget extends DOMWidgetView {
           this.view = res.view;
 
           // this.el.appendChild(this.viewElement);
-          addDataFrame(this.viewElement,
-            this.model.get("widgetID"),
-            this.model.get("dfName"),
-            this.view
-          );
+          // addDataFrame(this.viewElement,
+          //   this.model.get("widgetID"),
+          //   this.model.get("dfName"),
+          //   this.view
+          // );
 
           this.send({ type: "display" });
         })
@@ -163,6 +164,14 @@ export class MidasWidget extends DOMWidgetView {
       }
     });
     // initial rendering
-    reembed();
+    let fixYScale = () => {
+      console.log("FIXING Y");
+        // access the current scale
+        // @ts-ignore
+        const y_scale = this.view.scale(Y_SCALE);
+        // then set the current scale
+        this.view.signal(Y_DOMAIN_SIGNAL, y_scale.domain());
+    };
+    addDataFrame(widgetID, this.model.get("dfName"), fixYScale, () => reembed());
   }
 }
