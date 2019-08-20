@@ -13,10 +13,6 @@ declare global {
   interface Window { sidebar: MidasContainer; }
 }
 
-interface DeleteButtonProps {
-  onClick: MouseEventHandler;
-}
-
 interface ContainerState {
   elements: ContainerElementState[];
   idToCell: Map<string, number>;
