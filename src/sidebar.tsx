@@ -39,17 +39,14 @@ interface MidasElementState {
 }
 
 
+/**
+ * Returns the DOM id of the given element that contains the visualizations
+ * @param id the id of the data frame of the visualization
+ * @param includeSelector whether to include CSS selector (#)
+ */
 export function makeElementId(id: number, includeSelector: boolean = false) {
   let toReturn = `midas-element-${id}`;
   return includeSelector ? "#" + toReturn : toReturn;
-}
-
-function DeleteButton(props: DeleteButtonProps): ReactElement {
-  return (
-    <button className="midas-header-button" onClick={props.onClick}>
-      x
-    </button>
-  );
 }
 
 /**
@@ -62,18 +59,28 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
     this.state = { hidden: false };
   }
 
+  /**
+   * Toggles whether the visualization can be seen
+   */
   toggleHiddenStatus() {
     this.setState(prevState => {
       return { hidden: !prevState.hidden };
     });
   }
-
+  /**
+   * Selects the cell in the notebook where the data frame was defined.
+   * Note that currently if the output was generated and then the page
+   * is refreshed, this may not work.
+   */
   selectCell() {
     let cell = Jupyter.notebook.get_msg_cell(this.props.getCellId());
     let index = Jupyter.notebook.find_cell_index(cell);
     Jupyter.notebook.select(index);
   }
 
+  /**
+   * Renders this component.
+   */
   render() {
     return (
       <div className="midas-element">
@@ -92,11 +99,11 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
           <button
             className={"midas-header-button"}
             onClick={() => this.props.onClick}>
+            x
           </button>
 
           {/* <DeleteButton onClick={this.props.onClick} /> */}
         </div>
-
         <div
           id={makeElementId(this.props.id)}
           style={this.state.hidden ? { display: "none" } : {}}
@@ -106,6 +113,9 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
   }
 }
 
+/**
+ * Container for the MidasElements that hold the visualization.
+ */
 class MidasContainer extends React.Component<any, ContainerState> {
   constructor(props?: any) {
     super(props);
@@ -115,11 +125,21 @@ class MidasContainer extends React.Component<any, ContainerState> {
     };
   }
 
+  /**
+   * Looks up the id of the notebook cell from which the given data frame was
+   * defined.
+   * @param name the name of the data frame
+   */
   getCellId(name: string) {
     return this.state.idToCell[name];
   }
 
-  setIdToCell(name: string, cell: number) {
+  /**
+   * Stores the cell id at which the given data frame was defined.
+   * @param name the name of the data frame
+   * @param cell the cell id at which the data frame was defined
+   */
+  recordDFCellId(name: string, cell: string) {
     this.setState((prevState) => {
       prevState.idToCell[name] = cell;
       return {
@@ -129,10 +149,16 @@ class MidasContainer extends React.Component<any, ContainerState> {
     });
   }
 
-  addDataFrame(key: number, dfName: string) {
+  /**
+   * Adds the visualization of the given data frame to this container
+   * @param id the id of the data frame
+   * @param dfName the name of the data frame
+   */
+  addDataFrame(id: number, dfName: string) {
     let shouldReturn = false;
+    // todo: make less janky/more idiomatic?
     this.state.elements.forEach(({ name, id }) => {
-      if (id === key) {
+      if (id === id) {
         shouldReturn = true;
       }
     });
@@ -140,32 +166,44 @@ class MidasContainer extends React.Component<any, ContainerState> {
     if (shouldReturn) return;
 
     let newElements = this.state.elements.concat([{
-      id: key,
+      id: id,
       name: dfName,
     }]);
 
     this.setState({ elements: newElements });
   }
 
-  removeDataFrame(key: number) {
+  /**
+   * Removes the given data frame via id
+   * @param key the id of the data frame
+   */
+  removeDataFrame(id: number) {
     this.setState(prevState => {
       return {
-        elements: prevState.elements.filter(e => (e.id !== key))
+        elements: prevState.elements.filter(e => (e.id !== id))
       };
     });
   }
 
+  /**
+   * Renders this component.
+   */
   render() {
     return (
       <div id="midas-floater-container">
-            {this.state.elements.map(({ id, name }, index) => (
-              <MidasElement id= { id } key = { id } name = { name } onClick = {() => this.removeDataFrame(id)} getCellId = { () => this.getCellId(name)}/>
+        {this.state.elements.map(({ id, name }, index) => (
+          <MidasElement id={id} key={id} name={name} onClick={() => this.removeDataFrame(id)} getCellId={() => this.getCellId(name)} />
         ))}
       </div>
     );
   }
 }
 
+/**
+ * Adds the visualization of the data frame to the sidebar.
+ * @param id the id of the data frame
+ * @param df_name the name of the data frame
+ */
 export function addDataFrame(id: number, df_name: string) {
   if (window.sidebar === undefined) {
     return;
@@ -173,6 +211,10 @@ export function addDataFrame(id: number, df_name: string) {
   window.sidebar.addDataFrame(id, df_name);
 }
 
+/**
+ * Makes the resizer that allows changing the width of the sidebar.
+ * @param divToResize the div representing the sidebar.
+ */
 function makeResizer(divToResize: JQuery<HTMLElement>) {
 
   let resizer = $("<div id=\"resizer\">");
@@ -196,25 +238,33 @@ function makeResizer(divToResize: JQuery<HTMLElement>) {
   });
 }
 
+/**
+ * Makes the comm responsible for discovery of which visualization
+ * corresponds to which cell, accomplished through inspecting the
+ * metadata of the message sent.
+ */
 function makeComm() {
   Jupyter.notebook.kernel.comm_manager.register_target('midas-cell-comm',
-  function(comm: any, msg: any) {
+    function (comm: any, msg: any) {
       // comm is the frontend comm instance
       // msg is the comm_open message, which can carry data
 
       // Register handlers for later messages:
-      comm.on_msg(function(msg: any) {
+      comm.on_msg(function (msg: any) {
         let cellId = msg.parent_header.msg_id;
 
         console.log(msg.content.data.name, cellId);
-        window.sidebar.setIdToCell(msg.content.data.name, cellId);
+        window.sidebar.recordDFCellId(msg.content.data.name, cellId);
       });
-      comm.on_close(function(msg: any) {});
-  });
+      comm.on_close(function (msg: any) { });
+    });
 
 }
 
-export function createFloater() {
+/**
+ * Creates the sidebar.
+ */
+export function createSidebar() {
   let floater = $("<div id=\"midas-floater-wrapper\"/>");
   let reactWrapper = $("<div id=\"midas-react-wrapper\">");
 
