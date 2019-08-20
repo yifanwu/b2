@@ -22,10 +22,17 @@ def gen_linechart_spec(x_field: str, y_field: str, data: DataFrame, date_format:
                 x_field: f"date{date_format}"
             }
         },
-        "transform": [{
-            "type": "collect",
-            "sort": {"field": x_field}
-        }]
+        "transform": [
+            {
+                "type": "collect",
+                "sort": {"field": x_field}
+            },
+            {
+                "type": "extent",
+                "field": y_field,
+                "signal": Y_DOMAIN_BY_DATA_SIGNAL
+            }
+        ]
     }]
 
     # then add lines

@@ -4,6 +4,7 @@ from typing import cast
 
 from midas import Midas
 from midas.types import ChartType, TwoDimSelectionPredicate, TickIOType
+from IPython import get_ipython
 
 DF_NAME = 'simple_df'
 DERIVED_DF_NAME = 'derived_df'

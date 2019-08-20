@@ -1,5 +1,7 @@
 export const DEBOUNCE_RATE = 100;
 
+export const MIDAS_CELL_COMM_NAME = "midas-cell-comm";
+
 // need to keep this in sync with the defaults.py file
 //   maybe consider changing this to a JSON file for better synchronization
 

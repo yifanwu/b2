@@ -4,7 +4,7 @@ import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base
 // import {Jupyter} from  "@jupyter/base";
 // var events = require("js/base/events");
 import { LogInternalError } from "./utils";
-import {addDataFrame} from "./sidebar";
+import {addDataFrame} from "./midas";
 import { DEBOUNCE_RATE, Y_SCALE, Y_DOMAIN_SIGNAL } from "./constants";
 
 interface WidgetUpdate {

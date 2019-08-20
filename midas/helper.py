@@ -1,8 +1,9 @@
 from pandas import DataFrame
 from typing import cast, Optional
 
-from .types import OneDimSelectionPredicate, SelectionPredicate, NullSelectionPredicate, TwoDimSelectionPredicate
+from .types import OneDimSelectionPredicate, SelectionPredicate, NullSelectionPredicate, TwoDimSelectionPredicate, DFInfo
 from .constants import CUSTOM_INDEX_NAME
+from .errors import check_not_null
 
 def get_chart_title(df_name: str):
     # one level of indirection in case we need to change in the future
@@ -30,6 +31,14 @@ def get_df_code(predicate: SelectionPredicate, df_name: str):
         return f"""{meta_data_str}\n{df_name}.loc[\n({df_name}['{predicate.x_column}'] < {predicate.x[1]})\n& ({df_name}['{predicate.x_column}'] > {predicate.x[0]})\n& ({df_name}['{predicate.y_column}'] > {predicate.y[0]})\n& ({df_name}['{predicate.y_column}'] < {predicate.y[1]})\n]"""
     else:
         return ""
+
+def get_selection_by_predicate(df_info: DFInfo, history_index: int) -> Optional[SelectionPredicate]:
+    check_not_null(df_info)
+    if (len(df_info.predicates) > history_index):
+        predicate = df_info.predicates[history_index]
+        return predicate
+    else:
+        return None
 
 def get_df_by_predicate(df: DataFrame, predicate: SelectionPredicate):
     """get_selection returns the selection DF

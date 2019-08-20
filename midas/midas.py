@@ -5,8 +5,6 @@ from datetime import datetime, timedelta
 from json import loads
 import ipywidgets
 from IPython import get_ipython
-from IPython.core.magic import (Magics, magics_class, line_magic,
-                                cell_magic, line_cell_magic)
 from pyperclip import copy
 from ipykernel.comm import Comm
 
@@ -18,16 +16,17 @@ except ImportError as err:
     logging = lambda x, y: None
 
 # from .config import DEBOUNCE_RATE_MS
+from .midas_magic import MidasMagic
 from .instructions import HELP_INSTRUCTION
 from .errors import NullValueError, DfNotFoundError, InternalLogicalError, UserError, \
     report_error_to_user, logging, debug_log, report_error_to_user, \
     check_not_null
-from .utils import get_min_max_tuple_from_list, check_path, get_random_string
-from .helper import get_df_by_predicate, get_df_transform_func_by_index, get_chart_title, get_df_code
+from .utils import get_min_max_tuple_from_list, check_path, get_random_string, in_ipynb
+from .helper import get_df_by_predicate, get_df_transform_func_by_index, get_chart_title, get_df_code, get_selection_by_predicate
 from .showme import gen_spec, set_data_attr
 from .vega_gen.defaults import SELECTION_SIGNAL
 from .widget import MidasWidget
-from .constants import CUSTOM_INDEX_NAME
+from .constants import CUSTOM_INDEX_NAME, MIDAS_CELL_COMM_NAME
 from .vega_gen.data_processing import get_categorical_distribution, get_numeric_distribution
 from .types import DFInfo, ChartType, ChartInfo, TickSpec, DfTransform, \
     TwoDimSelectionPredicate, OneDimSelectionPredicate, NullSelectionPredicate, \
@@ -39,28 +38,40 @@ from .types import DFInfo, ChartType, ChartInfo, TickSpec, DfTransform, \
 CUSTOM_FUNC_PREFIX = "__m_"
 MIDAS_INSTANCE_NAME = "m"
 
-@magics_class
-class Midas(Magics):
+class Midas(object):
     """[summary]
     
     functions prefixed with "js_" is invoked by the js layer.
     """
-    # dfs: Dict[str, DFInfo]
-    # tick_funcs: Dict[str, List[TickItem]]
-    # joins: List[JoinInfo]
-    # nextId: int
+    dfs: Dict[str, DFInfo]
+    tick_funcs: Dict[str, List[TickItem]]
+    joins: List[JoinInfo]
+    nextId: int
+    midas_cell_comm: Comm
+    is_in_ipynb: bool
 
-    def __init__(self, shell):
-        super(Midas, self).__init__(shell)
+    def __init__(self):
         self.nextId = 0
         self.dfs = {}
         self.tick_funcs = {}
         self.current_tick: int = 0
+        
+        try:
+            get_ipython()
+            self.is_in_ipynb = True
+        except:
+            print("not in notebooks")
+            self.is_in_ipynb = False
+
         # self.is_processing_tick: bool = False
         self.tick_log: List[TickSpec] = []
-        # TODO: maybe we can just change the DataFrame here...
-        # self._pandas_magic()
-
+        self.midas_cell_comm = None
+        # check if we are in a ipython environment
+        if self.is_in_ipynb:
+            ip = get_ipython()
+            magics = MidasMagic(ip, self)
+            ip.register_magics(magics)
+            self.midas_cell_comm = Comm(target_name=MIDAS_CELL_COMM_NAME)
     
     def _next_id(self):
       to_return = self.nextId
@@ -83,14 +94,6 @@ class Midas(Magics):
         else:
           return self._next_id()
 
-    def _get_selection_by_predicate(self, df_name: str, history_index: int):
-        df_info = self.dfs[df_name]
-        check_not_null(df_info)
-        if (len(df_info.predicates) > history_index):
-            predicate = df_info.predicates[history_index]
-            return predicate, df_info
-        else:
-            raise DfNotFoundError(df_name)
 
     def _add_to_tick(self, df_name: str, item: TickItem):
         logging("_add_to_tick", f" called{df_name}\n{item}")
@@ -142,7 +145,6 @@ class Midas(Magics):
             report_error_to_user("we could not generat the spec")
 
 
-
     # spec: VegaSpecType, encodings: Dict[Channel, str], chart_type: ChartType
     def visualize_df_with_spec(self, df_name: str, chart_info: ChartInfo, set_data=False):
         if (set_data):
@@ -169,10 +171,11 @@ class Midas(Magics):
 
         with out:
           display(w)
-
         return w
 
+    # ----------------------------------------------------------------------------
     # METHODS EXPOSED TO USERS
+    # ----------------------------------------------------------------------------
     def loc(self, df_name: str, new_df_name: str, rows: Optional[Union[slice, List[int]]] = None, columns: Optional[Union[slice, List[str]]] = None) -> DataFrame:
         """this is a wrapper around the DataFrame `loc` function so that Midas will
         help keep track
@@ -212,9 +215,8 @@ class Midas(Magics):
         df_info = DFInfo(df_name, self._get_id(df_name), df, created_on, selections, derivation, chart_spec)
         self.dfs[df_name] = df_info
         self.__show_or_rename_visualization(df_name)
-
-        my_comm = Comm(target_name='midas-cell-comm')
-        my_comm.send({'name': df_name})
+        if self.midas_cell_comm:
+            self.midas_cell_comm.send({'name': df_name})
 
         return
 
@@ -252,11 +254,15 @@ class Midas(Magics):
 
     def _process_tick(self, df_name: str, history_index: int):
         self.current_tick += 1
-        # see if we need to wait
-        # checkthe tick item
-        predicate, df_info = self._get_selection_by_predicate(df_name, history_index)
-        if not predicate:
+        df_info = self.dfs[df_name]
+        if df_info is None:
             return
+        _predicate = get_selection_by_predicate(df_info, history_index)
+
+        if not _predicate:
+            return
+        # weird hack to make pyright happy...
+        predicate = _predicate
         # TODO check if predicate the same as before
         lineage_data: DataFrame = None
         items = self.tick_funcs.get(df_name)
@@ -427,15 +433,24 @@ class Midas(Magics):
         # 
         raise NotImplementedError()
 
-    def js_get_current_chart_code(self, df_name: str) -> str:
+    def js_get_current_chart_code(self, df_name: str) -> Optional[str]:
         # figure out how to derive the current df
         # don't have a story yet for complicated things...
         # decide on if we want to focus on complex code gen...
-        predicate = self.dfs[df_name].predicates[-1]
-        code = get_df_code(predicate, df_name)
-        print(code)
-        copy(code)
-        return code
+        if self._has_df(df_name):
+            predicates = self.dfs[df_name].predicates
+            if (len(predicates) > 0):
+                predicate = predicates[-1]
+                code = get_df_code(predicate, df_name)
+                print(code)
+                copy(code)
+                return code
+        # something went wrong, so let's tell comes...
+        self.midas_cell_comm.send({
+            'type': 'error',
+            'value': f'no selection on {df_name} yet'
+        })
+        return
 
     def link(self, df1_name: str, df2_name: str):
         # infer how  df_interact_name and df_filter_name are connected to each other
@@ -467,42 +482,11 @@ class Midas(Magics):
             df2_info.visualization.widget.replace_data(new_data)
         return
 
-    # -------------------------------------------------------------------------------------
-    # magics
-    @cell_magic
-    def reactive(self, df_name: str, line, cell=None):
-        """react_to is a cell or line magic (based on how many '%' were specified)
-        
-        Arguments:
-            df_name {str} -- the visualization whose 
-        """
-        # for now, just do a regex for what df_names are mentioned
-        # and re-run the cell
-    @cell_magic
-    def test(self, line: str, cell: str):
-        print("cell", cell)
-        print("line", line)
-        print("executing with shell with import")
-        # exec(cell)
-        # hack
-        with_import = "import pandas as pd\n"+cell
-        shell = get_ipython().get_ipython()
-        shell.run_cell(with_import)
-    @cell_magic
-    def state(self, line: str, cell: str):
-        if hasattr(self, 'k'):
-            self.k += 1
-            print(self.k)
-        else:
-            self.k = 1
-            print(self.k)
 
-
-
-def load_ipython_extension(ipython):
-# ip = get_ipython()
-    magics = Midas(ipython)
-    ipython.register_magics(magics)
+# def load_ipython_extension(ipython):
+# # ip = get_ipython()
+#     magics = Midas(ipython)
+#     ipython.register_magics(magics)
 
 
 __all__ = ['Midas']

@@ -1,12 +1,12 @@
 import vegaEmbed, { Mode, EmbedOptions } from "vega-embed";
 import { Spec, View } from "vega";
 import { TopLevelSpec } from "vega-lite";
-import {createSidebar} from "./sidebar";
+import {createMidasComponent} from "./midas";
 
 export { default as vegaEmbed } from "vega-embed";
 
 export function load_ipython_extension() {
-  createSidebar();
+  createMidasComponent();
 
 }
 
