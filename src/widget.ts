@@ -57,7 +57,6 @@ export class MidasWidget extends DOMWidgetView {
     let widgetID = this.model.get("widgetID");
 
     // this.el.appendChild(this.viewElement);
-    addDataFrame(widgetID, this.model.get("dfName"));
 
     this.errorElement = document.createElement("div");
     this.errorElement.style.color = "red";
@@ -165,6 +164,7 @@ export class MidasWidget extends DOMWidgetView {
       }
     });
     // initial rendering
-    reembed();
+
+    addDataFrame(widgetID, this.model.get("dfName"), () => reembed());
   }
 }

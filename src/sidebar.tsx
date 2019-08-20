@@ -1,13 +1,14 @@
-import React, { MouseEventHandler, ReactElement } from "react";
+import React, { MouseEventHandler } from "react";
 import ReactDOM from "react-dom";
 
+import { X_SCALE, Y_SCALE, X_DOMAIN_SIGNAL, Y_DOMAIN_SIGNAL } from "./constants";
 import "./floater.css";
 
 import $ from "jquery";
 import "jqueryui";
+import { DOMWidgetModel } from "@jupyter-widgets/base";
 
 // TODO: extract HTML class names so there aren't so many strings everywhere
-
 
 declare global {
   interface Window { sidebar: MidasContainer; }
@@ -74,6 +75,12 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
     Jupyter.notebook.select(index);
   }
 
+  getPythonButtonClicked() {
+    const execute = `m.js_get_current_chart_code('${this.props.name}')`;
+    console.log("clicked, and executing", execute);
+    IPython.notebook.kernel.execute(execute);
+  }
+
   /**
    * Renders this component.
    */
@@ -85,8 +92,18 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
           <div className="midas-header-options"></div>
           <button
             className={"midas-header-button"}
+            onClick={() => 3}>
+            Fix Y
+          </button>
+          <button
+            className={"midas-header-button"}
+            onClick={() => this.getPythonButtonClicked()}>
+            Code
+          </button>
+          <button
+            className={"midas-header-button"}
             onClick={() => this.selectCell()}
-          >Code</button>
+          >Cell</button>
           <button
             className={"midas-header-button"}
             onClick={() => this.toggleHiddenStatus()}>
@@ -94,11 +111,10 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
           </button>
           <button
             className={"midas-header-button"}
-            onClick={() => this.props.onClick}>
+            onClick={(e) => this.props.onClick(e)}>
             x
           </button>
 
-          {/* <DeleteButton onClick={this.props.onClick} /> */}
         </div>
         <div
           id={makeElementId(this.props.id)}
@@ -150,23 +166,25 @@ class MidasContainer extends React.Component<any, ContainerState> {
    * @param id the id of the data frame
    * @param dfName the name of the data frame
    */
-  addDataFrame(id: number, dfName: string) {
+  addDataFrame(id: number, dfName: string, cb: () => void) {
     let shouldReturn = false;
     // todo: make less janky/more idiomatic?
-    this.state.elements.forEach(({ name, id }) => {
-      if (id === id) {
+    this.state.elements.forEach((e) => {
+      if (id === e.id) {
         shouldReturn = true;
       }
     });
 
     if (shouldReturn) return;
 
-    let newElements = this.state.elements.concat([{
-      id: id,
-      name: dfName,
-    }]);
-
-    this.setState({ elements: newElements });
+    this.setState(prevState => {
+      prevState.elements.push({
+        id: id,
+        name: dfName,
+      });
+      return prevState;
+     }, cb);
+     console.log("State " + JSON.stringify(this.state));
   }
 
   /**
@@ -200,11 +218,12 @@ class MidasContainer extends React.Component<any, ContainerState> {
  * @param id the id of the data frame
  * @param df_name the name of the data frame
  */
-export function addDataFrame(id: number, df_name: string) {
+export function addDataFrame(id: number, df_name: string, cb: () => void) {
+  console.log("Adding data frame: " + df_name + " " + id);
   if (window.sidebar === undefined) {
     return;
   }
-  window.sidebar.addDataFrame(id, df_name);
+  window.sidebar.addDataFrame(id, df_name, cb);
 }
 
 /**
