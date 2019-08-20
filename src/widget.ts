@@ -5,7 +5,7 @@ import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base
 // var events = require("js/base/events");
 import { LogInternalError } from "./utils";
 import {addDataFrame} from "./sidebar";
-import { DEBOUNCE_RATE } from "./constants";
+import { DEBOUNCE_RATE, Y_SCALE, Y_DOMAIN_SIGNAL } from "./constants";
 
 interface WidgetUpdate {
   key: string;
@@ -164,7 +164,14 @@ export class MidasWidget extends DOMWidgetView {
       }
     });
     // initial rendering
-
-    addDataFrame(widgetID, this.model.get("dfName"), () => reembed());
+    let fixYScale = () => {
+      console.log("FIXING Y");
+        // access the current scale
+        // @ts-ignore
+        const y_scale = this.view.scale(Y_SCALE);
+        // then set the current scale
+        this.view.signal(Y_DOMAIN_SIGNAL, y_scale.domain());
+    };
+    addDataFrame(widgetID, this.model.get("dfName"), fixYScale, () => reembed());
   }
 }

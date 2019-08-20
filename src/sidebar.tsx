@@ -22,6 +22,7 @@ interface ContainerState {
 interface ContainerElementState {
   id: number;
   name: string;
+  fixYScale: () => void;
 }
 
 interface MidasElementProps {
@@ -29,6 +30,7 @@ interface MidasElementProps {
   onClick: MouseEventHandler;
   name: string;
   getCellId: Function;
+  fixYScale: () => void;
 }
 
 interface MidasElementState {
@@ -92,7 +94,7 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
           <div className="midas-header-options"></div>
           <button
             className={"midas-header-button"}
-            onClick={() => 3}>
+            onClick={() => this.props.fixYScale()}>
             Fix Y
           </button>
           <button
@@ -166,7 +168,7 @@ class MidasContainer extends React.Component<any, ContainerState> {
    * @param id the id of the data frame
    * @param dfName the name of the data frame
    */
-  addDataFrame(id: number, dfName: string, cb: () => void) {
+  addDataFrame(id: number, dfName: string, fixYScale: () => void, cb: () => void) {
     let shouldReturn = false;
     // todo: make less janky/more idiomatic?
     this.state.elements.forEach((e) => {
@@ -181,6 +183,7 @@ class MidasContainer extends React.Component<any, ContainerState> {
       prevState.elements.push({
         id: id,
         name: dfName,
+        fixYScale: fixYScale,
       });
       return prevState;
      }, cb);
@@ -205,8 +208,8 @@ class MidasContainer extends React.Component<any, ContainerState> {
   render() {
     return (
       <div id="midas-floater-container">
-        {this.state.elements.map(({ id, name }, index) => (
-          <MidasElement id={id} key={id} name={name} onClick={() => this.removeDataFrame(id)} getCellId={() => this.getCellId(name)} />
+        {this.state.elements.map(({ id, name, fixYScale }, index) => (
+          <MidasElement id={id} key={id} name={name} onClick={() => this.removeDataFrame(id)} getCellId={() => this.getCellId(name)} fixYScale={() => fixYScale()} />
         ))}
       </div>
     );
@@ -218,12 +221,12 @@ class MidasContainer extends React.Component<any, ContainerState> {
  * @param id the id of the data frame
  * @param df_name the name of the data frame
  */
-export function addDataFrame(id: number, df_name: string, cb: () => void) {
+export function addDataFrame(id: number, df_name: string, fixYScale: () => void, cb: () => void) {
   console.log("Adding data frame: " + df_name + " " + id);
   if (window.sidebar === undefined) {
     return;
   }
-  window.sidebar.addDataFrame(id, df_name, cb);
+  window.sidebar.addDataFrame(id, df_name, fixYScale, cb);
 }
 
 /**
