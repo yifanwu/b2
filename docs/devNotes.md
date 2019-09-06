@@ -17,3 +17,23 @@ https://testnb.readthedocs.io/en/latest/examples/Notebook/Distributing%20Jupyter
 ## Hacks
 
 Added `view(name: string): any;` to `vega-typings/types/runtime/index.d.ts`.
+
+## Some relvant source code
+
+https://github.com/ipython/ipython/blob/master/IPython/core/interactiveshell.py
+
+The following describes a python class.
+
+```python
+class ExecutionResult(object):
+    """The result of a call to :meth:`InteractiveShell.run_cell`
+    Stores information about what took place.
+    """
+    execution_count = None
+    error_before_exec = None
+    error_in_exec = None
+    info = None
+    result = None
+```
+
+and that of [run_cell](https://github.com/ipython/ipython/blob/master/IPython/core/interactiveshell.py#L2828)

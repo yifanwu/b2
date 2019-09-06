@@ -1,8 +1,14 @@
 /// <reference path="./external/Jupyter.d.ts" />
 import { MIDAS_CELL_COMM_NAME } from "./constants";
 import { LogSteps, LogDebug, LogInternalError } from "./utils";
+import { AlertType } from "./types";
 
-type MidasCommLoad = { type: string; value: string };
+// types could be of: name, error, reactive
+// TODO: maybe don't need these types...
+type ErrorCommLoad = { type: string; value: string };
+type CreateCommLoad = { type: string; value: string };
+type ReactiveCommLoad = { type: string; value: string};
+type MidasCommLoad = ErrorCommLoad | CreateCommLoad | ReactiveCommLoad;
 
 /**
  * Makes the comm responsible for discovery of which visualization
@@ -27,15 +33,22 @@ function on_msg(msg: any) {
   const load = msg.content.data as MidasCommLoad;
   switch (load.type) {
     case "name": {
-      LogDebug(`${load.value}, ${cellId}`);
+      const nameLoad = load as CreateCommLoad;
+      LogDebug(`${nameLoad.value}, ${cellId}`);
       if (!window.hasOwnProperty("midas")) {
         LogInternalError(`midas not registered to window`);
       }
-      window.midas.recordDFCellId(load.value, cellId);
+      window.midas.recordDFCellId(nameLoad.value, cellId);
     }
     case "error": {
-      LogDebug(`sending error ${load.value}`);
-      window.midas.showErrorMsg(load.value);
+      const errorLoad = load as ErrorCommLoad;
+      LogDebug(`sending error ${errorLoad.value}`);
+      window.midas.addAlert(errorLoad.value);
+    }
+    case "reactive": {
+      const reactiveLoad = load as ReactiveCommLoad;
+      window.midas.captureCell(reactiveLoad.value, cellId);
+      window.midas.addAlert(`Success adding cell to ${reactiveLoad.value}`, AlertType.Confirmation);
     }
   }
 }

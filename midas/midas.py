@@ -68,10 +68,11 @@ class Midas(object):
         self.midas_cell_comm = None
         # check if we are in a ipython environment
         if self.is_in_ipynb:
+            midas_cell_comm = Comm(target_name=MIDAS_CELL_COMM_NAME)
+            self.midas_cell_comm = midas_cell_comm
             ip = get_ipython()
-            magics = MidasMagic(ip, self)
+            magics = MidasMagic(ip, midas_cell_comm)
             ip.register_magics(magics)
-            self.midas_cell_comm = Comm(target_name=MIDAS_CELL_COMM_NAME)
     
     def _next_id(self):
       to_return = self.nextId
@@ -162,7 +163,7 @@ class Midas(object):
         # note that we use a custom prefix to avoid accidentally overwrriting a user defined function
         cb = f"""
             var {CUSTOM_FUNC_PREFIX}val_str = JSON.stringify(value);
-            var pythonCommand = `{CUSTOM_INDEX_NAME}.js_add_selection("{df_name}", '${{{CUSTOM_FUNC_PREFIX}val_str}}')`;
+            var pythonCommand = `{MIDAS_INSTANCE_NAME}.js_add_selection("{df_name}", '${{{CUSTOM_FUNC_PREFIX}val_str}}')`;
             console.log("calling", pythonCommand);
             IPython.notebook.kernel.execute(pythonCommand)
         """

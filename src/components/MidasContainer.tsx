@@ -1,7 +1,8 @@
 import React from "react";
 
 import MidasElement from "./MidasElement";
-import { hashCode } from "../utils";
+import { hashCode, LogInternalError, LogSteps } from "../utils";
+import { AlertType } from "../types";
 
 interface ContainerElementState {
   id: number;
@@ -9,21 +10,38 @@ interface ContainerElementState {
   fixYScale: () => void;
 }
 
+interface AlertItem {
+  msg: string;
+  alertType: AlertType;
+  aId: number;
+}
+
 interface ContainerState {
     elements: ContainerElementState[];
     idToCell: Map<string, number>;
-    alerts: string[];
+    // maps signals to cellIds
+    reactiveCells: Map<string, number[]>;
+    allReactiveCells: Set<number>;
+    alerts: AlertItem[];
 }
+
+const ALERT_ALIVE_TIME = 5000;
 
 /**
  * Container for the MidasElements that hold the visualization.
  */
-export default class MidasContainer extends React.Component<any, ContainerState> {
-    constructor(props?: any) {
+export default class MidasContainer extends React.Component<{}, ContainerState> {
+    constructor(props?: {}) {
       super(props);
+      this.tick = this.tick.bind(this);
+      this.captureCell = this.captureCell.bind(this);
+
+      // NOTE: maybe other binds needed as well...
       this.state = {
         elements: [],
         idToCell: new Map(),
+        reactiveCells: new Map(),
+        allReactiveCells: new Set(),
         alerts: []
       };
     }
@@ -52,20 +70,63 @@ export default class MidasContainer extends React.Component<any, ContainerState>
       });
     }
 
-    showErrorMsg(msg: string) {
-      // make this disappearing
+
+    tick(dfName: string) {
+      console.log("midas container tick called", dfName);
+      // look up the reactiveCells
+      const cells = this.state.reactiveCells.get(dfName);
+      const cellIdxs = cells.map(c => {
+        const cIdxMsg = Jupyter.notebook.get_msg_cell(c);
+        const idx = Jupyter.notebook.find_cell_index(cIdxMsg);
+        if (idx) {
+          return idx;
+        } else {
+          // maybe report this to the user
+          LogInternalError(`One of the cells is no longer found`);
+        }
+      });
+      LogSteps(`[${dfName}] Reactively executing cells ${cellIdxs}`);
+      Jupyter.notebook.execute_cells(cellIdxs);
+    }
+
+    captureCell(dfName: string, cellId: number) {
+      if (this.state.allReactiveCells.has(cellId)) {
+        // we have already done this before
+        return;
+      }
       this.setState(prevState => {
-        prevState.alerts.push(msg);
+        if (prevState.reactiveCells.has(dfName)) {
+          prevState.reactiveCells.get(dfName).push(cellId);
+        } else {
+          prevState.reactiveCells.set(dfName, [cellId]);
+        }
+      });
+    }
+
+    addAlert(msg: string, alertType: AlertType = AlertType.Error) {
+      // make this disappearing
+      const aId = hashCode(msg) * 100 + Math.round(Math.random() * 100);
+      this.setState(prevState => {
+        prevState.alerts.push({
+          msg,
+          alertType,
+          aId
+        });
         return prevState;
       });
       window.setTimeout(() => {
         this.setState(prevState => {
-          const alerts = prevState.alerts.filter(a => a !== msg);
+          const alerts = prevState.alerts.filter(a => a.aId !== aId);
           return {
             alerts
           };
         });
-      }, 2000);
+      }, ALERT_ALIVE_TIME);
+    }
+
+    resetState() {
+      // TODO
+      throw Error("not implemented");
     }
 
     /**
@@ -117,12 +178,15 @@ export default class MidasContainer extends React.Component<any, ContainerState>
           getCellId={() => this.getCellId(name)}
           fixYScale={() => fixYScale()} />
       ));
-      const alertDivs = this.state.alerts.map((a) => <div
-          className="midas-alerts"
-          key={`alert-${hashCode(a)}`}
-        >
-          {a}
-        </div>);
+      const alertDivs = this.state.alerts.map((a) => {
+        const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-confirm";
+        return <div
+              className={className}
+              key={`alert-${a.aId}`}
+            >
+              {a.msg}
+          </div>;
+        });
       return (
         <div id="midas-floater-container">
           {elements}

@@ -3,6 +3,7 @@ export const STRICT = true;
 export const FgRed = "\x1b[31m";
 const FgGreen = "\x1b[32m";
 const FgBlue = "\x1b[34m";
+const FgMegenta = "\x1b[35m";
 const FgGray = "\x1b[90m";
 export const Reset = "\x1b[0m";
 
@@ -20,7 +21,7 @@ export function LogSteps(func: string, message?: string) {
 }
 
 export function LogDebug(message: string) {
-  console.log(`${FgGray}${message}${Reset}`);
+  console.log(`${FgMegenta}${message}${Reset}`);
 }
 
 export function hashCode(str: string) {

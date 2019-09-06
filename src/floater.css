@@ -120,3 +120,17 @@
   margin-right: 0;
   font-family: monospace;
 }
+
+.midas-alerts-error {
+  padding: 20px;
+  background-color: #f44336;
+  color: white;
+  text-align: left;
+}
+
+.midas-alerts-error {
+  padding: 20px;
+  background-color: green;
+  color: white;
+  text-align: left;
+}

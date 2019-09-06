@@ -3,9 +3,9 @@ import { vegaEmbed } from "./index";
 import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base";
 // import {Jupyter} from  "@jupyter/base";
 // var events = require("js/base/events");
-import { LogInternalError } from "./utils";
-import {addDataFrame} from "./midas";
-import { DEBOUNCE_RATE, Y_SCALE, Y_DOMAIN_SIGNAL } from "./constants";
+import { LogInternalError, LogDebug } from "./utils";
+import { addDataFrame } from "./midas";
+import { SELECTION_SIGNAL, DEBOUNCE_RATE, Y_SCALE, Y_DOMAIN_SIGNAL } from "./constants";
 
 interface WidgetUpdate {
   key: string;
@@ -62,6 +62,7 @@ export class MidasWidget extends DOMWidgetView {
     this.errorElement.style.color = "red";
     this.el.appendChild(this.errorElement);
 
+    const dfName = this.model.get("dfName");
     const reembed = () => {
       if (this.view) {
         this.view.finalize();
@@ -80,14 +81,9 @@ export class MidasWidget extends DOMWidgetView {
       })
         .then((res: any) => {
           this.view = res.view;
-
-          // this.el.appendChild(this.viewElement);
-          // addDataFrame(this.viewElement,
-          //   this.model.get("widgetID"),
-          //   this.model.get("dfName"),
-          //   this.view
-          // );
-
+          // also update this view such that it calls the Midas tick everytime it changes...
+          LogDebug(`Registering signal for TICK`);
+          this.view.signal(SELECTION_SIGNAL, () => { window.midas.tick(dfName); });
           this.send({ type: "display" });
         })
         .catch((err: Error) => console.error(err));
@@ -172,6 +168,8 @@ export class MidasWidget extends DOMWidgetView {
         // then set the current scale
         this.view.signal(Y_DOMAIN_SIGNAL, y_scale.domain());
     };
-    addDataFrame(widgetID, this.model.get("dfName"), fixYScale, () => reembed());
+    // must be called here, otherwise we have asyn issues..
+    addDataFrame(widgetID, dfName, fixYScale, () => reembed());
+
   }
 }
