@@ -4,7 +4,7 @@
 
   margin-right: 20pt;
   /* border-radius: 5px; */
-  z-index: 100;
+  /* z-index: 100; */
   display: flex;
   flex-direction: row;
   /* overflow:hidden; */
@@ -133,4 +133,12 @@
   background-color: green;
   color: white;
   text-align: left;
+}
+
+.midas-sortable-list {
+  list-style-type: none;
+}
+.drag-handle {
+  cursor: grab;
+  font-family: monospace;
 }

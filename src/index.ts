@@ -1,13 +1,17 @@
 import vegaEmbed, { Mode, EmbedOptions } from "vega-embed";
 import { Spec, View } from "vega";
 import { TopLevelSpec } from "vega-lite";
-import {createMidasComponent} from "./midas";
+import {createMidasComponent, resetSideBarState} from "./midas";
 
 export { default as vegaEmbed } from "vega-embed";
 
 export function load_ipython_extension() {
   createMidasComponent();
 
+  $([Jupyter.events]).on("kernel_starting.Kernel", function(){
+    console.log("Kernel starting.");
+      resetSideBarState();
+  });
 }
 
 function javascriptIndex(selector: string, outputs: any) {

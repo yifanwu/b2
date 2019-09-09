@@ -3,12 +3,18 @@ import React from "react";
 import MidasElement from "./MidasElement";
 import { hashCode, LogInternalError, LogSteps } from "../utils";
 import { AlertType } from "../types";
+import {
+  SortableContainer,
+  SortableElement,
+  SortableHandle,
+} from 'react-sortable-hoc';
 
 interface ContainerElementState {
   id: number;
   name: string;
   fixYScale: () => void;
 }
+import arrayMove from 'array-move';
 
 interface AlertItem {
   msg: string;
@@ -26,6 +32,10 @@ interface ContainerState {
 }
 
 const ALERT_ALIVE_TIME = 5000;
+
+const MidasSortableContainer = SortableContainer(({children}: {children: any}) => {
+  return <div>{children}</div>;
+});
 
 /**
  * Container for the MidasElements that hold the visualization.
@@ -61,6 +71,10 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
      * @param cell the cell id at which the data frame was defined
      */
     recordDFCellId(name: string, cell: string) {
+      console.log(
+        `Recording the dataframe ${name} was defined at ${cell}`
+      );
+      
       this.setState((prevState) => {
         prevState.idToCell[name] = cell;
         return {
@@ -125,8 +139,13 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     }
 
     resetState() {
-      // TODO
-      throw Error("not implemented");
+      this.setState({
+          elements: [],
+          idToCell: new Map(),
+          reactiveCells: new Map(),
+          allReactiveCells: new Set(),
+          alerts: []
+      });
     }
 
     /**
@@ -153,12 +172,23 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         });
         return prevState;
        }, cb);
-       console.log("State " + JSON.stringify(this.state));
     }
 
+    onSortEnd = ({oldIndex, newIndex}: {oldIndex: number, newIndex: number}) => {
+      this.setState(prevState => {
+        return {
+          elements: arrayMove(prevState.elements, oldIndex, newIndex),
+          idToCell: prevState.idToCell,
+          reactiveCells: prevState.reactiveCells,
+          allReactiveCells: prevState.allReactiveCells,
+          alerts: prevState.alerts
+        }
+      });
+    };
+  
     /**
      * Removes the given data frame via id
-     * @param key the id of the data frame
+     * @param id the id of the data frame
      */
     removeDataFrame(id: number) {
       this.setState(prevState => {
@@ -171,6 +201,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     render() {
       const elements = this.state.elements.map(({ id, name, fixYScale }, index) => (
         <MidasElement
+          index={index}
           id={id}
           key={id}
           name={name}
@@ -189,7 +220,9 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         });
       return (
         <div id="midas-floater-container">
-          {elements}
+          <MidasSortableContainer onSortEnd={this.onSortEnd} useDragHandle>
+            {elements}
+          </MidasSortableContainer>
           {alertDivs}
         </div>
       );

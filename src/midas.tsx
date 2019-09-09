@@ -16,7 +16,14 @@ declare global {
   interface Window { midas: MidasContainer; }
 }
 
+export function resetSideBarState() {
+  console.log("Resetting sidebar state.");
+  if (window.midas === undefined) {
+    return;
+  }
 
+  window.midas.resetState();
+}
 
 /**
  * Adds the visualization of the data frame to the sidebar.

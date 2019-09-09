@@ -1,5 +1,10 @@
 /// <reference path="../external/Jupyter.d.ts" />
 import React, { MouseEventHandler } from "react";
+import {
+  SortableContainer,
+  SortableElement,
+  SortableHandle,
+} from 'react-sortable-hoc';
 
 interface MidasElementProps {
   id: number;
@@ -13,12 +18,14 @@ interface MidasElementState {
   hidden: boolean;
 }
 
+const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
+
 /**
  * Contains the visualization as well as a header with actions to minimize,
  * delete, or find the corresponding cell of the visualization.
  */
-export default class MidasElement extends React.Component<MidasElementProps, MidasElementState> {
-    constructor(props: any) {
+class MidasElement extends React.Component<MidasElementProps, MidasElementState> {
+    constructor(props: MidasElementProps) {
       super(props);
       this.state = { hidden: false };
     }
@@ -55,6 +62,7 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
       return (
         <div className="midas-element">
           <div className="midas-header">
+            <DragHandle/>
             <span className="midas-title">{this.props.name}</span>
             <div className="midas-header-options"></div>
             <button
@@ -81,7 +89,6 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
               onClick={(e) => this.props.onClick(e)}>
               x
             </button>
-
           </div>
           <div
             id={makeElementId(this.props.id)}
@@ -92,7 +99,6 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
     }
   }
 
-
 /**
  * Returns the DOM id of the given element that contains the visualizations
  * @param id the id of the data frame of the visualization
@@ -102,3 +108,11 @@ function makeElementId(id: number, includeSelector: boolean = false) {
   let toReturn = `midas-element-${id}`;
   return includeSelector ? "#" + toReturn : toReturn;
 }
+
+const SortableItem = SortableElement((props: MidasElementProps) => (
+  <div>
+    <MidasElement {...props}/>
+  </div>
+));
+
+export default SortableItem;

@@ -217,7 +217,7 @@ class Midas(object):
         self.dfs[df_name] = df_info
         self.__show_or_rename_visualization(df_name)
         if self.midas_cell_comm:
-            self.midas_cell_comm.send({'name': df_name})
+            self.midas_cell_comm.send({'type': 'name', 'value': df_name})
 
         return
 

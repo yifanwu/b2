@@ -16,6 +16,7 @@ type MidasCommLoad = ErrorCommLoad | CreateCommLoad | ReactiveCommLoad;
  * metadata of the message sent.
  */
 export function makeComm() {
+  console.log("Making comm.")
   Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
       // comm is the frontend comm instance
@@ -28,9 +29,11 @@ export function makeComm() {
 }
 
 function on_msg(msg: any) {
+  // TODO: add error checking in the payload to give more eager/intuitive warning
   let cellId = msg.parent_header.msg_id;
   LogSteps("on_msg", JSON.stringify(msg));
   const load = msg.content.data as MidasCommLoad;
+
   switch (load.type) {
     case "name": {
       const nameLoad = load as CreateCommLoad;
