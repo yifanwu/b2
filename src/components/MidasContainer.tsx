@@ -220,7 +220,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         });
       return (
         <div id="midas-floater-container">
-          <MidasSortableContainer onSortEnd={this.onSortEnd} useDragHandle>
+          <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>
             {elements}
           </MidasSortableContainer>
           {alertDivs}

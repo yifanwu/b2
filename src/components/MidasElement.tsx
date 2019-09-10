@@ -97,6 +97,14 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
         </div>
       );
     }
+    // render() {
+    //   return (
+    //     <div>
+    //       <DragHandle/>
+    //       Test
+    //     </div>
+    //   )
+    // }
   }
 
 /**
@@ -110,7 +118,7 @@ function makeElementId(id: number, includeSelector: boolean = false) {
 }
 
 const SortableItem = SortableElement((props: MidasElementProps) => (
-  <div>
+  <div className="sortable">
     <MidasElement {...props}/>
   </div>
 ));

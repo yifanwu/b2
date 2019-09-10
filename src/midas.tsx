@@ -1,7 +1,7 @@
 import React, { MouseEventHandler } from "react";
 import ReactDOM from "react-dom";
 import MidasContainer from "./components/MidasContainer";
-
+import MidasMidbar from "./components/MidasMidbar"
 import { makeComm } from "./comm";
 import "./floater.css";
 
@@ -69,12 +69,15 @@ function makeResizer(divToResize: JQuery<HTMLElement>) {
 export function createMidasComponent() {
   let floater = $("<div id=\"midas-floater-wrapper\"/>");
   let reactWrapper = $("<div id=\"midas-react-wrapper\">");
-
+  let midbar = $("<div id=\"midbar\"/>");
+ 
   makeResizer(floater);
-
+ 
+  floater.append(midbar);
   floater.append(reactWrapper);
 
   $("#notebook").append(floater);
+  ReactDOM.render(<MidasMidbar/>, document.getElementById("midbar"));
 
 
   ReactDOM.render(<MidasContainer ref={(comp) => window.midas = comp} />, document.getElementById("midas-react-wrapper"));
