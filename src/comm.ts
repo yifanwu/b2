@@ -2,13 +2,15 @@
 import { MIDAS_CELL_COMM_NAME } from "./constants";
 import { LogSteps, LogDebug, LogInternalError } from "./utils";
 import { AlertType } from "./types";
+import { DataProps } from "@nteract/data-explorer/src/types";
 
-// types could be of: name, error, reactive
 // TODO: maybe don't need these types...
+// but just in case things get more complicated
 type ErrorCommLoad = { type: string; value: string };
 type CreateCommLoad = { type: string; value: string };
-type ReactiveCommLoad = { type: string; value: string};
-type MidasCommLoad = ErrorCommLoad | CreateCommLoad | ReactiveCommLoad;
+type ReactiveCommLoad = { type: string; value: string };
+type DataCommLoad = {  type: string; dfName: string, value: DataProps };
+type MidasCommLoad = ErrorCommLoad | CreateCommLoad | ReactiveCommLoad | DataCommLoad;
 
 /**
  * Makes the comm responsible for discovery of which visualization
@@ -29,15 +31,16 @@ export function makeComm() {
 
 function on_msg(msg: any) {
   let cellId = msg.parent_header.msg_id;
+  // need to make sure that midas is loaded
+  if (!window.hasOwnProperty("midas")) {
+    LogInternalError(`midas not registered to window`);
+  }
   LogSteps("on_msg", JSON.stringify(msg));
   const load = msg.content.data as MidasCommLoad;
   switch (load.type) {
     case "name": {
       const nameLoad = load as CreateCommLoad;
       LogDebug(`${nameLoad.value}, ${cellId}`);
-      if (!window.hasOwnProperty("midas")) {
-        LogInternalError(`midas not registered to window`);
-      }
       window.midas.recordDFCellId(nameLoad.value, cellId);
     }
     case "error": {
@@ -49,6 +52,11 @@ function on_msg(msg: any) {
       const reactiveLoad = load as ReactiveCommLoad;
       window.midas.captureCell(reactiveLoad.value, cellId);
       window.midas.addAlert(`Success adding cell to ${reactiveLoad.value}`, AlertType.Confirmation);
+    }
+    case "initial_data": {
+      // we are going to start the data explorers
+      const dataLoad = load as DataCommLoad;
+      window.midas.addDataExplorer(dataLoad.dfName, dataLoad.value);
     }
   }
 }

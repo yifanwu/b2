@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@jupyter-widgets/base": "2.0.1",
+    "@nteract/data-explorer": "^7.1.2",
     "@types/jqueryui": "^1.12.7",
     "@types/react": "^16.9.1",
     "@types/react-dom": "^16.8.5",

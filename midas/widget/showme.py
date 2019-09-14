@@ -7,7 +7,6 @@ from typing import Optional, Dict
 from pandas import DataFrame
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_bool_dtype, is_datetime64_any_dtype
 
-from .errors import type_check_with_warning, check_not_null, InternalLogicalError
 from .vega_gen.bar_chart import gen_bar_chart_spec
 from .vega_gen.scatter_plot import gen_scatterplot_spec
 from .vega_gen.line_chart import gen_linechart_spec
@@ -15,7 +14,8 @@ from .vega_gen.data_processing import get_categorical_distribution, \
     get_numeric_distribution, set_data_attr
 from .vega_gen.defaults import COUNT_COL_NAME
 
-from .types import ChartInfo, ChartType, Channel, DfTransform
+from ..util.errors import type_check_with_warning, check_not_null, InternalLogicalError
+from ..types import ChartInfo, ChartType, Channel, DfTransform
 
 def gen_spec(df: DataFrame, title: str) -> Optional[ChartInfo]:
     """Implements basic show me like feature

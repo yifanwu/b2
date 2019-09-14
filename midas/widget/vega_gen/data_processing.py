@@ -3,6 +3,7 @@ from pandas import DataFrame, Series, cut
 
 from .defaults import DEFAULT_DATA_SOURCE, COUNT_COL_NAME, Y_DOMAIN_BY_DATA_SIGNAL
 from midas.types import ChartInfo, Channel
+
 # chart_info: ChartInfo
 def set_data_attr(spec_base: Dict, data: DataFrame, x_column: str, y_column: str) -> Dict:
     """set_data_attr takes the df and transformes it into Dict object shape for serialization

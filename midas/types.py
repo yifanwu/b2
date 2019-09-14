@@ -3,7 +3,7 @@ from typing import NamedTuple, Callable, List, Union, Any, Optional, Dict, Tuple
 from datetime import datetime
 from pandas import DataFrame
 
-from .widget import MidasWidget
+from .widget.widget import MidasWidget
 
 """
 Note that namedtuples are immutable, so we'll basically 
@@ -40,11 +40,20 @@ class Channel(Enum):
     color = "color"
 
 
-class DerivationType(Enum):
-    initial = "initial"
-    loc = "loc" # projection and selection
+class OpType(Enum):
+    load = "load"
+    projection = "projection"
+    selection = "selection"
     groupby = "groupby"
-    black_box = "black_box"
+
+class OpLogItem(NamedTuple):
+    op: OpType
+    fun_name: str
+    src_name: Optional[str]
+    dest_name: str
+    args: List[any]
+    kwargs: Dict[any]
+
 
 
 # class TickCallbackType(Enum):
@@ -77,11 +86,14 @@ class DFLoc(NamedTuple):
 # class DF, Callable[]
 
 class DFDerivation(NamedTuple):
+    """ the derivation will be a sequence of transforms
+    """
     soruce_df: str
     target_df: str
+    transforms: List[OpLogItem]
     # some domain specific annotations
-    derivation_type: DerivationType
-    derivation_func: Union[Callable[[DataFrame], DataFrame], DFLoc]
+    # derivation_type: DerivationType
+    # derivation_func: Union[Callable[[DataFrame], DataFrame], DFLoc]
     # dataframe in, dataframe out
 
 
@@ -159,6 +171,10 @@ class Visualization(NamedTuple):
     chart_info: ChartInfo
     widget: MidasWidget
 
+class GroupbyInfo(NamedTuple):
+    ref_name: str
+    derivation: DFDerivation
+    
 
 class DFInfo(NamedTuple):
     df_name: str
