@@ -1,4 +1,4 @@
-from .defaults import BRUSH_MARK, X_SCALE, X_PIXEL_SIGNAL, SELECTION_SIGNAL, CHART_HEIGHT
+from midas.defaults import BRUSH_MARK, X_SCALE, X_PIXEL_SIGNAL, SELECTION_SIGNAL, CHART_HEIGHT
 
 def gen_click_signal():
     return {

@@ -3,10 +3,10 @@ import json
 from pandas import DataFrame
 from typing import List, Optional, Dict
 
-from midas.utils.errors import debug_log
-from midas.utils.utils import dataframe_to_dict
+from midas.util.errors import debug_log
+from midas.util.utils import dataframe_to_dict
 
-from .vega_gen.defaults import DEFAULT_DATA_SOURCE
+from midas.defaults import DEFAULT_DATA_SOURCE
 from .widget_types import UpdateDataMessage, SignalMessage, WidgetMessageType
 
 try:

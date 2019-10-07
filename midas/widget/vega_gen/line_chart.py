@@ -1,22 +1,20 @@
 
 from pandas import DataFrame
 
-from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, CHART_HEIGHT, CHART_WIDTH_SIGNAL, CHART_HEIGHT_SIGNAL, CHART_WIDTH, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
+from midas.defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
 from .shared_all import gen_spec_base
 from .shared_one_dim import gen_x_brush_signal, gen_x_brush_mark
-from .data_processing import sanitize_dataframe
 from .shared_all import gen_spec_base, gen_y_domain_signals, gen_width_height_signals
 
 # note that if we don't specify, it's automatically inferred
 # :%Y-%m-%d
-def gen_linechart_spec(x_field: str, y_field: str, data: DataFrame, date_format:str=""):
+def gen_linechart_spec(x_field: str, y_field: str, date_format: str=""):
     # spec_base = gen_scatterplot_spec(x_field, y_field, data)
     spec_base = gen_spec_base()
     # line chart need special spec because it needs the time
-    sanitzied_df = sanitize_dataframe(data)
     spec_base["data"] = [{
         "name": DEFAULT_DATA_SOURCE,
-        "values": sanitzied_df.to_dict(orient='records'),
+        "values": [],
         "format":{
             "parse": {
                 x_field: f"date{date_format}"

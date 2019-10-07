@@ -5,27 +5,35 @@ from os import path
 
 from typing import Tuple, List
 from pandas import DataFrame
+from IPython import get_ipython
 
 import random
 import string
 
-def get_random_string(stringLength=10):
-    """Generate a random string of fixed length """
-    letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(stringLength))
-
-def in_ipynb():
+def isnotebook():
     try:
-        get_ipython()
-        return True
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
     except NameError:
-        return False
+        return False      # Probably standard Python interpreter
 
-try:
-    from IPython.display import get_ipython
-except ImportError as err:
-    def in_ipynb():
-        return False
+# def in_ipynb():
+#     try:
+#         get_ipython()
+#         return True
+#     except NameError:
+#         return False
+
+# try:
+#     from IPython.display import get_ipython
+# except ImportError as err:
+#     def in_ipynb():
+#         return False
 
 def abs_path(p: str):
     """Make path absolute."""

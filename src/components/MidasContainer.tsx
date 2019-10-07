@@ -1,15 +1,17 @@
-import React from "react";
+import React, { createRef, RefObject } from "react";
 
 import MidasElement from "./MidasElement";
 import Profiler from "./Profiler";
 import { hashCode, LogInternalError, LogSteps } from "../utils";
 import { AlertType } from "../types";
 import { DataProps } from "@nteract/data-explorer/src/types";
+import { Spec } from "vega";
 
+// TODO: we need to re
 interface ContainerElementState {
-  id: number;
-  name: string;
-  fixYScale: () => void;
+  dfName: string;
+  cellId: number;
+  vegaSpec: Spec;
 }
 
 interface ProfilerInfo {
@@ -27,6 +29,8 @@ interface ContainerState {
   profiles: ProfilerInfo[];
   // TODO: refact the name `elements` --- we now have different visual elements it seems.
   elements: ContainerElementState[];
+  refs: Map<string, RefObject<HTMLDivElement>>;
+  // FIXME: the idToCell might not be needed given that we have refs.
   idToCell: Map<string, number>;
   // maps signals to cellIds
   reactiveCells: Map<string, number[]>;
@@ -51,6 +55,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     this.state = {
       profiles: [],
       elements: [],
+      refs: new Map(),
       idToCell: new Map(),
       reactiveCells: new Map(),
       allReactiveCells: new Set(),
@@ -85,7 +90,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
   }
 
 
-  tick(dfName: string) {
+  tick(dfName: string, ) {
     console.log("midas container tick called", dfName);
     // look up the reactiveCells
     const cells = this.state.reactiveCells.get(dfName);
@@ -116,6 +121,12 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         prevState.reactiveCells.set(dfName, [cellId]);
       }
     });
+  }
+
+  navigate(dfName: string) {
+    // 
+    const elmnt = document.getElementById("content");
+    elmnt.scrollIntoView();
   }
 
 
@@ -152,26 +163,19 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
    * @param id the id of the data frame
    * @param dfName the name of the data frame
    */
-  addDataFrame(id: number, dfName: string, fixYScale: () => void, cb: () => void) {
-    let shouldReturn = false;
-    // todo: make less janky/more idiomatic?
-    this.state.elements.forEach((e) => {
-      if (id === e.id) {
-        shouldReturn = true;
-      }
-    });
-
-    if (shouldReturn) return;
+  addDataFrame(dfName: string, vegaSpec: Spec, cellId: number) {
+    if (this.state.elements.filter(e => e.dfName === dfName).length > 0) {
+      return;
+    }
 
     this.setState(prevState => {
       prevState.elements.push({
-        id: id,
-        name: dfName,
-        fixYScale: fixYScale,
+        cellId,
+        dfName,
+        vegaSpec
       });
       return prevState;
-      }, cb);
-      console.log("State " + JSON.stringify(this.state));
+    });
   }
 
 
@@ -179,10 +183,10 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
    * Removes the given data frame via id
    * @param key the id of the data frame
    */
-  removeDataFrame(id: number) {
+  removeDataFrame(dfName: string) {
     this.setState(prevState => {
       return {
-        elements: prevState.elements.filter(e => (e.id !== id))
+        elements: prevState.elements.filter(e => (e.dfName !== dfName))
       };
     });
   }
@@ -190,7 +194,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
   /**
    * This is a different type of visualization
    */
-  addDataExplorer(dfName: string, data: DataProps) {
+  addProfile(dfName: string, data: DataProps, cellId: number) {
     // see if it exists
     if (this.state.profiles.indexOf) {
 
@@ -202,16 +206,18 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     const profilerDivs = profiles.map(({dfName, data}) => {
       <Profiler
         data={data}
-      />
+      />;
     });
-    const chartDivs = elements.map(({ id, name, fixYScale }, index) => (
+    const chartDivs = elements.map(({cellId, dfName, vegaSpec }) => (
       <MidasElement
-        id={id}
-        key={id}
-        name={name}
-        onClick={() => this.removeDataFrame(id)}
-        getCellId={() => this.getCellId(name)}
-        fixYScale={() => fixYScale()} />
+        cellId={cellId}
+        key={dfName}
+        dfName={dfName}
+        // FIXME: title need to change
+        title={dfName}
+        vegaSpec={vegaSpec}
+        removeChart={() => this.removeDataFrame(dfName)}
+      />
     ));
     const alertDivs = alerts.map((a) => {
       const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-confirm";

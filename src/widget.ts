@@ -4,7 +4,7 @@ import { DOMWidgetView, JupyterPhosphorPanelWidget } from "@jupyter-widgets/base
 // import {Jupyter} from  "@jupyter/base";
 // var events = require("js/base/events");
 import { LogInternalError, LogDebug } from "./utils";
-import { addDataFrame } from "./midas";
+// import { addDataFrame } from "./midas";
 import { SELECTION_SIGNAL, DEBOUNCE_RATE, Y_SCALE, Y_DOMAIN_SIGNAL } from "./constants";
 
 interface WidgetUpdate {
@@ -38,6 +38,7 @@ interface WidgetRegisterSignalMessage extends WidgetMessageBase {
   callbacks: SignalCallback[];
 }
 
+// this is used for controlling the signals...
 const casted_window = (window as any);
 if (typeof casted_window.lastInvoked === "undefined") {
   casted_window.lastInvoked = new Date();
@@ -75,18 +76,6 @@ export class MidasWidget extends DOMWidgetView {
         return;
       }
 
-      vegaEmbed(`#midas-element-${widgetID}`, spec, {
-        loader: { http: { credentials: "same-origin" } },
-        ...opt
-      })
-        .then((res: any) => {
-          this.view = res.view;
-          // also update this view such that it calls the Midas tick everytime it changes...
-          LogDebug(`Registering signal for TICK`);
-          this.view.signal(SELECTION_SIGNAL, () => { window.midas.tick(dfName); });
-          this.send({ type: "display" });
-        })
-        .catch((err: Error) => console.error(err));
     };
 
     const checkView = () => {
@@ -113,20 +102,7 @@ export class MidasWidget extends DOMWidgetView {
     const registerSignalCallback = (signalCallback: SignalCallback) => {
       checkView();
       // we know that there are two arguments, name and value
-      const cb = new Function("name", "value", signalCallback.callback);
-      const wrapped = (name: any, value: any) => {
-        const n = new Date();
-        const l = (window as any).lastInvoked;
-        (window as any).lastInvoked = n;
-        if (l) {
-          if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
-            clearTimeout((window as any).lastInvokedTimer);
-          }
-          (window as any).lastInvokedTimer = setTimeout(() => cb(name, value), DEBOUNCE_RATE);
-        } else {
-          throw Error("global times should be kept");
-        }
-      };
+
       this.view.addSignalListener(signalCallback.signal, wrapped);
     };
 
@@ -160,16 +136,8 @@ export class MidasWidget extends DOMWidgetView {
       }
     });
     // initial rendering
-    let fixYScale = () => {
-      console.log("FIXING Y");
-        // access the current scale
-        // @ts-ignore
-        const y_scale = this.view.scale(Y_SCALE);
-        // then set the current scale
-        this.view.signal(Y_DOMAIN_SIGNAL, y_scale.domain());
-    };
     // must be called here, otherwise we have asyn issues..
-    addDataFrame(widgetID, dfName, fixYScale, () => reembed());
+    // addDataFrame(widgetID, dfName, fixYScale, () => reembed());
 
   }
 }

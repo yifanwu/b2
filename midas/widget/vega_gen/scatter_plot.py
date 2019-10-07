@@ -2,14 +2,23 @@
 from typing import Optional, Dict
 from pandas import DataFrame
 
-from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, Y_PIXEL_SIGNAL, SELECTION_SIGNAL, BRUSH_MARK, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
+from midas.defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, Y_PIXEL_SIGNAL, SELECTION_SIGNAL, BRUSH_MARK, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
 from .shared_all import gen_spec_base, gen_y_domain_signals, gen_width_height_signals
-from .data_processing import set_data_attr
 
 
-def gen_scatterplot_spec(x_field: str, y_field: str, data: DataFrame):
+def gen_scatterplot_spec(x_field: str, y_field: str):
     spec_base = gen_spec_base()
-    set_data_attr(spec_base, data, x_field, y_field)
+    spec_base["data"] = [{
+        "name": DEFAULT_DATA_SOURCE,
+        "values": [],
+        "transform": [
+            {
+                "type": "extent",
+                "field": y_field,
+                "signal": Y_DOMAIN_BY_DATA_SIGNAL
+            }
+        ]
+    }]
     spec_base["scales"] = [
         {
             "name": X_SCALE,
