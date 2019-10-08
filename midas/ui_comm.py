@@ -50,11 +50,12 @@ class UiComm(object):
         return
 
     
-    def create_profile(self,  df_name: DFName, df: MidasDataFrame):
-        data = json.dumps(df.value.to_json(orient="table"))
+    def create_profile(self, df_name: DFName, df: MidasDataFrame):
+        clean_df = sanitize_dataframe(df.value)
+        data = json.dumps(clean_df.to_json(orient="table"))
         message = {
             "type": "profiler",
-            "dfName": df.name,
+            "dfName": df_name,
             "data": data
         }
         self.comm.send(message)

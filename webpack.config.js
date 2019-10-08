@@ -24,7 +24,7 @@ const outputLibraryTarget = "amd";
 module.exports = [
   // the main vega extension
   Object.assign({}, commonConfig, {
-    entry: "./src/index.ts",
+    entry: "./src/index.tsx",
     output: {
       filename: "index.js",
       library: "nbextensions/midas/index",
@@ -32,20 +32,20 @@ module.exports = [
       libraryTarget: outputLibraryTarget
     }
   }),
-  // the widget extension
-  Object.assign({}, commonConfig, {
-    entry: "./src/widget.ts",
-    output: {
-      filename: "widget.js",
-      path: outputPath,
-      libraryTarget: outputLibraryTarget
-    },
-    externals: {
-      "vega": "vega",
-      "@jupyter-widgets/base": "@jupyter-widgets/base",
-      "./index": "nbextensions/midas/index"
-    }
-  }),
+  // // the widget extension
+  // Object.assign({}, commonConfig, {
+  //   entry: "./src/widget.ts",
+  //   output: {
+  //     filename: "widget.js",
+  //     path: outputPath,
+  //     libraryTarget: outputLibraryTarget
+  //   },
+  //   externals: {
+  //     "vega": "vega",
+  //     "@jupyter-widgets/base": "@jupyter-widgets/base",
+  //     "./index": "nbextensions/midas/index"
+  //   }
+  // }),
   Object.assign({}, commonConfig, {
     entry: "./src/floater.css",
     output: {

@@ -7,15 +7,23 @@ import { AlertType } from "../types";
 import { DataProps } from "@nteract/data-explorer/src/types";
 import { Spec } from "vega";
 
+// Mappings
+//  this stores the information connecting the cells to
+//  we want thtis to be both directions.
+interface MappingMetaData {
+  dfName: string;
+}
+
 // TODO: we need to re
 interface ContainerElementState {
   dfName: string;
-  cellId: number;
+  notebookCellId: number;
   vegaSpec: Spec;
 }
 
 interface ProfilerInfo {
   dfName: string;
+  notebookCellId: number;
   data: DataProps;
 }
 
@@ -26,6 +34,7 @@ interface AlertItem {
 }
 
 interface ContainerState {
+  notebookMetaData: MappingMetaData[];
   profiles: ProfilerInfo[];
   // TODO: refact the name `elements` --- we now have different visual elements it seems.
   elements: ContainerElementState[];
@@ -53,6 +62,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     this.addAlert = this.addAlert.bind(this);
 
     this.state = {
+      notebookMetaData: [],
       profiles: [],
       elements: [],
       refs: new Map(),
@@ -90,7 +100,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
   }
 
 
-  tick(dfName: string, ) {
+  tick(dfName: string) {
     console.log("midas container tick called", dfName);
     // look up the reactiveCells
     const cells = this.state.reactiveCells.get(dfName);
@@ -163,17 +173,20 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
    * @param id the id of the data frame
    * @param dfName the name of the data frame
    */
-  addDataFrame(dfName: string, vegaSpec: Spec, cellId: number) {
+  addDataFrame(dfName: string, vegaSpec: Spec, notebookCellId: number) {
     if (this.state.elements.filter(e => e.dfName === dfName).length > 0) {
       return;
     }
 
     this.setState(prevState => {
       prevState.elements.push({
-        cellId,
+        notebookCellId,
         dfName,
         vegaSpec
       });
+      // prevState.notebookMetaData.push({
+      //   dfName,
+      // });
       return prevState;
     });
   }
@@ -194,23 +207,36 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
   /**
    * This is a different type of visualization
    */
-  addProfile(dfName: string, data: DataProps, cellId: number) {
+  addProfile(dfName: string, data: DataProps, notebookCellId: number) {
     // see if it exists
-    if (this.state.profiles.indexOf) {
-
+    if (this.state.profiles.filter(e => e.dfName === dfName).length > 0) {
+      return;
     }
+    this.setState(prevState => {
+      prevState.profiles.push({
+        notebookCellId,
+        dfName,
+        data
+      });
+      // prevState.notebookMetaData.push({
+      //   dfName,
+      //   notebookCellId,
+      // });
+      return prevState;
+    });
   }
 
   render() {
     const {elements, profiles, alerts} = this.state;
-    const profilerDivs = profiles.map(({dfName, data}) => {
+    const profilerDivs = profiles.map(({dfName, data}) => (
       <Profiler
+        key={dfName}
         data={data}
-      />;
-    });
-    const chartDivs = elements.map(({cellId, dfName, vegaSpec }) => (
+      />
+    ));
+    const chartDivs = elements.map(({notebookCellId, dfName, vegaSpec }) => (
       <MidasElement
-        cellId={cellId}
+        cellId={notebookCellId}
         key={dfName}
         dfName={dfName}
         // FIXME: title need to change

@@ -24,9 +24,7 @@ LICENSE             = 'BSD 3-clause'
 DATA_FILES          = [
                             ('share/jupyter/nbextensions/midas', [
                              'midas/static/index.js',
-                             'midas/static/index.js.map',
-                             'midas/static/widget.js',
-                             'midas/static/widget.js.map',
+                             'midas/static/index.js.map'
                             ]),
                             ('etc/jupyter/nbconfig/notebook.d' , ['midas.json'])
                         ]
