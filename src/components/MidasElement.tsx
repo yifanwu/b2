@@ -15,6 +15,7 @@ interface MidasElementProps {
 }
 
 interface MidasElementState {
+  elementId: string;
   hidden: boolean;
   view: View;
 }
@@ -58,10 +59,15 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
   constructor(props: any) {
     super(props);
     this.embed = this.embed.bind(this);
+    const elementId = makeElementId(this.props.dfName, false);
     this.state = {
       hidden: false,
-      view: null
+      view: null,
+      elementId,
     };
+  }
+
+  componentDidMount() {
     // FIXME: maybe do not need to run everytime???
     this.embed();
   }
@@ -69,9 +75,11 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
   embed() {
     const { dfName, vegaSpec } = this.props;
     // TODO: add options support later...
-    vegaEmbed(`#midas-element-${dfName}`, vegaSpec, {
-      loader: { http: { credentials: "same-origin" } }
-    })
+    // not sure why they have this http loader thing
+    // , {
+    //   loader: { http: { credentials: "same-origin" } }
+    // }
+    vegaEmbed(`#${this.state.elementId}`, vegaSpec)
       .then((res: any) => {
         this.setState({view: res.view});
         // also update this view such that it calls the Midas tick everytime it changes...
@@ -171,7 +179,7 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
 
         </div>
         <div
-          id={makeElementId(this.props.dfName)}
+          id={this.state.elementId}
           style={this.state.hidden ? { display: "none" } : {}}
         />
       </div>

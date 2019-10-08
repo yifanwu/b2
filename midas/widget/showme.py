@@ -38,7 +38,7 @@ def gen_spec(df: DataFrame, chart_title: str) -> Optional[ChartInfo]:
     if (df_len == 0):
         raise Exception("DataFrame has too few columns")
     elif (df_len == 1):
-        first_col = df.value.columns.values[0]
+        first_col = df.columns.values[0]
         if (is_string_dtype(df[first_col])):
             additional_transforms = DfTransform.categorical_distribution
             chart_type = ChartType.bar_categorical

@@ -19,7 +19,7 @@ type ProfilerComm = {
 type ChartRenderComm = {
   type: string;
   dfName: string;
-  vega: Spec
+  vega: string;
 };
 
 type MidasCommLoad = ErrorCommLoad | ReactiveCommLoad | ProfilerComm | ChartRenderComm | NavigateCommLoad;
@@ -33,7 +33,7 @@ export function makeComm(refToMidas: MidasContainer) {
   LogSteps("makeComm");
   Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
-      LogDebug(`makeComm first message: ${msg}`);
+      LogDebug(`makeComm first message: ${JSON.stringify(msg)}`);
       // comm is the frontend comm instance
       // msg is the comm_open message, which can carry data
 
@@ -87,7 +87,8 @@ function make_on_msg(refToMidas: MidasContainer) {
         const cellId = msg.parent_header.msg_id;
         const chartRenderLoad = load as ChartRenderComm;
         LogSteps("Chart", chartRenderLoad.dfName);
-        refToMidas.addDataFrame(chartRenderLoad.dfName, chartRenderLoad.vega, cellId);
+        const spec = JSON.parse(chartRenderLoad.vega);
+        refToMidas.addDataFrame(chartRenderLoad.dfName, spec, cellId);
         return;
       }
       case "chart_update_data": {
