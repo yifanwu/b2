@@ -1,3 +1,6 @@
+import ast
+
+from .ui_comm import UiComm
 # extracting out the magic part for better testing...
 from IPython import get_ipython
 from IPython.core.magic import (Magics, magics_class, line_magic,
@@ -7,11 +10,10 @@ from IPython.core.magic_arguments import (argument, magic_arguments,
 
 @magics_class
 class MidasMagic(Magics):
-
-    def __init__(self, shell, comm):
+    uiComm: UiComm
+    def __init__(self, shell, uiComm: UiComm):
         super(MidasMagic, self).__init__(shell)
-        self.comm = comm
-
+        self.uiComm = uiComm
 
     @cell_magic
     @magic_arguments()
@@ -32,30 +34,10 @@ class MidasMagic(Magics):
         else:
             print("\x1b[31mYou need to call %%reactive with the name of the chart. This cell is not exeucted\x1b[0m")
 
-
-    @cell_magic
-    def test(self, line: str, cell: str):
-        shell = get_ipython().get_ipython()
-        shell.run_cell(cell)
-        # if r.error_in_exec:
-        #     r.error_in_exec
-        # else:
-        #     r.result
-
-    @cell_magic
-    def state(self, line: str, cell: str):
-        return
-    #     if hasattr(self, 'k'):
-    #         self.k += 1
-    #         print(self.k)
-    #     else:
-    #         self.k = 1
-    #         print(self.k)
-
-def execute_cell(cell):
-    shell = get_ipython().get_ipython()
-    r =  shell.run_cell(cell)
-    if r.error_in_exec:
-        return r.error_in_exec
-    else:
-        return r.result
+# def execute_cell(cell):
+#     shell = get_ipython().get_ipython()
+#     r =  shell.run_cell(cell)
+#     if r.error_in_exec:
+#         return r.error_in_exec
+#     else:
+#         return r.result

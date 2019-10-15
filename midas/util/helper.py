@@ -1,36 +1,27 @@
 from pandas import DataFrame
 from typing import cast, Optional
+from datetime import datetime
+from typing import Dict, Optional
+from pandas import DataFrame
 
-from .types import OneDimSelectionPredicate, SelectionPredicate, NullSelectionPredicate, TwoDimSelectionPredicate, DFInfo
-from .constants import CUSTOM_INDEX_NAME
+from .data_processing import get_categorical_distribution, get_numeric_distribution
+from midas.state_types import DFInfo
+from midas.defaults import COUNT_COL_NAME
+from midas.vis_types import OneDimSelectionPredicate, DfTransform, SelectionPredicate, NullSelectionPredicate, DfTransform
 from .errors import check_not_null
 
+
+def transform_df(transform: DfTransform, df: DataFrame):
+    first_col = df.columns.values[0]
+    if (transform == DfTransform.categorical_distribution):
+        return get_categorical_distribution(df[first_col], first_col)
+    elif (transform == DfTransform.numeric_distribution):
+        return get_numeric_distribution(df[first_col], first_col)
+    
 def get_chart_title(df_name: str):
     # one level of indirection in case we need to change in the future
     return df_name
 
-def get_df_transform_func_by_index(target_df: DataFrame):
-    # basically add a 
-    def transform(df_in: DataFrame):
-        import pandas as pd
-        return pd.merge(target_df, df_in, how="inner", on=CUSTOM_INDEX_NAME)
-    return transform
-
-def get_df_code(predicate: SelectionPredicate, df_name: str):
-    # note that this code closely mirrors that in get_df_by_predicate
-    t_str = predicate.interaction_time.strftime("%m_%d_%H_%M_%S")
-    meta_data_str=f"""# generated from interaction on `{df_name}` at time {t_str}"""
-    if (isinstance(predicate, OneDimSelectionPredicate)):
-        # FIXME: the story around categorical is not clear
-        _p = cast(OneDimSelectionPredicate, predicate)
-        if (_p.is_categoritcal):
-            return f"""{meta_data_str}\n{df_name}.loc[{df_name}['{predicate.x_column}'].isin({predicate.x})]"""
-        else:
-            return f"""{meta_data_str}\n{df_name}.loc[\n({df_name}['{predicate.x_column}'] < {predicate.x[1]})\n& ({df_name}['{predicate.x_column}'] > {predicate.x[0]})]"""
-    elif(isinstance(predicate, TwoDimSelectionPredicate)):
-        return f"""{meta_data_str}\n{df_name}.loc[\n({df_name}['{predicate.x_column}'] < {predicate.x[1]})\n& ({df_name}['{predicate.x_column}'] > {predicate.x[0]})\n& ({df_name}['{predicate.y_column}'] > {predicate.y[0]})\n& ({df_name}['{predicate.y_column}'] < {predicate.y[1]})\n]"""
-    else:
-        return ""
 
 def get_selection_by_predicate(df_info: DFInfo, history_index: int) -> Optional[SelectionPredicate]:
     check_not_null(df_info)
@@ -39,6 +30,7 @@ def get_selection_by_predicate(df_info: DFInfo, history_index: int) -> Optional[
         return predicate
     else:
         return None
+
 
 def get_df_by_predicate(df: DataFrame, predicate: SelectionPredicate):
     """get_selection returns the selection DF

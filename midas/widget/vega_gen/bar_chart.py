@@ -1,15 +1,25 @@
 
 from pandas import DataFrame
 
-from .defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
+from midas.defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
 from .shared_one_dim import gen_x_brush_signal, gen_x_brush_mark
 from .shared_all import gen_spec_base, gen_y_domain_signals, gen_width_height_signals
-from .defaults import SELECTION_SIGNAL
-from .data_processing import set_data_attr
+from midas.defaults import SELECTION_SIGNAL
+# from .data_processing import set_data_attr
 
-def gen_bar_chart_spec(x_field: str, y_field: str, data: DataFrame):
+def gen_bar_chart_spec(x_field: str, y_field: str):
     spec_base = gen_spec_base()
-    set_data_attr(spec_base, data, x_field, y_field)
+    spec_base["data"] = [{
+        "name": DEFAULT_DATA_SOURCE,
+        "values": [],
+        "transform": [
+            {
+                "type": "extent",
+                "field": y_field,
+                "signal": Y_DOMAIN_BY_DATA_SIGNAL
+            }
+        ]
+    }]
     spec_base["scales"] = [
         {
             "name": X_SCALE,

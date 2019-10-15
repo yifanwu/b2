@@ -1,5 +1,6 @@
 export const DEBOUNCE_RATE = 100;
 
+export const MIDAS_INSTANCE_NAME = "m";
 export const MIDAS_CELL_COMM_NAME = "midas-cell-comm";
 
 // need to keep this in sync with the defaults.py file

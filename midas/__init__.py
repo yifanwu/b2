@@ -3,7 +3,6 @@ from warnings import warn
 
 from .midas import Midas
 
-
 __all__ = ['Midas']
 
 __version__ = '0.0.1'

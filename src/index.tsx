@@ -1,17 +1,80 @@
 import vegaEmbed, { Mode, EmbedOptions } from "vega-embed";
 import { Spec, View } from "vega";
 import { TopLevelSpec } from "vega-lite";
-import {createMidasComponent, resetSideBarState} from "./midas";
+import {resetSideBarState} from "./midas";
 
+import React, { MouseEventHandler } from "react";
+import ReactDOM from "react-dom";
 export { default as vegaEmbed } from "vega-embed";
+
+import $ from "jquery";
+import "jqueryui";
+
+import "./floater.css";
+
+import { makeComm } from "./comm";
+import MidasContainer from "./components/MidasContainer";
+import { LogSteps } from "./utils";
+
 
 export function load_ipython_extension() {
   createMidasComponent();
+}
+
+
+declare global {
+  interface Window { midas: MidasContainer; }
+}
+
+/**
+ * Makes the resizer that allows changing the width of the sidebar.
+ * @param divToResize the div representing the sidebar.
+ */
+function makeResizer(divToResize: JQuery<HTMLElement>) {
+
+  let resizer = $("<div id=\"resizer\">");
+  divToResize.append(resizer);
+
+  resizer.on("mousedown", (e) => {
+    let x = e.clientX;
+    let originalWidth = divToResize.width();
+    let originalWidth2 = $("#midas-react-wrapper").width();
+
+    $(window).on("mousemove", (e) => {
+      let delta = x - e.clientX;
+      console.log(delta);
+      divToResize.width((_, currentWidth) => originalWidth + delta);
+      $("#midas-react-wrapper").width(originalWidth2 + delta);
+    });
+  });
+
+  $(window).on("mouseup", () => {
+    $(window).off("mousemove");
+  });
+}
+
+
+export function createMidasComponent() {
+  LogSteps("createMidasComponent", "this should be called only once!");
+
+  let floater = $("<div id=\"midas-floater-wrapper\"/>");
+  let reactWrapper = $("<div id=\"midas-react-wrapper\">");
+
+  makeResizer(floater);
+
+  floater.append(reactWrapper);
+
+  $("#notebook").append(floater);
+
+  ReactDOM.render(<MidasContainer ref={(comp) => makeComm(comp)} />,
+    document.getElementById("midas-react-wrapper"));
 
   $([Jupyter.events]).on("kernel_starting.Kernel", function(){
     console.log("Kernel starting.");
       resetSideBarState();
   });
+  // $("#midas-floater-wrapper").css("position", "fixed");
+  $("#midas-floating-container").height($("#midas-floater-wrapper").innerHeight);
 }
 
 function javascriptIndex(selector: string, outputs: any) {

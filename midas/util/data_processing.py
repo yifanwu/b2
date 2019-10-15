@@ -1,39 +1,29 @@
-from typing import Dict, Optional
 from pandas import DataFrame, Series, cut
+from typing import Dict, Optional
+from midas.defaults import DEFAULT_DATA_SOURCE, Y_DOMAIN_BY_DATA_SIGNAL, COUNT_COL_NAME
+from midas.vis_types import ChartInfo, Channel
 
-from .defaults import DEFAULT_DATA_SOURCE, COUNT_COL_NAME, Y_DOMAIN_BY_DATA_SIGNAL
-from midas.types import ChartInfo, Channel
-# chart_info: ChartInfo
-def set_data_attr(spec_base: Dict, data: DataFrame, x_column: str, y_column: str) -> Dict:
-    """set_data_attr takes the df and transformes it into Dict object shape for serialization
-    will also create transforms that are populated to signals
-    Arguments:
-        spec_base {Dict} -- [description]
-        data {DataFrame} -- [description]
-    
-    Returns:
-        Dict -- [description]
-    """
-    sanitzied_df = sanitize_dataframe(data)
-    # spec_base = chart_info.vega_spec
 
-    spec_base["data"] = [{
-        "name": DEFAULT_DATA_SOURCE,
-        "values": sanitzied_df.to_dict(orient='records'),
-        "transform": [
-            # {
-            #     "type": "extent",
-            #     "field": x_column,
-            #     "signal": X_DOMAIN_BY_DATA_SIGNAL
-            # },
-            {
-                "type": "extent",
-                "field": y_column,
-                "signal": Y_DOMAIN_BY_DATA_SIGNAL
-            }
-        ]
-    }]
-    return spec_base
+def get_categorical_distribution(data: Series, column_name: str) -> Optional[DataFrame]:
+    # TODO: just select the top 10
+    if not data.empty:
+        return data.value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
+    else:
+        return None
+
+
+def get_numeric_distribution(data: Series,  column_name: str) -> Optional[DataFrame]:
+    # wow can just use pd.cut
+    # FIXME: preserve integer bounds when applicable
+    if not data.empty:
+        return cut(data, bins=10) \
+          .value_counts() \
+          .to_frame(COUNT_COL_NAME) \
+          .rename_axis(column_name) \
+          .reset_index()
+    else:
+        return None
+
 
 
 def sanitize_dataframe(df):
@@ -92,18 +82,3 @@ def sanitize_dataframe(df):
             df[col_name] = col.where(col.notnull(), None)
     return df
 
-
-def get_categorical_distribution(data: Series, column_name: str) -> Optional[DataFrame]:
-    # TODO: just select the top 10
-    if not data.empty:
-        return data.value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
-    else:
-        return None
-
-
-def get_numeric_distribution(data: Series,  column_name: str) -> Optional[DataFrame]:
-    # wow can just use pd.cut
-    if not data.empty:
-        return cut(data, bins=10).value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
-    else:
-        return None

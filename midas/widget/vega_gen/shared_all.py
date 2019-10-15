@@ -1,8 +1,8 @@
 from typing import Optional
 from pandas import DataFrame
 
-from .defaults import CHART_HEIGHT, CHART_WIDTH, Y_DOMAIN_SIGNAL, CHART_WIDTH_SIGNAL, CHART_HEIGHT_SIGNAL
-from ..types import VegaSpecType
+from midas.defaults import CHART_HEIGHT, CHART_WIDTH, Y_DOMAIN_SIGNAL, CHART_WIDTH_SIGNAL, CHART_HEIGHT_SIGNAL
+from midas.vis_types import VegaSpecType
 
 # def gen_x_domain_signals():
 #     # assume that this is not categorical
