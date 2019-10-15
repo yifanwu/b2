@@ -3,12 +3,18 @@ import { MIDAS_CELL_COMM_NAME } from "./constants";
 import { LogSteps, LogDebug, LogInternalError } from "./utils";
 import { AlertType } from "./types";
 
+type ColumnValue = {
+  columnName: string;
+  columnType: string;
+}
+
 // types could be of: name, error, reactive
 // TODO: maybe don't need these types...
 type ErrorCommLoad = { type: string; value: string };
 type CreateCommLoad = { type: string; value: string };
 type ReactiveCommLoad = { type: string; value: string};
-type MidasCommLoad = ErrorCommLoad | CreateCommLoad | ReactiveCommLoad;
+type ColumnCommLoad = {type: string; value: ColumnValue};
+type MidasCommLoad = ErrorCommLoad | CreateCommLoad | ReactiveCommLoad | ColumnCommLoad;
 
 /**
  * Makes the comm responsible for discovery of which visualization
@@ -16,7 +22,7 @@ type MidasCommLoad = ErrorCommLoad | CreateCommLoad | ReactiveCommLoad;
  * metadata of the message sent.
  */
 export function makeComm() {
-  console.log("Making comm.")
+  console.log("Making comm.");
   Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
       // comm is the frontend comm instance
@@ -42,16 +48,29 @@ function on_msg(msg: any) {
         LogInternalError(`midas not registered to window`);
       }
       window.midas.recordDFCellId(nameLoad.value, cellId);
+      break;
+    }
+    case "add-selection": {
+      const selectionLoad = load as CreateCommLoad;
+      window.selectionShelf.addSelectionItem(selectionLoad.value);
+      break;
+    }
+    case "add-column": {
+      const columnLoad = load as ColumnCommLoad; // TODO: Add type
+      window.columnShelf.addColumnItem(columnLoad.value.columnName, columnLoad.value.columnType);
+      break;
     }
     case "error": {
       const errorLoad = load as ErrorCommLoad;
       LogDebug(`sending error ${errorLoad.value}`);
       window.midas.addAlert(errorLoad.value);
+      break;
     }
     case "reactive": {
       const reactiveLoad = load as ReactiveCommLoad;
       window.midas.captureCell(reactiveLoad.value, cellId);
       window.midas.addAlert(`Success adding cell to ${reactiveLoad.value}`, AlertType.Confirmation);
+      break;
     }
   }
 }

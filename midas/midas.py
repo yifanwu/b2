@@ -26,7 +26,7 @@ from .helper import get_df_by_predicate, get_df_transform_func_by_index, get_cha
 from .showme import gen_spec, set_data_attr
 from .vega_gen.defaults import SELECTION_SIGNAL
 from .widget import MidasWidget
-from .constants import CUSTOM_INDEX_NAME, MIDAS_CELL_COMM_NAME
+from .constants import CUSTOM_INDEX_NAME, MIDAS_CELL_COMM_NAME 
 from .vega_gen.data_processing import get_categorical_distribution, get_numeric_distribution
 from .types import DFInfo, ChartType, ChartInfo, TickSpec, DfTransform, \
     TwoDimSelectionPredicate, OneDimSelectionPredicate, NullSelectionPredicate, \
@@ -49,12 +49,14 @@ class Midas(object):
     nextId: int
     midas_cell_comm: Comm
     is_in_ipynb: bool
+    shelf_selections: dict #TODO Change
 
     def __init__(self):
         self.nextId = 0
         self.dfs = {}
         self.tick_funcs = {}
         self.current_tick: int = 0
+        self.shelf_selections = {}
         
         try:
             get_ipython()
@@ -433,6 +435,47 @@ class Midas(object):
     def add_facet(self, df_name: str, facet_column: str):
         # 
         raise NotImplementedError()
+    
+
+    def js_update_selection_shelf_selection_name(self, old_name: str, new_name: str):
+      self.shelf_selections[new_name] = self.shelf_selections[old_name]
+      del self.shelf_selections[old_name]
+    
+
+    def js_remove_selection_from_shelf(self, df_name: str):
+      del self.shelf_selections[df_name]
+
+
+    def js_add_selection_to_shelf(self, df_name: str):
+
+ 
+        if self._has_df(df_name):
+            predicates = self.dfs[df_name].predicates
+            if (len(predicates) > 0):
+                predicate = predicates[-1]
+                # from .utils import get_random_string
+                # name = get_random_string()
+
+                name = f"{predicate.x_column}_{predicate.x[0]}_{predicate.x[-1]}"
+                if name in self.shelf_selections:
+                  new_name = name
+                  counter = 1
+                  while new_name in self.shelf_selections:
+                    new_name = name
+                    name += str(counter)
+                  name = new_name
+
+                self.shelf_selections[name] = (predicate, df_name)
+                self.midas_cell_comm.send({
+                  'type': 'add-selection', # TODO Rename
+                  'value': name
+                })
+        else: 
+            self.midas_cell_comm.send({
+            'type': 'error',
+            'value': f'no selection on {df_name} yet'
+        })
+
 
     def js_get_current_chart_code(self, df_name: str) -> Optional[str]:
         # figure out how to derive the current df

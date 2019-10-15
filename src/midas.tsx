@@ -1,19 +1,24 @@
 import React, { MouseEventHandler } from "react";
 import ReactDOM from "react-dom";
 import MidasContainer from "./components/MidasContainer";
-import MidasMidbar from "./components/MidasMidbar"
+import MidasMidbar from "./components/MidasMidbar";
+import {SelectionShelf} from "./components/SelectionShelf";
 import { makeComm } from "./comm";
 import "./floater.css";
 
 import $ from "jquery";
 import "jqueryui";
-import { DOMWidgetModel } from "@jupyter-widgets/base";
+import { ColumnShelf } from "./components/ColumnShelf";
 
 // TODO: extract HTML class names so there aren't so many strings everywhere
 
 
 declare global {
-  interface Window { midas: MidasContainer; }
+  interface Window {
+    midas: MidasContainer;
+    selectionShelf: SelectionShelf;
+    columnShelf: ColumnShelf;
+  }
 }
 
 export function resetSideBarState() {
@@ -30,12 +35,23 @@ export function resetSideBarState() {
  * @param id the id of the data frame
  * @param df_name the name of the data frame
  */
-export function addDataFrame(id: number, df_name: string, fixYScale: () => void, cb: () => void) {
-  console.log("Adding data frame: " + df_name + " " + id);
+export function addDataFrame(id: number, dfName: string, fixYScale: () => void, cb: () => void) {
+  console.log("Adding data frame: " + dfName + " " + id);
   if (window.midas === undefined) {
     return;
   }
-  window.midas.addDataFrame(id, df_name, fixYScale, cb);
+  window.midas.addDataFrame(id, dfName, fixYScale, cb);
+}
+
+
+export function addShelfItem(selectionName: string) {
+  console.log("Adding selection to shelf");
+
+  if (window.midas === undefined) {
+    return;
+  }
+
+  window.selectionShelf.addSelectionItem(selectionName);
 }
 
 /**

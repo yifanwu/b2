@@ -2,7 +2,7 @@
   /* position: fixed !important; */
   /* top: 97.5pt; */
 
-  margin-right: 20pt;
+  margin-right: 220pt;
   /* border-radius: 5px; */
   /* z-index: 100; */
   display: flex;
@@ -18,7 +18,7 @@
   border: thin solid rgba(0, 0, 0, 0.38);
   position: fixed;
   padding: 10px;
-  margin-left: 110pt;
+  margin-left: 310pt;
   background-color: #fff;
   display: flex; /* necessary for scrolling */
   overflow:hidden;
@@ -32,7 +32,7 @@
   border: thin solid rgba(0, 0, 0, 0.38);
   /* z-index: 130; */
   height: 100%;
-  width: 100pt;
+  width: 300pt;
   margin-left: 10pt;
   background-color: #fff;
 
@@ -107,7 +107,7 @@
   background-color: antiquewhite;
 }
 
-.midas-header-button {
+.editable-text-button, .midas-header-button {
   font-family: monospace;
   margin-left: 2pt;
   margin-right: 2pt;
@@ -115,6 +115,7 @@
 
 .midas-header-options {
   margin-left: auto;
+  margin: 5pt;
 }
 
 .midas-header {
@@ -122,6 +123,35 @@
   display: flex;
   align-items: center;
   background-color:#F7F7F7;
+}
+
+.editable-text-title, .selection-column-name {
+  align-self: left;
+  flex-grow: 1;
+}
+
+.editable-text-header, .column-item-header {
+  width: 100%;
+  padding: 2.5pt;
+  margin: 2.5pt;
+  display: flex;
+  align-items: center;
+  background-color:#F7F7F7;
+}
+
+.midbar-shelf-header {
+  margin-left: 5pt;
+}
+
+.midas-shelf-selection-item {
+  width: 100%;
+  padding: 2.5pt;
+  margin-right: 5pt;
+  margin-top: 2.5pt;
+  margin-bottom: 2.5pt;
+  margin-left: 5pt;
+  display: flex;
+  align-items: center;
 }
 
 .midas-title {

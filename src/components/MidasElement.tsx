@@ -55,6 +55,12 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
       IPython.notebook.kernel.execute(execute);
     }
 
+    addSelectionButtonClicked() {
+      const execute = `m.js_add_selection_to_shelf('${this.props.name}')`;
+      console.log("clicked, and executing", execute);
+      IPython.notebook.kernel.execute(execute);
+    }
+
     /**
      * Renders this component.
      */
@@ -79,6 +85,11 @@ class MidasElement extends React.Component<MidasElementProps, MidasElementState>
               className={"midas-header-button"}
               onClick={() => this.selectCell()}
             >Cell</button>
+            <button
+              className={"midas-header-button"}
+              onClick={() => this.addSelectionButtonClicked()}>
+                Add Selection
+            </button>
             <button
               className={"midas-header-button"}
               onClick={() => this.toggleHiddenStatus()}>
