@@ -1,8 +1,6 @@
 import vegaEmbed, { Mode, EmbedOptions } from "vega-embed";
 import { Spec, View } from "vega";
 import { TopLevelSpec } from "vega-lite";
-import {resetSideBarState} from "./midas";
-
 import React, { MouseEventHandler } from "react";
 import ReactDOM from "react-dom";
 export { default as vegaEmbed } from "vega-embed";
@@ -16,15 +14,23 @@ import { makeComm } from "./comm";
 import MidasContainer from "./components/MidasContainer";
 import { LogSteps } from "./utils";
 
+import {SelectionShelf} from "./components/SelectionShelf";
+import { ColumnShelf } from "./components/ColumnShelf";
+
+
+declare global {
+  interface Window {
+    midas: MidasContainer;
+    selectionShelf: SelectionShelf;
+    columnShelf: ColumnShelf;
+  }
+}
+
 
 export function load_ipython_extension() {
   createMidasComponent();
 }
 
-
-declare global {
-  interface Window { midas: MidasContainer; }
-}
 
 /**
  * Makes the resizer that allows changing the width of the sidebar.
@@ -71,7 +77,7 @@ export function createMidasComponent() {
 
   $([Jupyter.events]).on("kernel_starting.Kernel", function(){
     console.log("Kernel starting.");
-      resetSideBarState();
+//      resetSideBarState();
   });
   // $("#midas-floater-wrapper").css("position", "fixed");
   $("#midas-floating-container").height($("#midas-floater-wrapper").innerHeight);

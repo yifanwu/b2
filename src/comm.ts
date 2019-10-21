@@ -56,8 +56,11 @@ export function makeComm(refToMidas: MidasContainer) {
 
 function make_on_msg(refToMidas: MidasContainer) {
   return function on_msg(msg: any) {
-    LogSteps("on_msg", JSON.stringify(msg));
+    console.log("ASDLKASJDLAS");
+
+    // LogSteps("on_msg", JSON.stringify(msg));
     const load = msg.content.data as MidasCommLoad;
+    console.log(load.type);
     switch (load.type) {
       case "error": {
         const errorLoad = load as ErrorCommLoad;

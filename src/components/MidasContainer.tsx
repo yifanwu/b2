@@ -184,6 +184,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
    * @param dfName the name of the data frame
    */
   addDataFrame(dfName: string, vegaSpec: Spec, notebookCellId: number) {
+    console.log(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`)
     if (this.state.elements.filter(e => e.dfName === dfName).length > 0) {
       return;
     }
@@ -277,7 +278,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     ));
     const chartDivs = elements.map(({notebookCellId, dfName, vegaSpec }) => (
       <MidasElement
-        index={0}
+        // index={0}
         cellId={notebookCellId}
         key={dfName}
         dfName={dfName}

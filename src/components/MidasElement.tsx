@@ -194,6 +194,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 }
 
+/*
 const SortableItem = SortableElement((props: MidasElementProps) => (
   <div className="sortable">
     <MidasElement {...props}/>
@@ -201,3 +202,6 @@ const SortableItem = SortableElement((props: MidasElementProps) => (
 ));
 
 export default SortableItem;
+
+*/
+export default MidasElement;

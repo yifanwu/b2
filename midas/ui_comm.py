@@ -73,26 +73,26 @@ class UiComm(object):
             if chart_info.additional_transforms:
                 vis_df = transform_df(chart_info.additional_transforms, df)
 
-            sanitzied_df = sanitize_dataframe(vis_df)
+            sanitizied_df = sanitize_dataframe(vis_df)
             # we have created it such that the data is an array
-            chart_info.vega_spec["data"][0]["values"] = sanitzied_df.to_dict(orient='records')
+            chart_info.vega_spec["data"][0]["values"] = sanitizied_df.to_dict(orient='records')
             # set the spec
             self.vis_spec[df_name] = chart_info
             # see if we need to apply any transforms
             # note that visualizations must have 2 columns or less right now.
             vega = json.dumps(chart_info.vega_spec)
-            mesage = {
+            message = {
                 'type': 'chart_render',
                 "dfName": df_name,
                 'vega': vega
             }
-            self.comm.send(mesage)
+            self.comm.send(message)
             # return self._visualize_df_with_spec(df_name, spec, set_data=False)
         else:
             # TODO: add better explanations
             self.comm.send({
                 "type": "error",
-                "value": "We could not generat the spec"
+                "value": "We could not generate the spec"
             })
         return
 
