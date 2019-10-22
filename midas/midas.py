@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from pandas import DataFrame, Series
 from IPython import get_ipython
-# from typing import Dict, Optional, List, Callable, Union, cast
+from typing import Dict, Optional, List, Callable, Union, cast
 # from datetime import datetime
 # from pyperclip import copy
 
@@ -14,7 +14,7 @@ except ImportError as err:
 
 
 from .midas_algebra.dataframe import MidasDataFrame
-from midas.state_types import DFName
+from midas.state_types import DFName, DFInfo
 from .state import State
 from .ui_comm import UiComm
 # from .config import DEBOUNCE_RATE_MS
@@ -96,7 +96,7 @@ class Midas(object):
 
 
     # the re
-    def get_df_info(self, df_name: DFName):
+    def get_df_info(self, df_name: DFName) -> Optional[DFInfo]:
         return self.state.dfs.get(df_name)
 
 
@@ -107,6 +107,15 @@ class Midas(object):
     @staticmethod
     def help():
         print(HELP_INSTRUCTION)
+
+    def add_selection(self, df_name: DFName, selection: str):
+        # note that the selection is str because 
+        logging("js_add_selection", df_name)
+        # figure out what spec it was
+        # FIXME make sure this null checking is correct
+        predicate = self.ui_comm.get_predicate_info(df_name, selection)
+        self.event_loop.tick(df_name, predicate)
+        return
 
 
     # decorator

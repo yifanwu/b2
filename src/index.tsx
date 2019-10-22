@@ -40,7 +40,6 @@ function makeResizer(divToResize: JQuery<HTMLElement>) {
 
     $(window).on("mousemove", (e) => {
       let delta = x - e.clientX;
-      console.log(delta);
       divToResize.width((_, currentWidth) => originalWidth + delta);
       $("#midas-react-wrapper").width(originalWidth2 + delta);
     });

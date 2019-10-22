@@ -19,7 +19,7 @@ export default class Profiler extends React.Component<ProfilerProps, ProfilerSta
   }
 
   render() {
-    return (<div>
+    return (<div style={{"width": 400}}>
         <DataExplorer
           data={this.props.data}
           initialView="grid"
