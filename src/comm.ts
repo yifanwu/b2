@@ -5,6 +5,7 @@ import { AlertType } from "./types";
 import { Spec, View } from "vega";
 import { DataProps } from "@nteract/data-explorer/src/types";
 import MidasContainer from "./components/MidasContainer";
+import {MidasSideBar} from "./components/MidasSideBar"
 
 type ColumnValue = {
   columnName: string;
@@ -37,16 +38,16 @@ type MidasCommLoad = ErrorCommLoad | ReactiveCommLoad | ProfilerComm | ChartRend
  * corresponds to which cell, accomplished through inspecting the
  * metadata of the message sent.
  */
-export function makeComm(refToMidas: MidasContainer) {
+export function makeComm(refToSidebar: MidasSideBar) {
   LogSteps("makeComm");
-  Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
+   Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
       LogDebug(`makeComm first message: ${JSON.stringify(msg)}`);
       // comm is the frontend comm instance
       // msg is the comm_open message, which can carry data
 
       // Register handlers for later messages:
-      const on_msg = make_on_msg(refToMidas);
+      const on_msg = make_on_msg(refToSidebar);
       comm.on_msg(on_msg);
       comm.on_close(function (msg: any) {
         LogSteps(`CommClose`, msg);
@@ -54,7 +55,13 @@ export function makeComm(refToMidas: MidasContainer) {
     });
 }
 
-function make_on_msg(refToMidas: MidasContainer) {
+function make_on_msg(refToSidebar: MidasSideBar) {
+
+  let refToMidas = refToSidebar.getMidasContainerRef();
+  let refToColumnShelf = refToSidebar.getColumnShelfRef();
+  let refToSelectionShelf = refToSidebar.getSelectionShelfRef();
+
+
   return function on_msg(msg: any) {
 
     LogSteps("on_msg", JSON.stringify(msg));
@@ -69,7 +76,7 @@ function make_on_msg(refToMidas: MidasContainer) {
       }
       case "add-selection": {
         const selectionLoad = load as CreateCommLoad;
-        window.selectionShelf.addSelectionItem(selectionLoad.value);
+        refToSelectionShelf.addSelectionItem(selectionLoad.value);
         break;
       }
       case "add-column": {

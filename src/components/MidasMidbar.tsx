@@ -1,6 +1,4 @@
 import React, { MouseEventHandler } from "react";
-import {SelectionShelf} from "./SelectionShelf";
-import {ColumnShelf} from "./ColumnShelf";
 
 export default class MidasMidbar extends React.Component<{}, {}> {
     render() {
