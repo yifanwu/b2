@@ -1,54 +1,3 @@
-#midas-floater-wrapper {
-  /* position: fixed !important; */
-  /* top: 97.5pt; */
-
-  margin-right: 220pt;
-  /* border-radius: 5px; */
-  /* z-index: 100; */
-  display: flex;
-  flex-direction: row;
-  /* overflow:hidden; */
-  /* max-height: 86%; */
-  /* float: right; */
-  width: 475pt;
-  /* min-width: 400pt; */
-}
-
-#midas-react-wrapper {
-  border: thin solid rgba(0, 0, 0, 0.38);
-  position: fixed;
-  padding: 10px;
-  margin-left: 310pt;
-  background-color: #fff;
-  display: flex; /* necessary for scrolling */
-  overflow:hidden;
-  max-height: 87%;
-  float: right;
-  /* min-width: 600pt; */
-}
-
-#midbar {
-  position: fixed;
-  border: thin solid rgba(0, 0, 0, 0.38);
-  /* z-index: 130; */
-  height: 100%;
-  width: 300pt;
-  margin-left: 10pt;
-  background-color: #fff;
-
-  /* background-color: rgba(255, 100, 255, .5); */
-}
-
-#resizer {
-  position: fixed;
-  z-index: 120;
-  height: 100%;
-  width: 10pt;
-  padding-left: 20pt;
-  background-color: rgba(0, 0, 255, 0);
-  cursor: ew-resize;
-}
-
 #notebook {
   display: flex;
   flex-direction: row;
@@ -89,12 +38,6 @@
   width: 350pt;
   height: 250pt;
 }
-
-/* .col-md-9 {
-  overflow:hidden;
-  margin-left: 14%;
-  width: 80%
-} */
 
 #midas-floater-wrapper.closed {
   min-width: 250px;

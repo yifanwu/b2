@@ -299,6 +299,10 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
       });
     return (
       <div id="midas-floater-container">
+        <h1 className="midbar-shelf-header">
+          Midas Monitor
+        </h1>
+
         {profilerDivs}
         {chartDivs}
         {alertDivs}
