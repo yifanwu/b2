@@ -3,30 +3,30 @@ import {SelectionItem} from "./SelectionItem";
 import { key } from "vega";
 
 interface SelectionShelfState {
-  selectionItemNames: string[];
+  selectionItemTitles: string[];
 }
 
 export class SelectionShelf extends React.Component<{}, SelectionShelfState> {
   constructor(props?: {}) {
     super(props);
     this.state = {
-      selectionItemNames: [],
+      selectionItemTitles: [],
     };
   }
 
-  addSelectionItem(name: string) {
+  addSelectionItem(title: string) {
     this.setState(prevState => {
-      prevState.selectionItemNames.push(name);
+      prevState.selectionItemTitles.push(title);
       return prevState;
     });
   }
 
   deleteItem(index: number) {
     this.setState(prevState => {
-      console.log(prevState.selectionItemNames);
-      prevState.selectionItemNames.splice(index, 1);
+      console.log(prevState.selectionItemTitles);
+      prevState.selectionItemTitles.splice(index, 1);
       console.log(index);
-      console.log(prevState.selectionItemNames);
+      console.log(prevState.selectionItemTitles);
       return prevState;
     });
   }
@@ -34,7 +34,7 @@ export class SelectionShelf extends React.Component<{}, SelectionShelfState> {
   render() {
     return (
       <>
-      {this.state.selectionItemNames.map(
+      {this.state.selectionItemTitles.map(
         (selectionName, index) => <SelectionItem selectionName={selectionName}
               onDelete={() => this.deleteItem(index)} key={selectionName}/>)}
       </>

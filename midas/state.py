@@ -17,7 +17,7 @@ class State(object):
         self.dfs = {}
         self.groupbys = {}
         self.ui_comm = uiComm
-
+        self.shelf_selections = {}
 
     # FIXME: maybe in the future df_name could be just added to DataFrame
     def add_df(self, df_name: DFName, mdf: MidasDataFrame):
