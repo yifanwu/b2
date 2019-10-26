@@ -25,7 +25,7 @@ interface MidasElementState {
   view: View;
 }
 
-// const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
+const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
@@ -157,7 +157,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     return (
       <div className="midas-element">
         <div className="midas-header">
-          {/* <DragHandle/> */}
+          <DragHandle/>
           <span className="midas-title">{this.props.title}</span>
           <div className="midas-header-options"></div>
           <button
@@ -195,7 +195,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 }
 
-/*
 const SortableItem = SortableElement((props: MidasElementProps) => (
   <div className="sortable">
     <MidasElement {...props}/>
@@ -204,5 +203,4 @@ const SortableItem = SortableElement((props: MidasElementProps) => (
 
 export default SortableItem;
 
-*/
-export default MidasElement;
+// export default MidasElement;

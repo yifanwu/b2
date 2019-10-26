@@ -237,36 +237,34 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     });
   }
 
-  /*
-  render() {
-    const elements = this.state.elements.map(({ id, name, fixYScale }, index) => (
-      <MidasElement
-        index={index}
-        id={id}
-        key={id}
-        name={name}
-        onClick={() => this.removeDataFrame(id)}
-        getCellId={() => this.getCellId(name)}
-        fixYScale={() => fixYScale()} />
-    ));
-    const alertDivs = this.state.alerts.map((a) => {
-      const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-confirm";
-      return <div
-            className={className}
-            key={`alert-${a.aId}`}
-          >
-            {a.msg}
-        </div>;
-      });
-    return (
-      <div id="midas-floater-container">
-        <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>
-          {elements}
-        </MidasSortableContainer>
-        {alertDivs}
-      </div>
-    );
-    */
+   onSortEnd = ({oldIndex, newIndex}: {oldIndex: number, newIndex: number}) => {
+    interface ContainerState {
+      notebookMetaData: MappingMetaData[];
+      profiles: ProfilerInfo[];
+      // TODO: refact the name `elements` --- we now have different visual elements it seems.
+      elements: ContainerElementState[];
+      refs: Map<string, RefObject<HTMLDivElement>>;
+      // FIXME: the idToCell might not be needed given that we have refs.
+      idToCell: Map<string, number>;
+      // maps signals to cellIds
+      reactiveCells: Map<string, number[]>;
+      allReactiveCells: Set<number>;
+      alerts: AlertItem[];
+    }
+    this.setState(prevState => {
+      return {
+        notebookMetaData: prevState.notebookMetaData,
+        profiles: prevState.profiles,
+        elements: arrayMove(prevState.elements, oldIndex, newIndex),
+        refs: prevState.refs,
+        idToCell: prevState.idToCell,
+        reactiveCells: prevState.reactiveCells,
+        allReactiveCells: prevState.allReactiveCells,
+        alerts: prevState.alerts
+      }
+    });
+  };
+
 
   render() {
     const {elements, profiles, alerts} = this.state;
@@ -276,9 +274,9 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         data={data}
       />
     ));
-    const chartDivs = elements.map(({notebookCellId, dfName, vegaSpec }) => (
+    const chartDivs = elements.map(({notebookCellId, dfName, vegaSpec }, index) => (
       <MidasElement
-        // index={0}
+        index={index}
         cellId={notebookCellId}
         key={dfName}
         dfName={dfName}
@@ -304,7 +302,9 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         </h1>
 
         {profilerDivs}
+        <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>
         {chartDivs}
+        </MidasSortableContainer>
         {alertDivs}
       </div>
     );

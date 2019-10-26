@@ -8,7 +8,7 @@ export { default as vegaEmbed } from "vega-embed";
 import $ from "jquery";
 import "jqueryui";
 
-import "./floater.css";
+import "./elements.css";
 import "./sidebar.css";
 
 import { makeComm } from "./comm";
