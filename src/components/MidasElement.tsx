@@ -25,7 +25,7 @@ interface MidasElementState {
   view: View;
 }
 
-const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
+// const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
@@ -115,6 +115,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     let cell = Jupyter.notebook.get_msg_cell(this.props.cellId);
     let index = Jupyter.notebook.find_cell_index(cell);
     Jupyter.notebook.select(index);
+    Jupyter.CodeCell.msg_cells[this.props.cellId].code_mirror.display.lineDiv.scrollIntoViewIfNeeded()
   }
 
   getPythonButtonClicked() {
@@ -156,7 +157,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     return (
       <div className="midas-element">
         <div className="midas-header">
-          <DragHandle/>
+          {/* <DragHandle/> */}
           <span className="midas-title">{this.props.title}</span>
           <div className="midas-header-options"></div>
           <button

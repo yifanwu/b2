@@ -84,7 +84,7 @@ export function createMidasComponent() {
 
   // $("#notebook").append(floater);
   $("#notebook").append(midasSideBarDiv);
-  ReactDOM.render(<MidasSideBar ref={(comp) => makeComm(comp.childRef)}/>, document.getElementById("midas-sidebar-wrapper"));
+  ReactDOM.render(<MidasSideBar ref={(comp) => makeComm(comp)}/>, document.getElementById("midas-sidebar-wrapper"));
 
   makeResizer((delta) => {
     let oldWidth = $("#midas-sidebar-wrapper").width()

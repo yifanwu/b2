@@ -81,7 +81,7 @@ function make_on_msg(refToSidebar: MidasSideBar) {
       }
       case "add-column": {
         const columnLoad = load as unknown as ColumnCommLoad; // TODO: Add type
-        window.columnShelf.addColumnItem(columnLoad.value.columnName, columnLoad.value.columnType);
+        refToColumnShelf.addColumnItem(columnLoad.value.columnName, columnLoad.value.columnType);
         break;
       }
       case "reactive": {
