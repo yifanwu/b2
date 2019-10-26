@@ -1,0 +1,135 @@
+#notebook {
+  display: flex;
+  flex-direction: row;
+  max-width: 100%;
+}
+
+#notebook-container {
+  flex-grow: 1;
+  margin-left: 10pt;
+  margin-right: 0pt;
+  width: 10%;
+}
+
+#midas-floater-container {
+  overflow: scroll;
+  text-align: center;
+  width: 100%;
+  max-height: 100%;
+  padding-right: 20px;
+}
+
+#notebook {
+  padding-left: 10pt;
+  padding-right: 0pt;
+}
+
+.hide-btn {
+  float: right;
+}
+
+
+.reload-btn {
+  float: right;
+}
+
+.midas-element {
+  margin-bottom: 10pt;
+  width: 350pt;
+  height: 250pt;
+}
+
+#midas-floater-wrapper.closed {
+  min-width: 250px;
+  width: auto;
+  transition: width;
+}
+#midas-floater-wrapper .header {
+  font-size: 16px;
+  font-weight: bold;
+  background-color: antiquewhite;
+}
+
+.editable-text-button, .midas-header-button {
+  font-family: monospace;
+  margin-left: 2pt;
+  margin-right: 2pt;
+}
+
+.midas-header-options {
+  margin-left: auto;
+  margin: 5pt;
+}
+
+.midas-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background-color:#F7F7F7;
+}
+
+.editable-text-title, .selection-column-name {
+  align-self: left;
+  flex-grow: 1;
+}
+
+.editable-text-header, .column-item-header {
+  width: 100%;
+  padding: 2.5pt;
+  margin: 2.5pt;
+  display: flex;
+  align-items: center;
+  background-color:#F7F7F7;
+}
+
+.midbar-shelf-header {
+  margin-left: 5pt;
+}
+
+.midas-shelf-selection-item {
+  width: 100%;
+  padding: 2.5pt;
+  margin-right: 5pt;
+  margin-top: 2.5pt;
+  margin-bottom: 2.5pt;
+  margin-left: 5pt;
+  display: flex;
+  align-items: center;
+}
+
+.midas-title {
+  align-self: left;
+  margin: 5pt;
+}
+
+.sortable {
+  display: inline-flex;
+}
+
+.chart-btns {
+  align-self: center;
+  margin-right: 0;
+  font-family: monospace;
+}
+
+.midas-alerts-error {
+  padding: 20px;
+  background-color: #f44336;
+  color: white;
+  text-align: left;
+}
+
+.midas-alerts-error {
+  padding: 20px;
+  background-color: green;
+  color: white;
+  text-align: left;
+}
+
+.midas-sortable-list {
+  list-style-type: none;
+}
+.drag-handle {
+  cursor: grab;
+  font-family: monospace;
+}

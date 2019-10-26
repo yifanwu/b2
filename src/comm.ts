@@ -16,7 +16,7 @@ type ColumnValue = {
 // TODO: maybe don't need these types...
 // but just in case things get more complicated
 type ErrorCommLoad = { type: string; value: string };
-type CreateCommLoad = { type: string; value: string };
+type AddSelectionLoad = { type: string; value: string };
 type ColumnCommLoad = {type: string; value: ColumnValue};
 type ReactiveCommLoad = { type: string; value: string };
 type NavigateCommLoad = { type: string; value: string };
@@ -75,7 +75,7 @@ function make_on_msg(refToSidebar: MidasSideBar) {
         return;
       }
       case "add-selection": {
-        const selectionLoad = load as CreateCommLoad;
+        const selectionLoad = load as AddSelectionLoad;
         refToSelectionShelf.addSelectionItem(selectionLoad.value);
         break;
       }
