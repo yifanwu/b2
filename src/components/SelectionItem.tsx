@@ -1,8 +1,8 @@
 /// <reference path="../external/Jupyter.d.ts" />
 
-import React, { MouseEventHandler } from "react";
-import {EditableText} from "./EditableText";
-import {MIDAS_CELL_COMM_NAME} from "../constants";
+import React from "react";
+import { EditableText } from "./EditableText";
+import { MIDAS_CELL_COMM_NAME } from "../constants";
 
 interface SelectionItemState {
   selectionName: string;

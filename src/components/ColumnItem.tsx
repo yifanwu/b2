@@ -1,7 +1,7 @@
 /// <reference path="../external/Jupyter.d.ts" />
 
 import React, { MouseEventHandler } from "react";
-import {MIDAS_CELL_COMM_NAME} from "../constants";
+import { MIDAS_CELL_COMM_NAME } from "../constants";
 // https://stackoverflow.com/questions/34126296/disable-jupyter-keyboard-shortcuts
 
 interface ColumnItemProps {
