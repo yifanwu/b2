@@ -4,7 +4,7 @@ import MidasMidbar from "./MidasMidbar";
 import {SelectionShelf} from "./SelectionShelf";
 import {ColumnShelf} from "./ColumnShelf";
 
-export class MidasSideBar extends React.Component<{}, {}> {
+export class MidasSidebar extends React.Component<{}, {}> {
 
   midasContainerRef: MidasContainer;
   selectionShelfRef: SelectionShelf;

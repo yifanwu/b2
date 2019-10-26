@@ -52,8 +52,6 @@ class Midas(object):
             ip = get_ipython()
             magics = MidasMagic(ip, ui_comm)
             ip.register_magics(magics)
-        # todo remove me
-        self.debug_messages = []
 
 
     def register_df(self, df_name_raw: str, df_raw: DataFrame):
@@ -152,16 +150,12 @@ class Midas(object):
 
 
     def js_add_selection_to_shelf(self, df_name: str):
-        self.debug_messages.append(f"ADDING {df_name}")
         if self.state.has_df(df_name):
-            self.debug_messages.append(f"YES, WE HAVE {df_name}")
             predicates = self.state.dfs[df_name].predicates
-            self.debug_messages.append(len(predicates))
             if (len(predicates) > 0):
                 predicate = predicates[-1]
 
                 name = f"{predicate.x_column}_{predicate.x[0]}_{predicate.x[-1]}"
-                self.debug_messages.append(f"THE CHOSEN NAME IS {name}")
                 if name in self.state.shelf_selections:
                   new_name = name
                   counter = 1

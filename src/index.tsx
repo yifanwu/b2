@@ -13,7 +13,7 @@ import "./sidebar.css";
 
 import { makeComm } from "./comm";
 import MidasContainer from "./components/MidasContainer";
-import {MidasSideBar} from "./components/MidasSideBar";
+import {MidasSidebar} from "./components/MidasSidebar";
 import { LogSteps } from "./utils";
 
 import {SelectionShelf} from "./components/SelectionShelf";
@@ -84,7 +84,7 @@ export function createMidasComponent() {
 
   // $("#notebook").append(floater);
   $("#notebook").append(midasSideBarDiv);
-  ReactDOM.render(<MidasSideBar ref={(comp) => makeComm(comp)}/>, document.getElementById("midas-sidebar-wrapper"));
+  ReactDOM.render(<MidasSidebar ref={(comp) => makeComm(comp)}/>, document.getElementById("midas-sidebar-wrapper"));
 
   makeResizer((delta) => {
     let oldWidth = $("#midas-sidebar-wrapper").width()

@@ -5,7 +5,7 @@ import { AlertType } from "./types";
 import { Spec, View } from "vega";
 import { DataProps } from "@nteract/data-explorer/src/types";
 import MidasContainer from "./components/MidasContainer";
-import {MidasSideBar} from "./components/MidasSideBar"
+import {MidasSidebar} from "./components/MidasSidebar"
 
 type ColumnValue = {
   columnName: string;
@@ -38,7 +38,7 @@ type MidasCommLoad = ErrorCommLoad | ReactiveCommLoad | ProfilerComm | ChartRend
  * corresponds to which cell, accomplished through inspecting the
  * metadata of the message sent.
  */
-export function makeComm(refToSidebar: MidasSideBar) {
+export function makeComm(refToSidebar: MidasSidebar) {
   LogSteps("makeComm");
    Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
@@ -55,7 +55,7 @@ export function makeComm(refToSidebar: MidasSideBar) {
     });
 }
 
-function make_on_msg(refToSidebar: MidasSideBar) {
+function make_on_msg(refToSidebar: MidasSidebar) {
 
   let refToMidas = refToSidebar.getMidasContainerRef();
   let refToColumnShelf = refToSidebar.getColumnShelfRef();
