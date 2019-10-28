@@ -36,6 +36,7 @@ class Midas(object):
     magic: MidasMagic
     ui_comm: UiComm
     state: State
+    shelf_selections: dict #TODO Change
 
     def __init__(self):
         # self.is_processing_tick: bool = False
@@ -44,6 +45,7 @@ class Midas(object):
         # check if we are in a ipython environment
         ui_comm = UiComm(is_in_ipynb)
         self.ui_comm = ui_comm
+        self.shelf_selections = {}
         self.state = State(ui_comm)
         self.event_loop = EventLoop(self.state)
         if is_in_ipynb:
@@ -145,6 +147,43 @@ class Midas(object):
     def add_facet(self, df_name: str, facet_column: str):
         # 
         raise NotImplementedError()
+    
+
+    def js_update_selection_shelf_selection_name(self, old_name: str, new_name: str):
+      self.state.shelf_selections[new_name] = self.state.shelf_selections[old_name]
+      del self.state.shelf_selections[old_name]
+    
+
+    def js_remove_selection_from_shelf(self, df_name: str):
+      del self.shelf_selections[df_name]
+
+
+    def js_add_selection_to_shelf(self, df_name: str):
+        if self.state.has_df(df_name):
+            predicates = self.state.dfs[df_name].predicates
+            if (len(predicates) > 0):
+                predicate = predicates[-1]
+
+                name = f"{predicate.x_column}_{predicate.x[0]}_{predicate.x[-1]}"
+                if name in self.state.shelf_selections:
+                  new_name = name
+                  counter = 1
+                  while new_name in self.state.shelf_selections:
+                    new_name = name
+                    name += str(counter)
+                  name = new_name
+
+                self.state.shelf_selections[name] = (predicate, df_name)
+                self.midas_cell_comm.send({
+                  'type': 'add-selection',
+                  'value': name
+                })
+        else: 
+            self.midas_cell_comm.send({
+            'type': 'error',
+            'value': f'no selection on {df_name} yet'
+        })
+
 
     # def js_get_current_chart_code(self, df_name: str) -> Optional[str]:
     #     # figure out how to derive the current df

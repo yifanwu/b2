@@ -5,10 +5,19 @@ import { AlertType } from "./types";
 import { Spec, View } from "vega";
 import { DataProps } from "@nteract/data-explorer/src/types";
 import MidasContainer from "./components/MidasContainer";
+import {MidasSidebar} from "./components/MidasSidebar"
 
+type ColumnValue = {
+  columnName: string;
+  columnType: string;
+}
+
+// types could be of: name, error, reactive
 // TODO: maybe don't need these types...
 // but just in case things get more complicated
 type ErrorCommLoad = { type: string; value: string };
+type AddSelectionLoad = { type: string; value: string };
+type ColumnCommLoad = {type: string; value: ColumnValue};
 type ReactiveCommLoad = { type: string; value: string };
 type NavigateCommLoad = { type: string; value: string };
 type ProfilerComm = {
@@ -29,16 +38,16 @@ type MidasCommLoad = ErrorCommLoad | ReactiveCommLoad | ProfilerComm | ChartRend
  * corresponds to which cell, accomplished through inspecting the
  * metadata of the message sent.
  */
-export function makeComm(refToMidas: MidasContainer) {
+export function makeComm(refToSidebar: MidasSidebar) {
   LogSteps("makeComm");
-  Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
+   Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
       LogDebug(`makeComm first message: ${JSON.stringify(msg)}`);
       // comm is the frontend comm instance
       // msg is the comm_open message, which can carry data
 
       // Register handlers for later messages:
-      const on_msg = make_on_msg(refToMidas);
+      const on_msg = make_on_msg(refToSidebar);
       comm.on_msg(on_msg);
       comm.on_close(function (msg: any) {
         LogSteps(`CommClose`, msg);
@@ -46,16 +55,34 @@ export function makeComm(refToMidas: MidasContainer) {
     });
 }
 
-function make_on_msg(refToMidas: MidasContainer) {
+function make_on_msg(refToSidebar: MidasSidebar) {
+
+  let refToMidas = refToSidebar.getMidasContainerRef();
+  let refToColumnShelf = refToSidebar.getColumnShelfRef();
+  let refToSelectionShelf = refToSidebar.getSelectionShelfRef();
+
+
   return function on_msg(msg: any) {
+
     LogSteps("on_msg", JSON.stringify(msg));
     const load = msg.content.data as MidasCommLoad;
+    console.log(load.type);
     switch (load.type) {
       case "error": {
         const errorLoad = load as ErrorCommLoad;
         LogDebug(`sending error ${errorLoad.value}`);
         refToMidas.addAlert(errorLoad.value);
         return;
+      }
+      case "add-selection": {
+        const selectionLoad = load as AddSelectionLoad;
+        refToSelectionShelf.addSelectionItem(selectionLoad.value);
+        break;
+      }
+      case "add-column": {
+        const columnLoad = load as unknown as ColumnCommLoad; // TODO: Add type
+        refToColumnShelf.addColumnItem(columnLoad.value.columnName, columnLoad.value.columnType);
+        break;
       }
       case "reactive": {
         const cellId = msg.parent_header.msg_id;

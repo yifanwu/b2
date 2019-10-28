@@ -1,0 +1,31 @@
+#midas-sidebar-wrapper {
+  width: 800px;
+  box-sizing: border-box;
+}
+
+.midas-inside {
+  background-color: white;
+  position: fixed;
+  height: 91%;
+  margin: 0 10px 0 10px;
+  overflow: scroll;
+  display: flex;
+}
+
+
+#midas-resizer {
+  position: fixed;
+  z-index: 120;
+  height: 100%;
+  width: 10px;
+  background-color: rgba(0, 0, 255, 0);
+  cursor: ew-resize;
+}
+
+#midas-midbar {
+  width: 500px;
+  border-right: 1pt;
+  border-color: #e3e3e3;
+  border-style: none solid none none;
+  box-sizing: border-box;
+}

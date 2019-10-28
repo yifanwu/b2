@@ -1,42 +1,3 @@
-#midas-floater-wrapper {
-  /* position: fixed !important; */
-  /* top: 97.5pt; */
-
-  margin-right: 20pt;
-  /* border-radius: 5px; */
-  z-index: 100;
-  display: flex;
-  flex-direction: row;
-  /* overflow:hidden; */
-  /* max-height: 86%; */
-  /* float: right; */
-  width: 400pt;
-  /* min-width: 600pt; */
-}
-
-#midas-react-wrapper {
-  border: thin solid rgba(0, 0, 0, 0.38);
-  position: fixed;
-  padding:10px;
-  margin-left: 10pt;
-  background-color: #fff;
-  display: flex;
-  overflow:hidden;
-  max-height: 87%;
-  float: right;
-  /* min-width: 600pt; */
-}
-
-
-#resizer {
-  position: fixed;
-  z-index: 120;
-  height: 100%;
-  width: 10pt;
-  background-color: rgba(0, 0, 255, 0);
-  cursor: ew-resize;
-}
-
 #notebook {
   display: flex;
   flex-direction: row;
@@ -52,7 +13,7 @@
 
 #midas-floater-container {
   overflow: scroll;
-  text-align: end;
+  text-align: center;
   width: 100%;
   max-height: 100%;
   padding-right: 20px;
@@ -63,24 +24,20 @@
   padding-right: 0pt;
 }
 
-.hide-btn{
+.hide-btn {
   float: right;
 }
 
 
-.reload-btn{
+.reload-btn {
   float: right;
 }
 
 .midas-element {
   margin-bottom: 10pt;
+  width: 350pt;
+  height: 250pt;
 }
-
-/* .col-md-9 {
-  overflow:hidden;
-  margin-left: 14%;
-  width: 80%
-} */
 
 #midas-floater-wrapper.closed {
   min-width: 250px;
@@ -93,7 +50,7 @@
   background-color: antiquewhite;
 }
 
-.midas-header-button {
+.editable-text-button, .midas-header-button {
   font-family: monospace;
   margin-left: 2pt;
   margin-right: 2pt;
@@ -101,6 +58,7 @@
 
 .midas-header-options {
   margin-left: auto;
+  margin: 5pt;
 }
 
 .midas-header {
@@ -110,9 +68,42 @@
   background-color:#F7F7F7;
 }
 
+.editable-text-title, .selection-column-name {
+  align-self: left;
+  flex-grow: 1;
+}
+
+.editable-text-header, .column-item-header {
+  width: 100%;
+  padding: 2.5pt;
+  margin: 2.5pt;
+  display: flex;
+  align-items: center;
+  background-color:#F7F7F7;
+}
+
+.midbar-shelf-header {
+  margin-left: 5pt;
+}
+
+.midas-shelf-selection-item {
+  width: 100%;
+  padding: 2.5pt;
+  margin-right: 5pt;
+  margin-top: 2.5pt;
+  margin-bottom: 2.5pt;
+  margin-left: 5pt;
+  display: flex;
+  align-items: center;
+}
+
 .midas-title {
   align-self: left;
   margin: 5pt;
+}
+
+.sortable {
+  display: inline-flex;
 }
 
 .chart-btns {
@@ -133,4 +124,12 @@
   background-color: green;
   color: white;
   text-align: left;
+}
+
+.midas-sortable-list {
+  list-style-type: none;
+}
+.drag-handle {
+  cursor: grab;
+  font-family: monospace;
 }

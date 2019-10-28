@@ -1,5 +1,10 @@
 /// <reference path="../external/Jupyter.d.ts" />
 import React, { MouseEventHandler } from "react";
+import {
+  SortableContainer,
+  SortableElement,
+  SortableHandle,
+} from 'react-sortable-hoc';
 import { makeElementId } from "../config";
 import { Spec, View } from "vega";
 import vegaEmbed from "vega-embed";
@@ -20,6 +25,7 @@ interface MidasElementState {
   view: View;
 }
 
+const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
@@ -55,7 +61,7 @@ function getDebouncedFunction(dfName: string) {
  * Contains the visualization as well as a header with actions to minimize,
  * delete, or find the corresponding cell of the visualization.
  */
-export default class MidasElement extends React.Component<MidasElementProps, MidasElementState> {
+export class MidasElement extends React.Component<MidasElementProps, MidasElementState> {
   constructor(props: any) {
     super(props);
     this.embed = this.embed.bind(this);
@@ -109,6 +115,7 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
     let cell = Jupyter.notebook.get_msg_cell(this.props.cellId);
     let index = Jupyter.notebook.find_cell_index(cell);
     Jupyter.notebook.select(index);
+    Jupyter.CodeCell.msg_cells[this.props.cellId].code_mirror.display.lineDiv.scrollIntoViewIfNeeded()
   }
 
   getPythonButtonClicked() {
@@ -135,6 +142,12 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
 
   }
 
+  addSelectionButtonClicked() {
+    const execute = `m.js_add_selection_to_shelf('${this.props.title}')`;
+    console.log("clicked, and executing", execute);
+    IPython.notebook.kernel.execute(execute);
+  }
+
   /**
    * Renders this component.
    */
@@ -150,6 +163,7 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
     return (
       <div className="midas-element">
         <div className="midas-header">
+          <DragHandle/>
           <span className="midas-title">{this.props.title}</span>
           <div className="midas-header-options"></div>
           <button
@@ -166,6 +180,12 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
             className={"midas-header-button"}
             onClick={() => this.selectCell()}
           >find original cell</button>
+            <button
+              className={"midas-header-button"}
+              onClick={() => this.addSelectionButtonClicked()}>
+                Add Selection
+            </button>
+
           <button
             className={"midas-header-button"}
             onClick={() => this.toggleHiddenStatus()}>
@@ -186,3 +206,13 @@ export default class MidasElement extends React.Component<MidasElementProps, Mid
     );
   }
 }
+
+const SortableItem = SortableElement((props: MidasElementProps) => (
+  <div className="sortable">
+    <MidasElement {...props}/>
+  </div>
+));
+
+export default SortableItem;
+
+// export default MidasElement;

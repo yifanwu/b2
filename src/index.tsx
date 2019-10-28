@@ -8,11 +8,25 @@ export { default as vegaEmbed } from "vega-embed";
 import $ from "jquery";
 import "jqueryui";
 
-import "./floater.css";
+import "./elements.css";
+import "./sidebar.css";
 
 import { makeComm } from "./comm";
 import MidasContainer from "./components/MidasContainer";
+import {MidasSidebar} from "./components/MidasSidebar";
 import { LogSteps } from "./utils";
+
+import {SelectionShelf} from "./components/SelectionShelf";
+import { ColumnShelf } from "./components/ColumnShelf";
+
+
+declare global {
+  interface Window {
+    midas: MidasContainer;
+    selectionShelf: SelectionShelf;
+    columnShelf: ColumnShelf;
+  }
+}
 
 
 export function load_ipython_extension() {
@@ -20,28 +34,24 @@ export function load_ipython_extension() {
 }
 
 
-declare global {
-  interface Window { midas: MidasContainer; }
-}
-
 /**
  * Makes the resizer that allows changing the width of the sidebar.
  * @param divToResize the div representing the sidebar.
  */
-function makeResizer(divToResize: JQuery<HTMLElement>) {
+function makeResizer(onChange: (delta: number) => void) {
 
-  let resizer = $("<div id=\"resizer\">");
-  divToResize.append(resizer);
+  let resizer = $("#midas-resizer");
 
   resizer.on("mousedown", (e) => {
     let x = e.clientX;
-    let originalWidth = divToResize.width();
-    let originalWidth2 = $("#midas-react-wrapper").width();
+    let lastTotalMove = 0;
 
     $(window).on("mousemove", (e) => {
-      let delta = x - e.clientX;
-      divToResize.width((_, currentWidth) => originalWidth + delta);
-      $("#midas-react-wrapper").width(originalWidth2 + delta);
+      let totalMove = x - e.clientX;
+      let delta = totalMove - lastTotalMove;
+      lastTotalMove = totalMove;
+
+      onChange(delta);
     });
   });
 
@@ -50,24 +60,48 @@ function makeResizer(divToResize: JQuery<HTMLElement>) {
   });
 }
 
+function syncWidth(parentSelector: string, childSelector: string, marginAdjust = 0) {
+  let parentwidth = $(parentSelector).width();
+  $(childSelector).width(parentwidth - marginAdjust );
+}
+
 
 export function createMidasComponent() {
   LogSteps("createMidasComponent", "this should be called only once!");
 
-  let floater = $("<div id=\"midas-floater-wrapper\"/>");
-  let reactWrapper = $("<div id=\"midas-react-wrapper\">");
+  $(window).resize(
+    function() {
+      syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10);
+    })
 
-  makeResizer(floater);
+  
+  let midasSideBarDiv = $("<div id=\"midas-sidebar-wrapper\"/>");
 
-  floater.append(reactWrapper);
+  // let floater = $("<div id=\"midas-floater-wrapper\"/>");
+  // let reactWrapper = $("<div id=\"midas-react-wrapper\">");
 
-  $("#notebook").append(floater);
+  // floater.append(reactWrapper);
 
-  ReactDOM.render(<MidasContainer ref={(comp) => makeComm(comp)} />,
-    document.getElementById("midas-react-wrapper"));
+  // $("#notebook").append(floater);
+  $("#notebook").append(midasSideBarDiv);
+  ReactDOM.render(<MidasSidebar ref={(comp) => makeComm(comp)}/>, document.getElementById("midas-sidebar-wrapper"));
 
-  // $("#midas-floater-wrapper").css("position", "fixed");
-  $("#midas-floating-container").height($("#midas-floater-wrapper").innerHeight);
+  makeResizer((delta) => {
+    let oldWidth = $("#midas-sidebar-wrapper").width()
+    $("#midas-sidebar-wrapper").width(oldWidth + delta);
+    syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10 * 2);
+  });
+
+
+  syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10 * 2);
+
+  // ReactDOM.render(<MidasContainer ref={(comp) => makeComm(comp)} />,
+    // document.getElementById("midas-react-wrapper"));
+
+  $([Jupyter.events]).on("kernel_starting.Kernel", function(){
+    console.log("Kernel starting.");
+//      resetSideBarState();
+  });
 }
 
 function javascriptIndex(selector: string, outputs: any) {
@@ -109,6 +143,7 @@ function showError(el: HTMLElement, error: Error) {
 
   throw error;
 }
+
 
 export function render(
   selector: string,

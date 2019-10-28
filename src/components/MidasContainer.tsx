@@ -4,6 +4,11 @@ import MidasElement from "./MidasElement";
 import Profiler from "./Profiler";
 import { hashCode, LogInternalError, LogSteps } from "../utils";
 import { AlertType } from "../types";
+import {
+  SortableContainer,
+  SortableElement,
+  SortableHandle,
+} from 'react-sortable-hoc';
 import { DataProps } from "@nteract/data-explorer/src/types";
 import { Spec } from "vega";
 
@@ -26,6 +31,7 @@ interface ProfilerInfo {
   notebookCellId: number;
   data: DataProps;
 }
+import arrayMove from 'array-move';
 
 interface AlertItem {
   msg: string;
@@ -48,6 +54,10 @@ interface ContainerState {
 }
 
 const ALERT_ALIVE_TIME = 5000;
+
+const MidasSortableContainer = SortableContainer(({children}: {children: any}) => {
+  return <div>{children}</div>;
+});
 
 /**
  * Container for the MidasElements that hold the visualization.
@@ -174,6 +184,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
    * @param dfName the name of the data frame
    */
   addDataFrame(dfName: string, vegaSpec: Spec, notebookCellId: number) {
+    console.log(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`)
     if (this.state.elements.filter(e => e.dfName === dfName).length > 0) {
       return;
     }
@@ -226,6 +237,35 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     });
   }
 
+   onSortEnd = ({oldIndex, newIndex}: {oldIndex: number, newIndex: number}) => {
+    interface ContainerState {
+      notebookMetaData: MappingMetaData[];
+      profiles: ProfilerInfo[];
+      // TODO: refact the name `elements` --- we now have different visual elements it seems.
+      elements: ContainerElementState[];
+      refs: Map<string, RefObject<HTMLDivElement>>;
+      // FIXME: the idToCell might not be needed given that we have refs.
+      idToCell: Map<string, number>;
+      // maps signals to cellIds
+      reactiveCells: Map<string, number[]>;
+      allReactiveCells: Set<number>;
+      alerts: AlertItem[];
+    }
+    this.setState(prevState => {
+      return {
+        notebookMetaData: prevState.notebookMetaData,
+        profiles: prevState.profiles,
+        elements: arrayMove(prevState.elements, oldIndex, newIndex),
+        refs: prevState.refs,
+        idToCell: prevState.idToCell,
+        reactiveCells: prevState.reactiveCells,
+        allReactiveCells: prevState.allReactiveCells,
+        alerts: prevState.alerts
+      }
+    });
+  };
+
+
   render() {
     const {elements, profiles, alerts} = this.state;
     const profilerDivs = profiles.map(({dfName, data}) => (
@@ -234,8 +274,9 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         data={data}
       />
     ));
-    const chartDivs = elements.map(({notebookCellId, dfName, vegaSpec }) => (
+    const chartDivs = elements.map(({notebookCellId, dfName, vegaSpec }, index) => (
       <MidasElement
+        index={index}
         cellId={notebookCellId}
         key={dfName}
         dfName={dfName}
@@ -256,8 +297,14 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
       });
     return (
       <div id="midas-floater-container">
+        <h1 className="midbar-shelf-header">
+          Midas Monitor
+        </h1>
+
         {profilerDivs}
+        <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>
         {chartDivs}
+        </MidasSortableContainer>
         {alertDivs}
       </div>
     );
