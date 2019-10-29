@@ -13,8 +13,8 @@ except ImportError as err:
     logging = lambda x, y: None
 
 
-from .midas_algebra.dataframe import MidasDataFrame
-from midas.state_types import DFName, DFInfo
+from .midas_algebra.dataframe import MidasDataFrame, DFInfo
+from midas.state_types import DFName
 from .state import State
 from .ui_comm import UiComm
 # from .config import DEBOUNCE_RATE_MS

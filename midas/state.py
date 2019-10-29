@@ -1,11 +1,11 @@
 from pandas import DataFrame
-from .midas_algebra.dataframe import MidasDataFrame
+from .midas_algebra.dataframe import MidasDataFrame, DFInfo
 from datetime import datetime
 from typing import Dict, List
 
 from .util.errors import InternalLogicalError
 from .vis_types import SelectionPredicate
-from .state_types import DFInfo, DFName
+from .state_types import DFName
 from midas.ui_comm import UiComm
 
 class State(object):

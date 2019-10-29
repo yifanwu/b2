@@ -5,7 +5,7 @@ from typing import Dict, Optional
 from pandas import DataFrame
 
 from .data_processing import get_categorical_distribution, get_numeric_distribution
-from midas.state_types import DFInfo
+from midas.midas_algebra.dataframe import DFInfo
 from midas.defaults import COUNT_COL_NAME
 from midas.vis_types import OneDimSelectionPredicate, DfTransform, SelectionPredicate, NullSelectionPredicate, DfTransform
 from .errors import check_not_null
