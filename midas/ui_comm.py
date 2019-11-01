@@ -42,7 +42,7 @@ class UiComm(object):
                 "value": df.name
             })
             return
-        if (len(df.value.columns) > 2):
+        if (len(df.pandas_value.columns) > 2):
             self.create_profile(df)
         else:
             self.create_chart(df)
@@ -51,7 +51,7 @@ class UiComm(object):
     def create_profile(self, df: MidasDataFrame):
         if df.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
-        clean_df = sanitize_dataframe(df.value)
+        clean_df = sanitize_dataframe(df.pandas_value)
         data = json.dumps(clean_df.to_json(orient="table"))
         message = {
             "type": "profiler",
@@ -65,7 +65,7 @@ class UiComm(object):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         
-        df = mdf.value
+        df = mdf.pandas_value
         if (len(df.columns) > 2):
             raise InternalLogicalError("create_chart should not be called")
         chart_title = get_chart_title(mdf.df_name) # type: ignore

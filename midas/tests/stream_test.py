@@ -1,3 +1,4 @@
+from midas.util.errors import debug_log
 from midas.midas_algebra.dataframe import MidasDataFrame
 from pandas import DataFrame
 import unittest
@@ -56,7 +57,9 @@ class TestStream(unittest.TestCase):
             print('unit test completed\n')
 
         # get the stream, and bind to it
+        debug_log("getting stream")
         stream = m.get_stream(DF_NAME)
+        debug_log("adding callbakc")
         stream.add_callback(cb)
         def transform(predicates):
             # takes in predicates
