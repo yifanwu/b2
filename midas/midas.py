@@ -12,11 +12,14 @@ except ImportError as err:
     display = lambda x: None
     logging = lambda x, y: None
 
+from .stream import MidasSelectionStream
 
-from .midas_algebra.dataframe import MidasDataFrame, DFInfo
+from .midas_algebra.dataframe import MidasDataFrame, DFInfo, RuntimeFunctions
 from midas.state_types import DFName
+from midas.event_types import TickItem
 from .state import State
 from .ui_comm import UiComm
+from .midas_algebra.context import Context
 # from .config import DEBOUNCE_RATE_MS
 from .midas_magic import MidasMagic
 from .util.instructions import HELP_INSTRUCTION
@@ -25,7 +28,6 @@ from .util.utils import isnotebook
 from .util.helper import get_df_by_predicate
 
 from .event_loop import EventLoop
-from .event_types import TickItem, TickIOType
 
 is_in_ipynb = isnotebook()
 
@@ -36,34 +38,39 @@ class Midas(object):
     magic: MidasMagic
     ui_comm: UiComm
     state: State
+    context: Context
     shelf_selections: dict #TODO Change
+    rt_funcs: RuntimeFunctions
 
     def __init__(self):
         # self.is_processing_tick: bool = False
-        self.midas_cell_comm = None
         # FIXME: have a better mock up experience for testing, if we are not in notebook...
         # check if we are in a ipython environment
         ui_comm = UiComm(is_in_ipynb)
         self.ui_comm = ui_comm
         self.shelf_selections = {}
         self.state = State(ui_comm)
+        self.context = Context(self.state.dfs)
         self.event_loop = EventLoop(self.state)
         if is_in_ipynb:
             ip = get_ipython()
             magics = MidasMagic(ip, ui_comm)
             ip.register_magics(magics)
 
+        self.rt_funcs = RuntimeFunctions(self.state.add_df, self.get_stream, self.ui_comm.navigate_to_chart)
 
-    def register_df(self, df_name_raw: str, df_raw: DataFrame):
+
+    def register_df(self, df_name_raw: str, df_raw: DataFrame) -> MidasDataFrame:
         """we will add this both to state
            and to render
         """
         df_name = DFName(df_name_raw)
         logging("register_df", df_name)
-        # create MidasDataFrame
-        df = MidasDataFrame.from_data(df_raw)
-        self.state.add_df(df_name, df)
-        return
+        # FIXME: need to figure out where to propate df_name...
+        df = MidasDataFrame.from_data(df_raw, df_name, self.rt_funcs)
+        self.state.add_df(df)
+        # retuns
+        return df
 
 
     def has_df(self, df_name_raw: str):
@@ -73,6 +80,27 @@ class Midas(object):
         # turn it into a df
         df = series.to_frame()
         return self.register_df(df, name)
+
+    def get_stream(self, df: Union[str, MidasDataFrame]) -> MidasSelectionStream:
+        """[summary]
+        
+        Arguments:
+            df -- could either be the name or the dataframe
+        """
+        # note that in the future we should
+        #   consider putting this along with the dataframes
+        # create the functions
+        # then pass them to MidasSelectionStream
+        if (isinstance(df, str)):
+            df_name = DFName(df)
+        else:
+            df_name = df.df_name
+            if (df_name is None):
+                # FIXME: might place this function somewher else so they get the mental model easier?
+                raise UserError("DF must be named to access selection")
+        df_info = self.get_df_info(df_name)
+        check_not_null(df_info)
+        return MidasSelectionStream(df_name, df_info.predicates, self.bind)
 
 
     def get_current_selection(self, df_name: DFName, option: str="predicate"):
@@ -110,15 +138,21 @@ class Midas(object):
     def help():
         print(HELP_INSTRUCTION)
 
-    def add_selection(self, df_name: DFName, selection: str):
+    def add_selection(self, df_name_raw: str, selection: str):
+        df_name = DFName(df_name_raw)
         # note that the selection is str because 
-        logging("js_add_selection", df_name)
+        logging("add_selection", df_name)
         # figure out what spec it was
         # FIXME make sure this null checking is correct
         predicate = self.ui_comm.get_predicate_info(df_name, selection)
         self.event_loop.tick(df_name, predicate)
         return
 
+    def bind(self, df_name: DFName, cb):
+        # , to_visualize: bool
+        # need to create TickItem
+        item = TickItem(df_name, cb)
+        return self.event_loop.add_callback(item)
 
     # decorator
     # def bind(self, param_type: Union[TickIOType, str], output_type: Union[TickIOType, str], df_interact_name: str, target_df: Optional[str]=None):
@@ -158,13 +192,16 @@ class Midas(object):
       del self.shelf_selections[df_name]
 
 
-    def js_add_selection_to_shelf(self, df_name: str):
+    def js_add_selection_to_shelf(self, df_name_raw: str):
+        df_name = DFName(df_name_raw)
         if self.state.has_df(df_name):
             predicates = self.state.dfs[df_name].predicates
             if (len(predicates) > 0):
                 predicate = predicates[-1]
-
-                name = f"{predicate.x_column}_{predicate.x[0]}_{predicate.x[-1]}"
+                # @RYAN: need to deal with the fact that the predicates are of 
+                #        multiple possible types, below makes the assumption that it's 
+                #        twoDimSelection
+                name = f"{predicate.x_column}_{predicate.x[0]}_{predicate.x[-1]}" # type: ignore
                 if name in self.state.shelf_selections:
                   new_name = name
                   counter = 1
@@ -174,15 +211,9 @@ class Midas(object):
                   name = new_name
 
                 self.state.shelf_selections[name] = (predicate, df_name)
-                self.midas_cell_comm.send({
-                  'type': 'add-selection',
-                  'value': name
-                })
+                self.ui_comm.custom_message('add-selection', name)
         else: 
-            self.midas_cell_comm.send({
-            'type': 'error',
-            'value': f'no selection on {df_name} yet'
-        })
+            self.ui_comm.send_error(f'no selection on {df_name} yet')
 
 
     # def js_get_current_chart_code(self, df_name: str) -> Optional[str]:
@@ -218,6 +249,6 @@ class Midas(object):
 # # ip = get_ipython()
 #     magics = Midas(ipython)
 #     ipython.register_magics(magics)
-
+      
 
 __all__ = ['Midas']

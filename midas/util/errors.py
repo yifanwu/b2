@@ -43,7 +43,12 @@ class UserError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
-        
+
+class TempDebuggingError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 def check_not_null(val: Any, err_msg: Optional[str]=None):
     if (val == None):
         raise NullValueError(err_msg)

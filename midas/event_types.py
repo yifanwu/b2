@@ -19,24 +19,7 @@ class TickSpec(NamedTuple):
     start_time: datetime
 
 
-# four kinds of callbacks that the developer could add to
-PredicateCallback = Callable[[SelectionPredicate], None]
-DataFrameCallback =  Callable[[MidasDataFrame], None]
-DataFrameToDataFrameCallback = Callable[[MidasDataFrame], MidasDataFrame]
-PredicateToDataFrameCallback = Callable[[SelectionPredicate], MidasDataFrame]
-
-    
 class TickItem(NamedTuple):
-    """[summary]
-    
-    Arguments:
-        param_type {[BindingParamType]} -- [description]
-        output_type {BindingOutputType}
-        call
-        target_df(optional)
-    """
-    param_type: TickIOType
-    output_type: TickIOType
-    call: Union[PredicateCallback, DataFrameCallback, DataFrameToDataFrameCallback, PredicateToDataFrameCallback]
-    target_df: Optional[DFName]
-    last_called: Optional[datetime] = None
+    df_name: DFName
+    call: Callable[[SelectionPredicate], Any]
+    # visualize: bool

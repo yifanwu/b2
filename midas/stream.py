@@ -1,39 +1,59 @@
-from midas.midas_algebra.dataframe import MidasDataFrame
 from midas.state_types import DFName
-from typing import List, Union
-from .midas_algebra.selection import SelectionValue
-from .midas import Midas
+from midas.vis_types import SelectionPredicate
+from typing import NewType, Callable, Union, List, Any
 
-class MidasSelection(object):
-    # wrap around the selections
-    values: List[SelectionValue]
-    # when it was selected
-    # what df
-    # maybe where it can link to etc?
-    def __init__(self, ref: Midas, values: List[SelectionValue]):
-        self.midas = ref
-        self.values = values
-    
-    def apply_to(self, df: Union[DFName, MidasDataFrame]):
-        # this returns a MidasDataFrame
-        self.midas.
+# class MidasSelection(object):
+# # wrap around the selections
+# values: List[SelectionValue]
+# # when it was selected
+# # what df
+# # maybe where it can link to etc?
+# def __init__(self, ref: Midas, values: List[SelectionValue]):
+#     self.midas = ref
+#     self.values = values
+
+# def apply_to(self, df: Union[DFName, MidasDataFrame]):
+#     # this returns a MidasDataFrame
+#     self.midas.
 
 
+TickId = NewType('TickId', str)
 
 class MidasSelectionStream(object):
-    """[An obeserver object that ]
+    """An obeserver object that 
     
     Arguments:
         object {[type]} -- [description]
     """
-    midas: Midas
 
-    def __init__(self, ref: Midas, df_name: DFName):
-        self.midas = ref
+    # FIXME: add function typing
+    def __init__(self,
+        df_name: DFName,
+        ref_to_predicate_list: List[SelectionPredicate],
+        bind: Callable[[DFName, Any], Any]
+      ):
+        self.ref_to_predicate_list = ref_to_predicate_list
         self.df_name = df_name
+        self.bind = bind
 
-    def get_current(self):
-        return self.midas.state.get_df(self.df_name)
+    @property
+    def current(self):
+        if (len(self.ref_to_predicate_list) > 0):
+            return self.ref_to_predicate_list[-1]
+        else:
+            return None
+
+
+    @property
+    def history(self):
+        raise NotImplementedError()
+        # return self.get_history(self.df_name)
+
+
+    # FIXME: not sure how better to name these # NAMING
+    def add_callback(self, cb) -> TickId:
+        return self.bind(self.df_name, cb)
+
 
 
 

@@ -15,7 +15,6 @@ from .util.helper import transform_df, get_chart_title
 from .widget.showme import gen_spec
 from .util.data_processing import sanitize_dataframe
 
-
 class UiComm(object):
     comm: Comm
     vis_spec: Dict[DFName, ChartInfo]
@@ -28,7 +27,7 @@ class UiComm(object):
         else:
             self.comm = MockComm()
 
-    def visualize(self, df_name: DFName, df: MidasDataFrame):
+    def visualize(self, df: MidasDataFrame):
         # if it's more than two we give profile
         # and less than two we plot
         # potentially add metadata here
@@ -44,28 +43,32 @@ class UiComm(object):
             })
             return
         if (len(df.value.columns) > 2):
-            self.create_profile(df_name, df)
+            self.create_profile(df)
         else:
-            self.create_chart(df_name, df)
+            self.create_chart(df)
         return
 
-    
-    def create_profile(self, df_name: DFName, df: MidasDataFrame):
+    def create_profile(self, df: MidasDataFrame):
+        if df.df_name is None:
+            raise InternalLogicalError("df should have a name to be updated")
         clean_df = sanitize_dataframe(df.value)
         data = json.dumps(clean_df.to_json(orient="table"))
         message = {
             "type": "profiler",
-            "dfName": df_name,
+            "dfName": df.df_name,
             "data": data
         }
         self.comm.send(message)
         return
 
-    def create_chart(self, df_name: DFName, mdf: MidasDataFrame):
+    def create_chart(self, mdf: MidasDataFrame):
+        if mdf.df_name is None:
+            raise InternalLogicalError("df should have a name to be updated")
+        
         df = mdf.value
         if (len(df.columns) > 2):
             raise InternalLogicalError("create_chart should not be called")
-        chart_title = get_chart_title(df_name)
+        chart_title = get_chart_title(mdf.df_name) # type: ignore
         chart_info = gen_spec(df, chart_title)
         if chart_info:
             # now we set the date for everyone
@@ -77,13 +80,13 @@ class UiComm(object):
             # we have created it such that the data is an array
             chart_info.vega_spec["data"][0]["values"] = sanitizied_df.to_dict(orient='records')
             # set the spec
-            self.vis_spec[df_name] = chart_info
+            self.vis_spec[mdf.df_name] = chart_info # type: ignore
             # see if we need to apply any transforms
             # note that visualizations must have 2 columns or less right now.
             vega = json.dumps(chart_info.vega_spec)
             message = {
                 'type': 'chart_render',
-                "dfName": df_name,
+                "dfName": mdf.df_name,
                 'vega': vega
             }
             self.comm.send(message)
@@ -96,6 +99,18 @@ class UiComm(object):
             })
         return
 
+
+    def send_error(self, message: str):
+        self.comm.send({
+            "type": "error",
+            "value": message
+        })
+
+
+    def navigate_to_chart(self, df_name: DFName):
+        # @ryan --- I think this should be very simialr to the concurrent scrolling
+        #           do you mind looking into it?
+        raise NotImplementedError()
 
     def get_predicate_info(self, df_name: DFName, selection: str):
         interaction_time = datetime.now()
@@ -152,3 +167,17 @@ class UiComm(object):
         if info:
             return info.chart_type
         return None
+
+    def custom_message(self, message_type: str, message: str):
+        """[internal] escape hatch for other message types
+        
+        Arguments:
+            type {str} -- the typescript code must know how to handle this "type"
+            message {str} -- propages the "value" of the message sent
+        """
+        self.comm.send({
+            "type": message_type,
+            "value": message
+        })
+
+    

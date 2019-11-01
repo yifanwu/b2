@@ -8,7 +8,9 @@ from .vis_types import SelectionPredicate
 from .state_types import DFName
 from midas.ui_comm import UiComm
 
+
 class State(object):
+    # FIXME: we might want to support a history of MidasDataFrames! as opposed to an update in place for dfinfo
     dfs: Dict[DFName, DFInfo]
     # series: Dict[str, Ser]
     nextId: int
@@ -20,26 +22,31 @@ class State(object):
         self.shelf_selections = {}
 
     # FIXME: maybe in the future df_name could be just added to DataFrame
-    def add_df(self, df_name: DFName, mdf: MidasDataFrame):
+    # @check_df_name
+    def add_df(self, mdf: MidasDataFrame):
+        if mdf.df_name is None:
+            raise InternalLogicalError("df should have a name to be updated")
         created_on = datetime.now()
         selections: List[SelectionPredicate] = []
-        df_info = DFInfo(df_name, mdf, created_on, selections)
-        self.dfs[df_name] = df_info
+        df_info = DFInfo(mdf, created_on, selections)
+        self.dfs[mdf.df_name] = df_info # type: ignore 
         # we also need to manage the UI component
-        self.ui_comm.visualize(df_name, mdf)
+        self.ui_comm.visualize(mdf)
         # maybe let's see what if we do not replace the index
         # if replace_index:
         #     df.index = df.index.map(str).map(lambda x: f"{x}-{df_name}")
         #     df.index.name = CUSTOM_INDEX_NAME
         return
 
-
-    def update_df_data(self, df_name: DFName, mdf: MidasDataFrame):
+    # @check_df_name
+    def update_df(self, mdf: MidasDataFrame):
+        if mdf.df_name is None:
+            raise InternalLogicalError("df should have a name to be updated")
         # will trigger the UI to update
-        if self.has_df(df_name):
-            self.dfs[df_name] = self.dfs[df_name]._replace(df = mdf)
+        if self.has_df(mdf.df_name):
+            self.dfs[mdf.df_name] = self.dfs[mdf.df_name]._replace(df = mdf)
         else:
-            self.add_df(df_name, mdf)
+            self.add_df(mdf)
 
 
     def append_df_predicates(self, df_name: DFName, predicate: SelectionPredicate) -> DFInfo:
