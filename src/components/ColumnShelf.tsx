@@ -1,5 +1,5 @@
-import React, { MouseEventHandler } from "react";
-import {ColumnItem} from "./ColumnItem"
+import React from "react";
+import {ColumnItem} from "./ColumnItem";
 
 interface Column {
   columnName: string;
@@ -46,6 +46,5 @@ export class ColumnShelf extends React.Component<{}, ColumnShelfState> {
       </>
     );
   }
-
 }
 

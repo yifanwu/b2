@@ -6,9 +6,7 @@ import { hashCode, LogInternalError, LogSteps } from "../utils";
 import { AlertType } from "../types";
 import {
   SortableContainer,
-  SortableElement,
-  SortableHandle,
-} from 'react-sortable-hoc';
+} from "react-sortable-hoc";
 import { DataProps } from "@nteract/data-explorer/src/types";
 import { Spec } from "vega";
 
@@ -31,7 +29,7 @@ interface ProfilerInfo {
   notebookCellId: number;
   data: DataProps;
 }
-import arrayMove from 'array-move';
+import arrayMove from "array-move";
 
 interface AlertItem {
   msg: string;
@@ -144,7 +142,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
   }
 
   navigate(dfName: string) {
-    // 
+    // TODO @yifan/@ryan
     const elmnt = document.getElementById("content");
     elmnt.scrollIntoView();
   }
@@ -184,7 +182,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
    * @param dfName the name of the data frame
    */
   addDataFrame(dfName: string, vegaSpec: Spec, notebookCellId: number) {
-    console.log(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`)
+    console.log(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`);
     if (this.state.elements.filter(e => e.dfName === dfName).length > 0) {
       return;
     }
@@ -261,9 +259,9 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         reactiveCells: prevState.reactiveCells,
         allReactiveCells: prevState.allReactiveCells,
         alerts: prevState.alerts
-      }
+      };
     });
-  };
+  }
 
 
   render() {

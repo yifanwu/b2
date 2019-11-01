@@ -46,14 +46,14 @@ module.exports = [
   //     "./index": "nbextensions/midas/index"
   //   }
   // }),
-  Object.assign({}, commonConfig, {
-    entry: "./src/floater.css",
-    output: {
-      filename: "floater.css",
-      library: "nbextensions/midas/index",
-      path: outputPath,
-      libraryTarget: outputLibraryTarget
-    }
-  }),
+  // Object.assign({}, commonConfig, {
+  //   entry: "./src/floater.css",
+  //   output: {
+  //     filename: "floater.css",
+  //     library: "nbextensions/midas/index",
+  //     path: outputPath,
+  //     libraryTarget: outputLibraryTarget
+  //   }
+  // }),
 
 ];

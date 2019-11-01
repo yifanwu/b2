@@ -23,7 +23,8 @@ Symlink files instead of copying files:
 
 ```sh
 python setup.py develop
-yarn build # yarn watch if in dev mode for continuous update
+yarn install
+npm run build # yarn watch if in dev mode for continuous update
 jupyter nbextension install --py --symlink midas  # not needed in notebook >= 5.3
 ```
 

@@ -72,9 +72,8 @@ export function createMidasComponent() {
   $(window).resize(
     function() {
       syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10);
-    })
+    });
 
-  
   let midasSideBarDiv = $("<div id=\"midas-sidebar-wrapper\"/>");
 
   // let floater = $("<div id=\"midas-floater-wrapper\"/>");

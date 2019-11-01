@@ -1,6 +1,5 @@
-import React, { MouseEventHandler } from "react";
-import {SelectionItem} from "./SelectionItem";
-import { key } from "vega";
+import React from "react";
+import { SelectionItem } from "./SelectionItem";
 
 interface SelectionShelfState {
   selectionItemTitles: string[];

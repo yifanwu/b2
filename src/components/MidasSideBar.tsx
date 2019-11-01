@@ -1,8 +1,7 @@
-import React, {RefObject} from "react"; 
+import React from "react"; 
 import MidasContainer from "./MidasContainer";
-import MidasMidbar from "./MidasMidbar";
-import {SelectionShelf} from "./SelectionShelf";
-import {ColumnShelf} from "./ColumnShelf";
+import { SelectionShelf } from "./SelectionShelf";
+import { ColumnShelf } from "./ColumnShelf";
 
 export class MidasSidebar extends React.Component<{}, {}> {
 
