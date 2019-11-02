@@ -269,6 +269,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     const profilerDivs = profiles.map(({dfName, data}) => (
       <Profiler
         key={dfName}
+        dfName={dfName}
         data={data}
       />
     ));

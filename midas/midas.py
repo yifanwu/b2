@@ -57,7 +57,7 @@ class Midas(object):
             magics = MidasMagic(ip, ui_comm)
             ip.register_magics(magics)
 
-        self.rt_funcs = RuntimeFunctions(self.state.add_df, self.get_stream, self.ui_comm.navigate_to_chart)
+        self.rt_funcs = RuntimeFunctions(self.state.add_df, self.get_stream, self.ui_comm.navigate_to_chart, self._eval)
 
 
     def register_df(self, df_name_raw: str, df_raw: DataFrame) -> MidasDataFrame:
@@ -68,10 +68,15 @@ class Midas(object):
         logging("register_df", df_name)
         # FIXME: need to figure out where to propate df_name...
         df = MidasDataFrame.from_data(df_raw, df_name, self.rt_funcs)
+        # TOTAL HACK
+        globals()[df_name_raw] = df
         self.state.add_df(df)
         # retuns
         return df
 
+    def _eval(self, code: str):
+        # ran here because it has the correct scope
+        return eval(code)
 
     def has_df(self, df_name_raw: str):
         return self.state.has_df(DFName(df_name_raw))
@@ -79,7 +84,7 @@ class Midas(object):
     def register_series(self, series: Series, name: str):
         # turn it into a df
         df = series.to_frame()
-        return self.register_df(df, name)
+        return self.register_df(name, df)
 
     def get_stream(self, df: Union[str, MidasDataFrame]) -> MidasSelectionStream:
         """[summary]

@@ -10,7 +10,7 @@ import {MidasSidebar} from "./components/MidasSidebar"
 type ColumnValue = {
   columnName: string;
   columnType: string;
-}
+};
 
 // types could be of: name, error, reactive
 // TODO: maybe don't need these types...

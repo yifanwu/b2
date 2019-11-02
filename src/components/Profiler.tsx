@@ -2,10 +2,11 @@ import React from "react";
 // for now the profiler is just going to be a table of the first 5 results
 // and the user can click to say not interesting
 
-import DataExplorer from "@nteract/data-explorer";
+// import DataExplorer from "@nteract/data-explorer";
 import { DataProps } from "@nteract/data-explorer/src/types";
 
 interface ProfilerProps {
+  dfName: string;
   data: DataProps;
 }
 
@@ -20,12 +21,13 @@ export default class Profiler extends React.Component<ProfilerProps, ProfilerSta
 
   render() {
     return (<div style={{"width": 400}}>
-        <DataExplorer
+        {/* <DataExplorer
           data={this.props.data}
           initialView="grid"
           mediaType="application/vnd.dataresource+json"
           metadata={{dx: {}}}
-        />
+        /> */}
+        <p>Dataframe {this.props.dfName} loaded!</p>
       </div>);
   }
 }

@@ -9,7 +9,7 @@ from .constants import MIDAS_CELL_COMM_NAME
 
 from midas.midas_algebra.dataframe import MidasDataFrame
 from .util.utils import get_min_max_tuple_from_list
-from .util.errors import InternalLogicalError, MockComm
+from .util.errors import InternalLogicalError, MockComm, debug_log
 from .vis_types import ChartType, NullSelectionPredicate, Channel, TwoDimSelectionPredicate, OneDimSelectionPredicate, ChartInfo
 from .util.helper import transform_df, get_chart_title
 from .widget.showme import gen_spec
@@ -42,6 +42,8 @@ class UiComm(object):
                 "value": df.name
             })
             return
+        debug_log("here is the df")
+        print(df.pandas_value)
         if (len(df.pandas_value.columns) > 2):
             self.create_profile(df)
         else:

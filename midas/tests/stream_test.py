@@ -20,7 +20,7 @@ class TestStream(unittest.TestCase):
     def test_simple(self):
         m = Midas()
         df = DataFrame([[1,2], [3,4], [5,6]], columns=['a', 'b'])
-        mdf = m.register_df(df, DF_NAME)
+        simple_df = m.register_df(DF_NAME, df)
 
         steps = 0
         def cb(predicate):
@@ -30,14 +30,17 @@ class TestStream(unittest.TestCase):
                 print('\n> unit test started for step 1')
                 self.assertEqual(predicate.x[0], 2)
                 # assert that the df_trans is set properly
-                mdf = m.get_df_info(DERIVED_DF_NAME)
-                derived_df = mdf.df.value
-                print(derived_df)
+                derived_df_info = m.get_df_info(DERIVED_DF_NAME)
+                self.assertIsNotNone(derived_df_info, f"{DERIVED_DF_NAME} should be found!")
+                # Note: cannot use value here because some scoping issues
+                derived_df_value = derived_df_info.df.pandas_value
+                print("Derived_df results")
+                print(derived_df_value)
                 # 1 row
-                self.assertEqual(derived_df.value[0], 1)
                 # 1 column
-                self.assertEqual(derived_df.shape[1], 1)
-                self.assertEqual(derived_df.iloc[0]['c'], 7)
+                self.assertEqual(derived_df_value.shape[0], 1)
+                self.assertEqual(derived_df_value.shape[1], 1)
+                self.assertEqual(derived_df_value.iloc[0]['b'], 4)
                 self.assertIsInstance(predicate, TwoDimSelectionPredicate)
                 _p = cast(TwoDimSelectionPredicate, predicate)
                 self.assertEqual(_p.x[0], 2)
@@ -60,17 +63,19 @@ class TestStream(unittest.TestCase):
         debug_log("getting stream")
         stream = m.get_stream(DF_NAME)
         debug_log("adding callbakc")
-        stream.add_callback(cb)
-        def transform(predicates):
-            # takes in predicates
-            new_mdf = predicates.filter(mdf)
-            new_mdf.project[new_mdf.b].assign(DERIVED_DF_NAME)
+        def transform(predicate):
+            debug_log(f"Transform {predicate}")
+            new_mdf = simple_df.apply_selection(predicate)
+            new_mdf.project([new_mdf.b]).assign(DERIVED_DF_NAME) # type: ignore
         stream.add_callback(transform)
+
+        # this should be added after the first one since there is a dependency!
+        stream.add_callback(cb)
+        
+        # 1
         val_str = '{"x":[2, 4],"y":[3, 5]}'
-        # now start one iteration of the loop
         m.add_selection("simple_df", val_str)
-        # sleep(1)
-        # now start the second iteration of the loop
+        # 2
         val_str_2 = '{"x":[0, 4],"y":[1, 5]}'
         m.add_selection("simple_df", val_str_2)
 
