@@ -23,7 +23,7 @@ from .midas_algebra.context import Context
 # from .config import DEBOUNCE_RATE_MS
 from .midas_magic import MidasMagic
 from .util.instructions import HELP_INSTRUCTION
-from .util.errors import NullValueError, DfNotFoundError, InternalLogicalError, UserError, logging, check_not_null
+from .util.errors import NullValueError, DfNotFoundError, InternalLogicalError, UserError, logging, check_not_null, DebugException
 from .util.utils import isnotebook
 from .util.helper import get_df_by_predicate
 
@@ -46,7 +46,7 @@ class Midas(object):
         # self.is_processing_tick: bool = False
         # FIXME: have a better mock up experience for testing, if we are not in notebook...
         # check if we are in a ipython environment
-        ui_comm = UiComm(is_in_ipynb)
+        ui_comm = UiComm(is_in_ipynb, self.add_selection)
         self.ui_comm = ui_comm
         self.shelf_selections = {}
         self.state = State(ui_comm)
@@ -70,9 +70,13 @@ class Midas(object):
         df = MidasDataFrame.from_data(df_raw, df_name, self.rt_funcs)
         # TOTAL HACK
         globals()[df_name_raw] = df
-        self.state.add_df(df)
+        # self.state.add_df(df, True)
         # retuns
         return df
+    
+    def refresh_comm(self):
+        self.ui_comm.set_comm()
+
 
     def _eval(self, code: str):
         # ran here because it has the correct scope
@@ -147,6 +151,7 @@ class Midas(object):
         df_name = DFName(df_name_raw)
         # note that the selection is str because 
         logging("add_selection", df_name)
+        # raise DebugException(f"adding new selection {df_name}")
         # figure out what spec it was
         # FIXME make sure this null checking is correct
         predicate = self.ui_comm.get_predicate_info(df_name, selection)
@@ -218,7 +223,7 @@ class Midas(object):
                 self.state.shelf_selections[name] = (predicate, df_name)
                 self.ui_comm.custom_message('add-selection', name)
         else: 
-            self.ui_comm.send_error(f'no selection on {df_name} yet')
+            self.ui_comm.send_user_error(f'no selection on {df_name} yet')
 
 
     # def js_get_current_chart_code(self, df_name: str) -> Optional[str]:

@@ -23,7 +23,7 @@ class State(object):
 
     # FIXME: maybe in the future df_name could be just added to DataFrame
     # @check_df_name
-    def add_df(self, mdf: MidasDataFrame):
+    def add_df(self, mdf: MidasDataFrame, is_base_df: bool=False):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         created_on = datetime.now()
@@ -31,11 +31,10 @@ class State(object):
         df_info = DFInfo(mdf, created_on, selections)
         self.dfs[mdf.df_name] = df_info # type: ignore 
         # we also need to manage the UI component
-        self.ui_comm.visualize(mdf)
-        # maybe let's see what if we do not replace the index
-        # if replace_index:
-        #     df.index = df.index.map(str).map(lambda x: f"{x}-{df_name}")
-        #     df.index.name = CUSTOM_INDEX_NAME
+        if is_base_df:
+            self.ui_comm.create_profile(mdf)
+        else:
+            self.ui_comm.visualize(mdf)
         return
 
     # @check_df_name

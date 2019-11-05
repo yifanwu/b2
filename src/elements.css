@@ -50,10 +50,19 @@
   background-color: antiquewhite;
 }
 
-.editable-text-button, .midas-header-button {
+.editable-text-button {
   font-family: monospace;
-  margin-left: 2pt;
-  margin-right: 2pt;
+  margin-left: 5pt;
+  margin-right: 1pt;
+  border-radius: 50%;
+} 
+
+.midas-header-button {
+  margin: 5px;
+  border-radius: 20%;
+  background-color: white;
+  color: black;
+  border: 2px solid #4CAF50; /* Green */
 }
 
 .midas-header-options {
@@ -69,6 +78,7 @@
 }
 
 .editable-text-title, .selection-column-name {
+  font-size: 0.9em;
   align-self: left;
   flex-grow: 1;
 }
@@ -83,18 +93,24 @@
 }
 
 .midbar-shelf-header {
-  margin-left: 5pt;
+  font-size: 1.4em;
+  margin: 5px;
 }
 
 .midas-shelf-selection-item {
   width: 100%;
-  padding: 2.5pt;
-  margin-right: 5pt;
-  margin-top: 2.5pt;
-  margin-bottom: 2.5pt;
-  margin-left: 5pt;
+  margin: 1pt;
   display: flex;
   align-items: center;
+}
+
+.profiler-table-name {
+  font-size: 1em;
+  font-weight: 500;
+}
+
+#profiler-shelf {
+  border-bottom: 2px solid grey;
 }
 
 .midas-title {
@@ -113,14 +129,17 @@
 }
 
 .midas-alerts-error {
-  padding: 20px;
-  background-color: #f44336;
+  margin: 5px;
+  padding: 5px;
+  background-color: red;
+  opacity: 40%;
   color: white;
   text-align: left;
 }
 
-.midas-alerts-error {
-  padding: 20px;
+.midas-alerts-confirm {
+  margin: 5px;
+  padding: 5px;
   background-color: green;
   color: white;
   text-align: left;
@@ -129,7 +148,19 @@
 .midas-sortable-list {
   list-style-type: none;
 }
+
 .drag-handle {
   cursor: grab;
   font-family: monospace;
+}
+
+.notification-btn {
+  font-family: monospace;
+  border: 2px solid white; /* Green */
+  background-color: transparent;
+  opacity: 0;
+  color: white;
+  margin-left: 5pt;
+  margin-right: 1pt;
+  border-radius: 50%;
 }

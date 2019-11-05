@@ -49,6 +49,7 @@ interface ContainerState {
   reactiveCells: Map<string, number[]>;
   allReactiveCells: Set<number>;
   alerts: AlertItem[];
+  comm: any; // unfortunately not typed
 }
 
 const ALERT_ALIVE_TIME = 5000;
@@ -68,8 +69,10 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     this.tick = this.tick.bind(this);
     this.captureCell = this.captureCell.bind(this);
     this.addAlert = this.addAlert.bind(this);
+    this.closeAlert = this.closeAlert.bind(this);
 
     this.state = {
+      comm: null,
       notebookMetaData: [],
       profiles: [],
       elements: [],
@@ -92,6 +95,9 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
   }
 
 
+  set_comm(comm: any) {
+    this.setState({comm});
+  }
   /**
    * Stores the cell id at which the given data frame was defined.
    * @param name the name of the data frame
@@ -112,18 +118,20 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     console.log("midas container tick called", dfName);
     // look up the reactiveCells
     const cells = this.state.reactiveCells.get(dfName);
-    const cellIdxs = cells.map(c => {
-      const cIdxMsg = Jupyter.notebook.get_msg_cell(c);
-      const idx = Jupyter.notebook.find_cell_index(cIdxMsg);
-      if (idx) {
-        return idx;
-      } else {
-        // maybe report this to the user
-        LogInternalError(`One of the cells is no longer found`);
-      }
-    });
-    LogSteps(`[${dfName}] Reactively executing cells ${cellIdxs}`);
-    Jupyter.notebook.execute_cells(cellIdxs);
+    if (cells) {
+      const cellIdxs = cells.map(c => {
+        const cIdxMsg = Jupyter.notebook.get_msg_cell(c);
+        const idx = Jupyter.notebook.find_cell_index(cIdxMsg);
+        if (idx) {
+          return idx;
+        } else {
+          // maybe report this to the user
+          LogInternalError(`One of the cells is no longer found`);
+        }
+      });
+      LogSteps(`[${dfName}] Reactively executing cells ${cellIdxs}`);
+      Jupyter.notebook.execute_cells(cellIdxs);
+    }
   }
 
 
@@ -159,16 +167,23 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
       });
       return prevState;
     });
-    window.setTimeout(() => {
+    if (alertType === AlertType.Confirmation) {
+      window.setTimeout(() => {
+        this.closeAlert(aId);
+      }, ALERT_ALIVE_TIME);
+    }
+  }
+
+  closeAlert(aId: number) {
+    return () => {
       this.setState(prevState => {
         const alerts = prevState.alerts.filter(a => a.aId !== aId);
         return {
           alerts
         };
       });
-    }, ALERT_ALIVE_TIME);
+    };
   }
-
 
   resetState() {
     // TODO
@@ -265,7 +280,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
 
 
   render() {
-    const {elements, profiles, alerts} = this.state;
+    const { comm, elements, profiles, alerts } = this.state;
     const profilerDivs = profiles.map(({dfName, data}) => (
       <Profiler
         key={dfName}
@@ -279,26 +294,30 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         cellId={notebookCellId}
         key={dfName}
         dfName={dfName}
+        comm={comm}
+        tick={this.tick}
         // FIXME: title need to change
         title={dfName}
         vegaSpec={vegaSpec}
         removeChart={() => this.removeDataFrame(dfName)}
       />
     ));
-    const alertDivs = alerts.map((a) => {
-      const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-confirm";
+    const alertDivs = alerts.map((a, i) => {
+      const close = this.closeAlert(a.aId);
+      const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-debug";
       return <div
             className={className}
             key={`alert-${a.aId}`}
           >
             {a.msg}
+            <button className="notification-btn" onClick={close}>x</button>
         </div>;
       });
     return (
       <div id="midas-floater-container">
-        <h1 className="midbar-shelf-header">
+        <div className="midbar-shelf-header">
           Midas Monitor
-        </h1>
+        </div>
 
         {profilerDivs}
         <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>

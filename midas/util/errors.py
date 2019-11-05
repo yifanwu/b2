@@ -24,6 +24,11 @@ class NullValueError(Exception):
         super().__init__(message)
 
 
+class DebugException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class WrongTypeError(Exception):
     def __init__(self, message):
         super().__init__(message)

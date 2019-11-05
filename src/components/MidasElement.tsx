@@ -4,7 +4,7 @@ import {
   SortableContainer,
   SortableElement,
   SortableHandle,
-} from 'react-sortable-hoc';
+} from "react-sortable-hoc";
 import { makeElementId } from "../config";
 import { Spec, View } from "vega";
 import vegaEmbed from "vega-embed";
@@ -17,6 +17,8 @@ interface MidasElementProps {
   dfName: string;
   title: string;
   vegaSpec: Spec;
+  tick: (dfName: string) => void;
+  comm: any; // unfortunately not typed
 }
 
 interface MidasElementState {
@@ -29,14 +31,22 @@ const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;â
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
-function getDebouncedFunction(dfName: string) {
+function getDebouncedFunction(dfName: string, comm: any, tick: (dfName: string) => void) {
   const callback = (signalName: string, value: any) => {
     // also need to call into python state...
     const valueStr = JSON.stringify(value);
-    const pythonCommand = `${MIDAS_INSTANCE_NAME}.js_add_selection("${dfName}", '${valueStr}')`;
-    IPython.notebook.kernel.execute(pythonCommand);
+    const msg = {
+      command: "selection",
+      dfName,
+      value: valueStr
+    };
+    comm.send(msg);
+    LogDebug("Sending to comm the selection");
+    console.log(msg);
+    // const pythonCommand = `${MIDAS_INSTANCE_NAME}.js_add_selection("${dfName}", '${valueStr}')`;
+    // IPython.notebook.kernel.execute(pythonCommand);
     // FIXME: there might be some async issues between the midas and the python
-    window.midas.tick(dfName);
+    tick(dfName);
   };
 
   const wrapped = (name: any, value: any) => {
@@ -78,21 +88,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.embed();
   }
 
+
   embed() {
-    const { dfName, vegaSpec } = this.props;
-    // TODO: add options support later...
-    // not sure why they have this http loader thing
-    // , {
-    //   loader: { http: { credentials: "same-origin" } }
-    // }
+    const { dfName, vegaSpec, tick } = this.props;
     vegaEmbed(`#${this.state.elementId}`, vegaSpec)
       .then((res: any) => {
-        this.setState({view: res.view});
-        // also update this view such that it calls the Midas tick everytime it changes...
-        LogDebug(`Registering signal for TICK`);
-        // this is the first time we are registering the signal, hence set signal
-        // for the future, it should be addSignalListener, though they should be handled
-        res.view.signal(SELECTION_SIGNAL, getDebouncedFunction(dfName));
+        this.setState({ view: res.view });
+        LogDebug(`Registering signal for TICK, with signal ${SELECTION_SIGNAL}`);
+        res.view.addSignalListener(SELECTION_SIGNAL, getDebouncedFunction(dfName, this.props.comm, tick));
       })
       .catch((err: Error) => console.error(err));
   }
@@ -115,7 +118,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     let cell = Jupyter.notebook.get_msg_cell(this.props.cellId);
     let index = Jupyter.notebook.find_cell_index(cell);
     Jupyter.notebook.select(index);
-    Jupyter.CodeCell.msg_cells[this.props.cellId].code_mirror.display.lineDiv.scrollIntoViewIfNeeded()
+    Jupyter.CodeCell.msg_cells[this.props.cellId].code_mirror.display.lineDiv.scrollIntoViewIfNeeded();
   }
 
   getPythonButtonClicked() {

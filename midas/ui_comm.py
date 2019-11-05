@@ -1,8 +1,9 @@
+from midas.midas_algebra.data_types import NotAllCaseHandledError
 from midas.state_types import DFName
 from ipykernel.comm import Comm
 from json import loads
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Callable, Any
 import json
 
 from .constants import MIDAS_CELL_COMM_NAME
@@ -18,14 +19,40 @@ from .util.data_processing import sanitize_dataframe
 class UiComm(object):
     comm: Comm
     vis_spec: Dict[DFName, ChartInfo]
+    is_in_ipynb: bool
+    tmp_debug: str
 
-    def __init__(self, is_in_ipynb: bool):
+    def __init__(self, is_in_ipynb: bool, add_selection: Callable[[str, str], Any]):
         self.next_id = 0
         self.vis_spec = {}
-        if is_in_ipynb:
+        self.is_in_ipynb = is_in_ipynb
+        self.set_comm()
+        self.add_selection = add_selection
+
+
+    def set_comm(self):
+        if self.is_in_ipynb:
             self.comm = Comm(target_name=MIDAS_CELL_COMM_NAME)
+
+            def handle_msg(data_raw):
+                self.tmp_debug = data_raw
+                # data_raw = loads(data_str)
+                data = data_raw["content"]["data"]
+                command = data["command"]
+                if (command == "selection"):
+                    df_name = data["dfName"]
+                    value = data["value"]
+                    self.send_debug_msg(f"Data: {command} {df_name} {value}")
+                    self.add_selection(df_name, value)
+                else:
+                    m = f"Command {command} not handled!"
+                    self.send_debug_msg(m)
+                    raise NotAllCaseHandledError(m)
+
+            self.comm.on_msg(handle_msg)
         else:
             self.comm = MockComm()
+    
 
     def visualize(self, df: MidasDataFrame):
         # if it's more than two we give profile
@@ -42,23 +69,24 @@ class UiComm(object):
                 "value": df.name
             })
             return
-        debug_log("here is the df")
-        print(df.pandas_value)
         if (len(df.pandas_value.columns) > 2):
-            self.create_profile(df)
+            self.send_user_error(f"Dataframe {df.df_name} not visualized")
         else:
             self.create_chart(df)
         return
 
     def create_profile(self, df: MidasDataFrame):
+        debug_log(f"creating profile {df.df_name}")
         if df.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
-        clean_df = sanitize_dataframe(df.pandas_value)
-        data = json.dumps(clean_df.to_json(orient="table"))
+        # clean_df = sanitize_dataframe(df.pandas_value)
+        # data = json.dumps(clean_df.to_json(orient="table"))
+        columns = [{"columnName": c.name, "columnType": c.c_type.value} for c in df.columns]
+        # print(columns)
         message = {
             "type": "profiler",
             "dfName": df.df_name,
-            "data": data
+            "columns": json.dumps(columns)
         }
         self.comm.send(message)
         return
@@ -102,12 +130,19 @@ class UiComm(object):
         return
 
 
-    def send_error(self, message: str):
+    def send_user_error(self, message: str):
         self.comm.send({
-            "type": "error",
+            "type": "notification",
+            "style": "error",
             "value": message
         })
 
+    def send_debug_msg(self, message: str):
+        self.comm.send({
+            "type": "notification",
+            "style": "debug",
+            "value": message
+        })
 
     def navigate_to_chart(self, df_name: DFName):
         # @ryan --- I think this should be very simialr to the concurrent scrolling
@@ -182,4 +217,4 @@ class UiComm(object):
             "value": message
         })
 
-    
+   

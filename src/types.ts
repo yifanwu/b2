@@ -1,5 +1,6 @@
 export enum AlertType {
   Error = "error",
+  Debug = "debug",
   Confirmation = "confirmation"
 }
 

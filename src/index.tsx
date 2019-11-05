@@ -17,20 +17,25 @@ import {MidasSidebar} from "./components/MidasSidebar";
 import { LogSteps } from "./utils";
 
 import {SelectionShelf} from "./components/SelectionShelf";
-import { ColumnShelf } from "./components/ColumnShelf";
+import { ProfilerShelf } from "./components/ProfilerShelf";
 
 
 declare global {
   interface Window {
     midas: MidasContainer;
     selectionShelf: SelectionShelf;
-    columnShelf: ColumnShelf;
+    profilerShelf: ProfilerShelf;
   }
 }
 
 
 export function load_ipython_extension() {
   createMidasComponent();
+
+  $([Jupyter.events]).on("kernel_starting.Kernel", function() {
+    LogSteps("!!Kernel starting!!");
+    createMidasComponent(false);
+  });
 }
 
 
@@ -65,42 +70,27 @@ function syncWidth(parentSelector: string, childSelector: string, marginAdjust =
   $(childSelector).width(parentwidth - marginAdjust );
 }
 
+export function createMidasComponent(is_first_time: boolean = true) {
+  LogSteps("createMidasComponent");
 
-export function createMidasComponent() {
-  LogSteps("createMidasComponent", "this should be called only once!");
-
-  $(window).resize(
-    function() {
+  if (is_first_time) {
+    $(window).resize(function() {
       syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10);
     });
+    const midasSideBarDiv = $("<div id=\"midas-sidebar-wrapper\"/>");
+    $("#notebook").append(midasSideBarDiv);
+  }
 
-  let midasSideBarDiv = $("<div id=\"midas-sidebar-wrapper\"/>");
-
-  // let floater = $("<div id=\"midas-floater-wrapper\"/>");
-  // let reactWrapper = $("<div id=\"midas-react-wrapper\">");
-
-  // floater.append(reactWrapper);
-
-  // $("#notebook").append(floater);
-  $("#notebook").append(midasSideBarDiv);
   ReactDOM.render(<MidasSidebar ref={(comp) => makeComm(comp)}/>, document.getElementById("midas-sidebar-wrapper"));
 
-  makeResizer((delta) => {
-    let oldWidth = $("#midas-sidebar-wrapper").width()
-    $("#midas-sidebar-wrapper").width(oldWidth + delta);
+  if (is_first_time) {
+    makeResizer((delta) => {
+      let oldWidth = $("#midas-sidebar-wrapper").width();
+      $("#midas-sidebar-wrapper").width(oldWidth + delta);
+      syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10 * 2);
+    });
     syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10 * 2);
-  });
-
-
-  syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10 * 2);
-
-  // ReactDOM.render(<MidasContainer ref={(comp) => makeComm(comp)} />,
-    // document.getElementById("midas-react-wrapper"));
-
-  $([Jupyter.events]).on("kernel_starting.Kernel", function(){
-    console.log("Kernel starting.");
-//      resetSideBarState();
-  });
+  }
 }
 
 function javascriptIndex(selector: string, outputs: any) {

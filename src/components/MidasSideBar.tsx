@@ -1,19 +1,19 @@
 import React from "react"; 
 import MidasContainer from "./MidasContainer";
 import { SelectionShelf } from "./SelectionShelf";
-import { ColumnShelf } from "./ColumnShelf";
+import { ProfilerShelf } from "./ProfilerShelf";
 
 export class MidasSidebar extends React.Component<{}, {}> {
 
   midasContainerRef: MidasContainer;
   selectionShelfRef: SelectionShelf;
-  columnShelfRef: ColumnShelf;
+  profilerShelfRef: ProfilerShelf;
 
   constructor(props?: {}) {
     super(props);
 
     this.setMidasContainerRef = this.setMidasContainerRef.bind(this);
-    this.setColumnShelfRef = this.setColumnShelfRef.bind(this);
+    this.setProfilerShelfRef = this.setProfilerShelfRef.bind(this);
     this.setSelectionShelfRef = this.setSelectionShelfRef.bind(this);
   }
 
@@ -21,55 +21,46 @@ export class MidasSidebar extends React.Component<{}, {}> {
     this.midasContainerRef = input;
   }
 
-  setColumnShelfRef(input: ColumnShelf) {
-    this.columnShelfRef = input;
+  setProfilerShelfRef(input: ProfilerShelf) {
+    this.profilerShelfRef = input;
   }
-
 
   setSelectionShelfRef(input: SelectionShelf) {
     this.selectionShelfRef = input;
   }
 
-
   getMidasContainerRef() {
     return this.midasContainerRef;
   }
 
-  getColumnShelfRef() {
-    return this.columnShelfRef;
+  getProfilerShelfRef() {
+    return this.profilerShelfRef;
   }
 
   getSelectionShelfRef() {
     return this.selectionShelfRef;
   }
 
+  set_comm(comm: any) {
+    this.midasContainerRef.set_comm(comm);
+  }
 
-    render() {
-      let midbar = (
-        <div id="midas-midbar">
-        <div>
-          <h1 className="midbar-shelf-header">
-            Column Shelf
-            </h1>
-            <ColumnShelf ref={this.setColumnShelfRef}/>
-          </div>
-        <div>
-          <h1 className="midbar-shelf-header">
-            Selection Shelf
-          </h1>
-          <SelectionShelf ref={this.setSelectionShelfRef}/>
-        </div>
-      </div>
-      )
-    return (
-      <>
-      <div id="midas-resizer"></div>
+  render() {
+    let midbar = (
+      <div id="midas-midbar">
+        <ProfilerShelf ref={this.setProfilerShelfRef}/>
+        <SelectionShelf ref={this.setSelectionShelfRef}/>
+    </div>
+    )
+  return (
+    <>
+    <div id="midas-resizer"></div>
 
-      <div className="midas-inside">
-        {midbar}
-        <MidasContainer ref={this.setMidasContainerRef}></MidasContainer>
-      </div>
-      </>
-    );
+    <div className="midas-inside">
+      {midbar}
+      <MidasContainer ref={this.setMidasContainerRef}></MidasContainer>
+    </div>
+    </>
+  );
   }
 }

@@ -31,14 +31,13 @@ export class SelectionShelf extends React.Component<{}, SelectionShelfState> {
   }
 
   render() {
-    return (
-      <>
-      {this.state.selectionItemTitles.map(
-        (selectionName, index) => <SelectionItem selectionName={selectionName}
-              onDelete={() => this.deleteItem(index)} key={selectionName}/>)}
-      </>
-    );
+    const selectionDivs = this.state.selectionItemTitles.map(
+      (selectionName, index) => <SelectionItem selectionName={selectionName}
+            onDelete={() => this.deleteItem(index)} key={selectionName}/>);
+    return <div id="selection-shelf">
+      <div className="midbar-shelf-header">selections</div>
+      {selectionDivs}
+      </div>;
   }
-
 }
 
