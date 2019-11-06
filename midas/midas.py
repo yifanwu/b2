@@ -151,8 +151,6 @@ class Midas(object):
         df_name = DFName(df_name_raw)
         # note that the selection is str because 
         logging("add_selection", df_name)
-        # raise DebugException(f"adding new selection {df_name}")
-        # figure out what spec it was
         # FIXME make sure this null checking is correct
         predicate = self.ui_comm.get_predicate_info(df_name, selection)
         self.event_loop.tick(df_name, predicate)
@@ -163,30 +161,6 @@ class Midas(object):
         # need to create TickItem
         item = TickItem(df_name, cb)
         return self.event_loop.add_callback(item)
-
-    # decorator
-    # def bind(self, param_type: Union[TickIOType, str], output_type: Union[TickIOType, str], df_interact_name: str, target_df: Optional[str]=None):
-    #     if not (self.state.has_df(df_interact_name)):
-    #         raise DfNotFoundError(f"{df_interact_name} is not in the collection of {self.dfs.keys()}")
-    #     if target_df and (target_df in self.dfs):
-    #         raise UserError(f"Your result based df {df_interact_name} alread exists, please chose a new name")
-        
-    #     _param_type = cast(TickIOType, TickIOType[param_type] if (type(param_type) == str) else param_type)
-    #     _output_type = cast(TickIOType, TickIOType[output_type] if (type(param_type) == str) else output_type)
-    #     def decorator(call):
-    #         nonlocal target_df
-    #         if (_output_type == TickIOType.data) and (not target_df):
-    #             rand_hash = get_random_string(4)
-    #             target_df = f"{call.__name__}_on_{df_interact_name}_{rand_hash}"
-    #         item = TickItem(_param_type, _output_type, call, target_df)
-    #         self.event_loop.add_to_tick(df_interact_name, item)
-    #     return decorator
-
-
-    # def register_join_info(self, dfs: List[str], join_columns: List[str]):
-    #     join_info = JoinInfo(dfs, join_columns)
-    #     self.joins.append(join_info)
-
 
     def add_facet(self, df_name: str, facet_column: str):
         # 
@@ -225,40 +199,5 @@ class Midas(object):
         else: 
             self.ui_comm.send_user_error(f'no selection on {df_name} yet')
 
-
-    # def js_get_current_chart_code(self, df_name: str) -> Optional[str]:
-    #     # figure out how to derive the current df
-    #     # don't have a story yet for complicated things...
-    #     # decide on if we want to focus on complex code gen...
-    #     if self._has_df(df_name):
-    #         predicates = self.dfs[df_name].predicates
-    #         if (len(predicates) > 0):
-    #             predicate = predicates[-1]
-    #             code = get_df_code(predicate, df_name)
-    #             print(code)
-    #             copy(code)
-    #             return code
-    #     # something went wrong, so let's tell comes...
-    #     self.midas_cell_comm.send({
-    #         'type': 'error',
-    #         'value': f'no selection on {df_name} yet'
-    #     })
-    #     return
-
-    # # the following are for internal use
-    # def js_add_selection(self, df_name: str, selection: str):
-    #     logging("js_add_selection", df_name)
-    #     # figure out what spec it was
-    #     # FIXME make sure this null checking is correct
-    #     predicate = self.ui_comm.get_predicate_info(df_name, selection)
-    #     self.event_loop.tick(df_name, predicate)
-    #     return
-
-
-# def load_ipython_extension(ipython):
-# # ip = get_ipython()
-#     magics = Midas(ipython)
-#     ipython.register_magics(magics)
-      
 
 __all__ = ['Midas']

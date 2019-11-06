@@ -11,6 +11,11 @@ type NotificationCommLoad = { type: string; style: string, value: string };
 type AddSelectionLoad = { type: string; value: string };
 type ReactiveCommLoad = { type: string; value: string };
 type NavigateCommLoad = { type: string; value: string };
+type UpdateCommLoad = {
+  type: string;
+  dfName: string;
+  newData: string;
+};
 type ProfilerComm = {
   type: string;
   dfName: string;
@@ -22,7 +27,7 @@ type ChartRenderComm = {
   vega: string;
 };
 
-type MidasCommLoad = NotificationCommLoad | ReactiveCommLoad | ProfilerComm | ChartRenderComm | NavigateCommLoad;
+type MidasCommLoad = NotificationCommLoad | ReactiveCommLoad | ProfilerComm | ChartRenderComm | NavigateCommLoad | UpdateCommLoad;
 
 /**
  * Makes the comm responsible for discovery of which visualization
@@ -106,6 +111,9 @@ function make_on_msg(refToSidebar: MidasSidebar) {
         return;
       }
       case "chart_update_data": {
+        const updateLoad = load as UpdateCommLoad;
+        const newData = JSON.parse(updateLoad.newData);
+        refToMidas.replaceData(updateLoad.dfName, newData);
         return;
       }
     }

@@ -7,6 +7,7 @@ from typing import Dict, Callable, Any
 import json
 
 from .constants import MIDAS_CELL_COMM_NAME
+from ast import literal_eval
 
 from midas.midas_algebra.dataframe import MidasDataFrame
 from .util.utils import get_min_max_tuple_from_list
@@ -55,24 +56,13 @@ class UiComm(object):
     
 
     def visualize(self, df: MidasDataFrame):
-        # if it's more than two we give profile
-        # and less than two we plot
-        # potentially add metadata here
-        # make sure that value is defined
-
-        if(df.id in self.vis_spec):
-            # might be changes that require updates
-            # TODO
-            # direct to the right visualization
-            self.comm.send({
-                "type": "navigate_to_vis",
-                "value": df.name
-            })
-            return
         if (len(df.pandas_value.columns) > 2):
             self.send_user_error(f"Dataframe {df.df_name} not visualized")
         else:
-            self.create_chart(df)
+            if (df.id in self.vis_spec):
+                self.update_chart(df)
+            else:
+                self.create_chart(df)
         return
 
     def create_profile(self, df: MidasDataFrame):
@@ -130,6 +120,30 @@ class UiComm(object):
         return
 
 
+    def update_chart(self, df: MidasDataFrame):
+        # first look up chart_info
+        if df.df_name is None:
+            raise InternalLogicalError("Missing df_name")
+        chart_info = self.vis_spec[df.df_name]
+        if chart_info is None:
+            raise InternalLogicalError("Cannot update since not done before")
+        pandas_df = df.pandas_value
+        vis_df = pandas_df
+        if chart_info.additional_transforms:
+            vis_df = transform_df(chart_info.additional_transforms, pandas_df)
+
+        sanitizied_df = sanitize_dataframe(vis_df)
+        # we have created it such that the data is an array
+        new_data = sanitizied_df.to_dict(orient='records')
+
+        # should be very similar to above
+        self.comm.send({
+            "type": "chart_update_data",
+            "dfName": df.df_name,
+            "newData": new_data
+        })
+        return
+
     def send_user_error(self, message: str):
         self.comm.send({
             "type": "notification",
@@ -168,9 +182,13 @@ class UiComm(object):
             is_categorical = True
             predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
             return predicate
-        if (vis.chart_type == ChartType.bar_linear):            
-            bound_left = predicate_raw[Channel.x.value][0][0]
-            bound_right = predicate_raw[Channel.x.value][-1][1]
+        if (vis.chart_type == ChartType.bar_linear):
+            print("===DKFDSFKDS")
+            print(predicate_raw[Channel.x.value][0])
+            left = literal_eval((predicate_raw[Channel.x.value][0].replace('(','[')))
+            bound_left = left[0]
+            right = literal_eval((predicate_raw[Channel.x.value][-1].replace('(','[')))
+            bound_right = right[1]
             x_value = get_min_max_tuple_from_list([bound_left, bound_right])
             is_categorical = False
             predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
@@ -184,10 +202,6 @@ class UiComm(object):
         raise InternalLogicalError("Not all chart_info handled")
 
 
-
-    def update_chart(self, df_name: str, df: MidasDataFrame):
-        # should be very similar to above
-        return
 
 
     def create_custom_visualization(self, spec):

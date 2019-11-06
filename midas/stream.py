@@ -46,9 +46,8 @@ class MidasSelectionStream(object):
 
     @property
     def history(self):
-        raise NotImplementedError()
-        # return self.get_history(self.df_name)
-
+        # raise NotImplementedError()
+        return self.ref_to_predicate_list
 
     # FIXME: not sure how better to name these # NAMING
     def add_callback(self, cb) -> TickId:

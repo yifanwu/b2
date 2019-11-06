@@ -1,4 +1,4 @@
-import React, { createRef, RefObject } from "react";
+import React, { RefObject } from "react";
 
 import MidasElement from "./MidasElement";
 import Profiler from "./Profiler";
@@ -22,6 +22,8 @@ interface ContainerElementState {
   dfName: string;
   notebookCellId: number;
   vegaSpec: Spec;
+  newData?: any[];
+  chanageStep: number;
 }
 
 interface ProfilerInfo {
@@ -29,6 +31,7 @@ interface ProfilerInfo {
   notebookCellId: number;
   data: DataProps;
 }
+
 import arrayMove from "array-move";
 
 interface AlertItem {
@@ -62,6 +65,8 @@ const MidasSortableContainer = SortableContainer(({children}: {children: any}) =
  * Container for the MidasElements that hold the visualization.
  */
 export default class MidasContainer extends React.Component<{}, ContainerState> {
+  // refLookup: Map<string, typeof MidasElement>;
+
   constructor(props?: {}) {
     super(props);
 
@@ -70,6 +75,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     this.captureCell = this.captureCell.bind(this);
     this.addAlert = this.addAlert.bind(this);
     this.closeAlert = this.closeAlert.bind(this);
+    // this.refLookup = new Map();
 
     this.state = {
       comm: null,
@@ -206,12 +212,30 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
       prevState.elements.push({
         notebookCellId,
         dfName,
-        vegaSpec
+        vegaSpec,
+        chanageStep: 1
       });
       // prevState.notebookMetaData.push({
       //   dfName,
       // });
       return prevState;
+    });
+  }
+
+  replaceData(dfName: string, data: any[]) {
+    // need to invoke the replaceData function of the child...
+    // replaceData
+    // this.refLookup[dfName].replaceData();
+    this.setState(prevState => {
+      for (let e of prevState.elements) {
+        if (e.dfName === dfName) {
+          e.newData = data;
+          e.chanageStep = e.chanageStep + 1;
+        }
+      }
+      return {
+        elements: prevState.elements
+      };
     });
   }
 
@@ -278,6 +302,11 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     });
   }
 
+  // setMidasElementRef(dfName: string) {
+  //   return (ref: typeof MidasElement) => {
+  //     this.refLookup[dfName] = ref;
+  //   };
+  // }
 
   render() {
     const { comm, elements, profiles, alerts } = this.state;
@@ -288,8 +317,9 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         data={data}
       />
     ));
-    const chartDivs = elements.map(({notebookCellId, dfName, vegaSpec }, index) => (
-      <MidasElement
+    const chartDivs = elements.map(({notebookCellId, dfName, vegaSpec }, index) => {
+      // const ref = this.setMidasElementRef(dfName);
+      return <MidasElement
         index={index}
         cellId={notebookCellId}
         key={dfName}
@@ -299,9 +329,11 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         // FIXME: title need to change
         title={dfName}
         vegaSpec={vegaSpec}
+        // ref={ref}
+        // ref={(r) => this.setMidasElementRef(dfName, r)}
         removeChart={() => this.removeDataFrame(dfName)}
-      />
-    ));
+      />;
+    });
     const alertDivs = alerts.map((a, i) => {
       const close = this.closeAlert(a.aId);
       const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-debug";
