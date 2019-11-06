@@ -12,6 +12,8 @@ import { MIDAS_INSTANCE_NAME, SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, Y_DOMAIN_SI
 import { LogDebug, LogInternalError } from "../utils";
 
 interface MidasElementProps {
+  changeStep: number;
+  newData?: any[];
   cellId: number;
   removeChart: MouseEventHandler;
   dfName: string;
@@ -107,6 +109,23 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.setState(prevState => {
       return { hidden: !prevState.hidden };
     });
+  }
+
+
+  componentWillReceiveProps(nextProps: MidasElementProps) {
+    if (nextProps.changeStep > this.props.changeStep) {
+      const filter = new Function(
+        "datum",
+        "return (true)"
+      );
+      const newValues = nextProps.newData;
+      const changeSet = this.state.view
+        .changeset()
+        .insert(newValues)
+        .remove(filter);
+
+      this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
+    }
   }
 
   /**

@@ -23,7 +23,7 @@ interface ContainerElementState {
   notebookCellId: number;
   vegaSpec: Spec;
   newData?: any[];
-  chanageStep: number;
+  changeStep: number;
 }
 
 interface ProfilerInfo {
@@ -213,7 +213,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         notebookCellId,
         dfName,
         vegaSpec,
-        chanageStep: 1
+        changeStep: 1
       });
       // prevState.notebookMetaData.push({
       //   dfName,
@@ -230,7 +230,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
       for (let e of prevState.elements) {
         if (e.dfName === dfName) {
           e.newData = data;
-          e.chanageStep = e.chanageStep + 1;
+          e.changeStep = e.changeStep + 1;
         }
       }
       return {
@@ -317,7 +317,8 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         data={data}
       />
     ));
-    const chartDivs = elements.map(({notebookCellId, dfName, vegaSpec }, index) => {
+    const chartDivs = elements.map(({
+      notebookCellId, dfName, vegaSpec, changeStep: chanageStep, newData }, index) => {
       // const ref = this.setMidasElementRef(dfName);
       return <MidasElement
         index={index}
@@ -329,6 +330,8 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         // FIXME: title need to change
         title={dfName}
         vegaSpec={vegaSpec}
+        changeStep={chanageStep}
+        newData={newData}
         // ref={ref}
         // ref={(r) => this.setMidasElementRef(dfName, r)}
         removeChart={() => this.removeDataFrame(dfName)}

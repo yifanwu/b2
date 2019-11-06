@@ -14,7 +14,7 @@ type NavigateCommLoad = { type: string; value: string };
 type UpdateCommLoad = {
   type: string;
   dfName: string;
-  newData: string;
+  newData: any;
 };
 type ProfilerComm = {
   type: string;
@@ -112,8 +112,9 @@ function make_on_msg(refToSidebar: MidasSidebar) {
       }
       case "chart_update_data": {
         const updateLoad = load as UpdateCommLoad;
-        const newData = JSON.parse(updateLoad.newData);
-        refToMidas.replaceData(updateLoad.dfName, newData);
+        console.log("chart update with data");
+        console.log(updateLoad.newData);
+        refToMidas.replaceData(updateLoad.dfName, updateLoad.newData);
         return;
       }
     }

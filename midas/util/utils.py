@@ -151,6 +151,5 @@ def get_min_max_tuple_from_list(values: List[float]) -> Tuple[float, float]:
     Returns:
        returns the modifed array in place
     """
-    if (values[0] > values[1]):
-        return (values[1], values[0])
-    return (values[0], values[1])
+    return (min(values), max(values))
+    

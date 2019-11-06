@@ -1,8 +1,11 @@
+from midas.util.errors import InternalLogicalError
 from pandas import DataFrame, Series, cut
+from math import log10, pow
 from typing import Dict, Optional
 from midas.defaults import DEFAULT_DATA_SOURCE, Y_DOMAIN_BY_DATA_SIGNAL, COUNT_COL_NAME
 from midas.vis_types import ChartInfo, Channel
 
+MAX_BINS = 20
 
 def get_categorical_distribution(data: Series, column_name: str) -> Optional[DataFrame]:
     # TODO: just select the top 10
@@ -11,16 +14,56 @@ def get_categorical_distribution(data: Series, column_name: str) -> Optional[Dat
     else:
         return None
 
+    # def get_bins(data: Series):
+
+
+def snap_to_nice_number(n: float):
+    if n <= 0:
+        raise InternalLogicalError(f"Got {n}")
+    if (n <= 1):
+        zeroes = pow(10, abs(int(log10(n))) + 1)
+        new_num = snap_to_nice_number(n * zeroes)
+        return new_num/zeroes
+        # if it's less than 1, make it as big as one and then call the same function and return
+    if (n <= 2):
+        return 2
+    elif (n <= 5):
+        return 5
+    elif (n <= 10):
+        return 10
+    # bigger than 10, just zero out the digits
+    zeroes = pow(10, int(log10(n)))
+    return (int(n / zeroes) + 1) * zeroes
+
 
 def get_numeric_distribution(data: Series,  column_name: str) -> Optional[DataFrame]:
-    # wow can just use pd.cut
-    # FIXME: preserve integer bounds when applicable
     if not data.empty:
-        return cut(data, bins=10) \
-          .value_counts() \
-          .to_frame(COUNT_COL_NAME) \
-          .rename_axis(column_name) \
-          .reset_index()
+        current_max_bins = data.nunique()
+        if (current_max_bins < MAX_BINS):
+            # no binning needed
+            return data.value_counts() \
+                       .to_frame(COUNT_COL_NAME) \
+                       .rename_axis(column_name) \
+                       .reset_index() \
+                       .sort_values(by=[column_name])
+        else:
+            min_bucket_count = round(MAX_BINS/current_max_bins)
+            d_max = data.max()
+            d_min = data.min()
+            min_bucket_size = (d_max - d_min) / min_bucket_count
+            bound = snap_to_nice_number(min_bucket_size)
+            d_nice_min = int(d_min/bound) * bound
+            bins = [d_nice_min]
+            cur = d_nice_min
+            while (cur < d_max):
+                cur += bound
+                bins.append(cur)
+                return cut(data, bins=bins, labels=bins[1:]) \
+                            .value_counts() \
+                            .to_frame(COUNT_COL_NAME) \
+                            .rename_axis(column_name) \
+                            .reset_index() \
+                            .sort_values(by=[column_name])
     else:
         return None
 
@@ -40,6 +83,9 @@ def sanitize_dataframe(df):
     """
     import pandas as pd
     import numpy as np
+
+    if df is None:
+        raise InternalLogicalError("Cannot sanitize empty df")
 
     df = df.copy()
 

@@ -59,7 +59,7 @@ class UiComm(object):
         if (len(df.pandas_value.columns) > 2):
             self.send_user_error(f"Dataframe {df.df_name} not visualized")
         else:
-            if (df.id in self.vis_spec):
+            if (df.df_name in self.vis_spec):
                 self.update_chart(df)
             else:
                 self.create_chart(df)
@@ -95,7 +95,9 @@ class UiComm(object):
             vis_df = df
             if chart_info.additional_transforms:
                 vis_df = transform_df(chart_info.additional_transforms, df)
-
+            if vis_df is None:
+                self.send_user_error(f"Df {mdf.df_name} is empty")
+                return
             sanitizied_df = sanitize_dataframe(vis_df)
             # we have created it such that the data is an array
             chart_info.vega_spec["data"][0]["values"] = sanitizied_df.to_dict(orient='records')
@@ -183,13 +185,15 @@ class UiComm(object):
             predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
             return predicate
         if (vis.chart_type == ChartType.bar_linear):
-            print("===DKFDSFKDS")
-            print(predicate_raw[Channel.x.value][0])
-            left = literal_eval((predicate_raw[Channel.x.value][0].replace('(','[')))
-            bound_left = left[0]
-            right = literal_eval((predicate_raw[Channel.x.value][-1].replace('(','[')))
-            bound_right = right[1]
-            x_value = get_min_max_tuple_from_list([bound_left, bound_right])
+            print("===debug===")
+            print(predicate_raw[Channel.x.value])
+            # bounds = []
+            # left = literal_eval((predicate_raw[Channel.x.value][0].replace('(','[')))
+            # bounds.append(left[0])
+            # right = literal_eval((predicate_raw[Channel.x.value][-1].replace('(','[')))
+            # bounds.append(right[1]
+            # x_value = get_min_max_tuple_from_list([bound_left, bound_right])
+            x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
             is_categorical = False
             predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
             return predicate
