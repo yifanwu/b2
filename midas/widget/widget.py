@@ -1,6 +1,6 @@
 from __future__ import print_function
 import json
-from pandas import DataFrame
+from pandas import DataFrame  # type: ignore
 from typing import List, Optional, Dict
 
 from midas.util.errors import debug_log
@@ -10,8 +10,8 @@ from midas.defaults import DEFAULT_DATA_SOURCE
 from .widget_types import UpdateDataMessage, SignalMessage, WidgetMessageType
 
 try:
-    from ipywidgets import DOMWidget
-    from traitlets import Unicode, Int, Bool
+    from ipywidgets import DOMWidget # type: ignore
+    from traitlets import Unicode, Int, Bool # type: ignore
 except ImportError as err:
     new_err = ImportError(
         "midas.widget requires ipywidgets, which could not be imported. "

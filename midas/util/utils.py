@@ -4,8 +4,8 @@ import codecs
 from os import path
 
 from typing import Tuple, List
-from pandas import DataFrame
-from IPython import get_ipython
+from pandas import DataFrame  # type: ignore
+from IPython import get_ipython  # type: ignore
 
 import random
 import string

@@ -1,12 +1,8 @@
-import ast
+from IPython import get_ipython # type: ignore
+from IPython.core.magic import (Magics, magics_class, line_magic, cell_magic, line_cell_magic)  # type: ignore
+from IPython.core.magic_arguments import (argument, magic_arguments, parse_argstring)  # type: ignore
 
 from .ui_comm import UiComm
-# extracting out the magic part for better testing...
-from IPython import get_ipython
-from IPython.core.magic import (Magics, magics_class, line_magic,
-                                cell_magic, line_cell_magic)
-from IPython.core.magic_arguments import (argument, magic_arguments,
-    parse_argstring)
 
 @magics_class
 class MidasMagic(Magics):

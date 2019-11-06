@@ -1,9 +1,9 @@
-from midas.util.errors import InternalLogicalError
-from pandas import DataFrame, Series, cut
+from pandas import DataFrame, Series, cut  # type: ignore
 from math import log10, pow
-from typing import Dict, Optional
-from midas.defaults import DEFAULT_DATA_SOURCE, Y_DOMAIN_BY_DATA_SIGNAL, COUNT_COL_NAME
-from midas.vis_types import ChartInfo, Channel
+from typing import Optional
+
+from midas.util.errors import InternalLogicalError
+from midas.defaults import COUNT_COL_NAME
 
 MAX_BINS = 20
 

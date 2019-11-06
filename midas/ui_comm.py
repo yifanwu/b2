@@ -1,13 +1,12 @@
-from midas.midas_algebra.data_types import NotAllCaseHandledError
-from midas.state_types import DFName
-from ipykernel.comm import Comm
+from ipykernel.comm import Comm # type: ignore
 from json import loads
 from datetime import datetime
 from typing import Dict, Callable, Any
 import json
 
 from .constants import MIDAS_CELL_COMM_NAME
-from ast import literal_eval
+from midas.midas_algebra.data_types import NotAllCaseHandledError
+from midas.state_types import DFName
 
 from midas.midas_algebra.dataframe import MidasDataFrame
 from .util.utils import get_min_max_tuple_from_list

@@ -1,8 +1,7 @@
-from pandas import DataFrame
+from pandas import DataFrame # type: ignore
 from typing import cast, Optional
 from datetime import datetime
 from typing import Dict, Optional
-from pandas import DataFrame
 
 from .data_processing import get_categorical_distribution, get_numeric_distribution
 from midas.midas_algebra.dataframe import DFInfo

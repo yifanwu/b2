@@ -1,12 +1,12 @@
-from pandas import DataFrame
-from .midas_algebra.dataframe import MidasDataFrame, DFInfo
+from pandas import DataFrame  # type: ignore
 from datetime import datetime
 from typing import Dict, List
 
+from .midas_algebra.dataframe import MidasDataFrame, DFInfo
 from .util.errors import InternalLogicalError, debug_log
 from .vis_types import SelectionPredicate
 from .state_types import DFName
-from midas.ui_comm import UiComm
+from .ui_comm import UiComm
 
 
 class State(object):
@@ -42,6 +42,8 @@ class State(object):
             self.ui_comm.visualize(mdf)
         return
 
+    def has_df(self, df_name: DFName):
+        return df_name in self.dfs
 
 
     def append_df_predicates(self, df_name: DFName, predicate: SelectionPredicate) -> DFInfo:

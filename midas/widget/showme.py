@@ -3,11 +3,9 @@ cases covered:
 * single attribute, get distribution
 * two attributes, bar, scatter, or line
 """
-from midas.state_types import DFName
-from midas.util.helper import get_chart_title
 from typing import Optional, Dict
-from pandas.api.types import is_string_dtype, is_numeric_dtype, is_bool_dtype, is_datetime64_any_dtype
-from pandas import DataFrame
+from pandas.api.types import is_string_dtype, is_numeric_dtype, is_bool_dtype, is_datetime64_any_dtype  # type: ignore
+from pandas import DataFrame # type: ignore
 
 from midas.midas_algebra.dataframe import MidasDataFrame
 from .vega_gen.bar_chart import gen_bar_chart_spec

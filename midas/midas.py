@@ -1,12 +1,11 @@
 from __future__ import absolute_import
-from pandas import DataFrame, Series
-from IPython import get_ipython
-from typing import Dict, Optional, List, Callable, Union, cast
-# from datetime import datetime
+from pandas import DataFrame, Series  # type: ignore
+from IPython import get_ipython  # type: ignore
+from typing import Optional, Union
 # from pyperclip import copy
 
 try:
-    from IPython.display import display
+    from IPython.display import display  # type: ignore
 except ImportError as err:
     print("not in Notebook environment")
     display = lambda x: None
