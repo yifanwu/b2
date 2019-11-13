@@ -6,7 +6,7 @@ from typing import Dict, Optional
 from .data_processing import get_categorical_distribution, get_numeric_distribution
 from midas.midas_algebra.dataframe import DFInfo
 from midas.defaults import COUNT_COL_NAME
-from midas.vis_types import OneDimSelectionPredicate, DfTransform, SelectionPredicate, NullSelectionPredicate, DfTransform
+from midas.vis_types import OneDimSelectionPredicate, DfTransform, SelectionEvent, NullSelectionPredicate, DfTransform
 from .errors import check_not_null
 
 
@@ -22,7 +22,7 @@ def get_chart_title(df_name: str):
     return df_name
 
 
-def get_selection_by_predicate(df_info: DFInfo, history_index: int) -> Optional[SelectionPredicate]:
+def get_selection_by_predicate(df_info: DFInfo, history_index: int) -> Optional[SelectionEvent]:
     check_not_null(df_info)
     if (len(df_info.predicates) > history_index):
         predicate = df_info.predicates[history_index]
@@ -31,7 +31,7 @@ def get_selection_by_predicate(df_info: DFInfo, history_index: int) -> Optional[
         return None
 
 
-def get_df_by_predicate(df: DataFrame, predicate: SelectionPredicate):
+def get_df_by_predicate(df: DataFrame, predicate: SelectionEvent):
     """get_selection returns the selection DF
     it's optional because the selection could have churned out "null"
     The default would be the selection of all of the df

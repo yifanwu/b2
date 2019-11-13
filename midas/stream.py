@@ -1,5 +1,5 @@
 from midas.state_types import DFName
-from midas.vis_types import SelectionPredicate
+from midas.vis_types import SelectionEvent
 from typing import NewType, Callable, Union, List, Any
 
 # class MidasSelection(object):
@@ -29,7 +29,7 @@ class MidasSelectionStream(object):
     # FIXME: add function typing
     def __init__(self,
         df_name: DFName,
-        ref_to_predicate_list: List[SelectionPredicate],
+        ref_to_predicate_list: List[SelectionEvent],
         bind: Callable[[DFName, Any], Any]
       ):
         self.ref_to_predicate_list = ref_to_predicate_list

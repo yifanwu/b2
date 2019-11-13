@@ -43,7 +43,7 @@ interface AlertItem {
 interface ContainerState {
   notebookMetaData: MappingMetaData[];
   profiles: ProfilerInfo[];
-  // TODO: refact the name `elements` --- we now have different visual elements it seems.
+  // TODO: refact the name `elements` --- we now have different visual elements
   elements: ContainerElementState[];
   refs: Map<string, RefObject<HTMLDivElement>>;
   // FIXME: the idToCell might not be needed given that we have refs.

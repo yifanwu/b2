@@ -1,7 +1,7 @@
+from midas.midas_algebra.selection import SelectionValue
 from ipykernel.comm import Comm # type: ignore
 from json import loads
-from datetime import datetime
-from typing import Dict, Callable, Any
+from typing import Dict, Callable, Any, List
 import json
 
 from .constants import MIDAS_CELL_COMM_NAME
@@ -9,9 +9,10 @@ from midas.midas_algebra.data_types import NotAllCaseHandledError
 from midas.state_types import DFName
 
 from midas.midas_algebra.dataframe import MidasDataFrame
+from midas.midas_algebra.selection import NumericRangeSelection, StringSetSelection, SingleValueSelection, ColumnRef
 from .util.utils import get_min_max_tuple_from_list
 from .util.errors import InternalLogicalError, MockComm, debug_log
-from .vis_types import ChartType, NullSelectionPredicate, Channel, TwoDimSelectionPredicate, OneDimSelectionPredicate, ChartInfo
+from .vis_types import ChartType, Channel, ChartInfo
 from .util.helper import transform_df, get_chart_title
 from .widget.showme import gen_spec
 from .util.data_processing import sanitize_dataframe
@@ -164,11 +165,10 @@ class UiComm(object):
         #           do you mind looking into it?
         raise NotImplementedError()
 
-    def get_predicate_info(self, df_name: DFName, selection: str):
-        interaction_time = datetime.now()
+    def get_predicate_info(self, df_name: DFName, selection: str) -> List[SelectionValue]:
         if (len(selection) == 0):
-            predicate = NullSelectionPredicate(interaction_time)
-            return predicate
+            # predicate = NullSelectionPredicate(df_name)
+            return []
         predicate_raw = loads(selection)
         vis = self.vis_spec[df_name]
         x_column = vis.encodings[Channel.x]
@@ -176,13 +176,14 @@ class UiComm(object):
         if (vis.chart_type == ChartType.scatter):
             x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
             y_value = get_min_max_tuple_from_list(predicate_raw[Channel.y.value])
-            predicate = TwoDimSelectionPredicate(interaction_time, x_column, y_column, x_value, y_value)
-            return predicate
+            x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
+            y_selection = NumericRangeSelection(ColumnRef(y_column, df_name), y_value[0], y_value[1])
+            # predicate = TwoDimSelectionPredicate(df_name, x_column, y_column, x_value, y_value)
+            return [x_selection, y_selection]
         if (vis.chart_type == ChartType.bar_categorical):
             x_value = predicate_raw[Channel.x.value]
-            is_categorical = True
-            predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
-            return predicate
+            predicate = StringSetSelection(ColumnRef(x_column, df_name), x_value)
+            return [predicate]
         if (vis.chart_type == ChartType.bar_linear):
             print("===debug===")
             print(predicate_raw[Channel.x.value])
@@ -193,18 +194,15 @@ class UiComm(object):
             # bounds.append(right[1]
             # x_value = get_min_max_tuple_from_list([bound_left, bound_right])
             x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
-            is_categorical = False
-            predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
-            return predicate
+            x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
+            # predicate = OneDimSelectionPredicate(df_name, x_column, x_value, is_categorical)
+            return [x_selection]
         if (vis.chart_type == ChartType.line):
             x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
-            is_categorical = False
-            predicate = OneDimSelectionPredicate(interaction_time, x_column, is_categorical, x_value)
-            return predicate
+            x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
+            return [x_selection]
         # now 
         raise InternalLogicalError("Not all chart_info handled")
-
-
 
 
     def create_custom_visualization(self, spec):

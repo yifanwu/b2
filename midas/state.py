@@ -2,9 +2,10 @@ from pandas import DataFrame  # type: ignore
 from datetime import datetime
 from typing import Dict, List
 
+from .midas_algebra.selection import SelectionValue
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo
 from .util.errors import InternalLogicalError, debug_log
-from .vis_types import SelectionPredicate
+from .vis_types import SelectionEvent
 from .state_types import DFName
 from .ui_comm import UiComm
 
@@ -28,7 +29,7 @@ class State(object):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         created_on = datetime.now()
-        selections: List[SelectionPredicate] = []
+        selections: List[SelectionEvent] = []
         df_info = DFInfo(mdf, created_on, selections)
         # if 
         if (mdf.df_name in self.dfs):
@@ -46,7 +47,7 @@ class State(object):
         return df_name in self.dfs
 
 
-    def append_df_predicates(self, df_name: DFName, predicate: SelectionPredicate) -> DFInfo:
+    def append_df_predicates(self, df_name: DFName, predicate: List[SelectionValue]) -> DFInfo:
         df_info = self.dfs.get(df_name)
         # idx = len(df_info.predicates)
         if df_info:

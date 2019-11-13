@@ -56,7 +56,12 @@ class Midas(object):
             magics = MidasMagic(ip, ui_comm)
             ip.register_magics(magics)
 
-        self.rt_funcs = RuntimeFunctions(self.state.add_df, self.get_stream, self.ui_comm.navigate_to_chart, self._eval)
+        self.rt_funcs = RuntimeFunctions(
+            self.state.add_df,
+            self.get_stream,
+            self.ui_comm.navigate_to_chart,
+            self._eval,
+            self.context.apply_selection)
 
 
     def register_df(self, df_name_raw: str, df_raw: DataFrame) -> MidasDataFrame:
@@ -72,7 +77,21 @@ class Midas(object):
         # self.state.add_df(df, True)
         # retuns
         return df
-    
+
+
+    def link(self, df_interact: MidasDataFrame, df_update: MidasDataFrame):
+        if (df_interact.df_name is None) or (df_update.df_name is None):
+            # send error
+            self.ui_comm.send_user_error("The DFs you wish to link must both have been assigned")
+            return
+        # basically replace the data in the tick cycles, while keeping the same name
+        def transformation(predicate):
+            df_update.apply_selection(predicate).assign(df_update.df_name)
+            return
+        self.bind(df_interact.df_name, transformation)
+        return
+
+
     def refresh_comm(self):
         self.ui_comm.set_comm()
 
@@ -81,13 +100,16 @@ class Midas(object):
         # ran here because it has the correct scope
         return eval(code)
 
+
     def has_df(self, df_name_raw: str):
         return self.state.has_df(DFName(df_name_raw))
+
 
     def register_series(self, series: Series, name: str):
         # turn it into a df
         df = series.to_frame()
         return self.register_df(name, df)
+
 
     def get_stream(self, df: Union[str, MidasDataFrame]) -> MidasSelectionStream:
         """[summary]
@@ -110,29 +132,6 @@ class Midas(object):
         check_not_null(df_info)
         return MidasSelectionStream(df_name, df_info.predicates, self.bind)
 
-
-    def get_current_selection(self, df_name: DFName, option: str="predicate"):
-        """[summary]
-        
-        Arguments:
-            df_name {str} -- [description]
-            option {str} -- two options, "predicate" or "data", defaults to "predicate"
-        
-        Returns:
-            [type] -- [description]
-        """
-        df_info = self.get_df_info(df_name)
-        check_not_null(df_info)
-        if (len(df_info.predicates) > 0):
-            predicate = df_info.predicates[-1]
-            if (option == "predicate"):
-                return predicate
-            else:
-                return get_df_by_predicate(df_info.df, predicate)
-        else:
-            return None
-
-
     # the re
     def get_df_info(self, df_name: DFName) -> Optional[DFInfo]:
         return self.state.dfs.get(df_name)
@@ -146,18 +145,17 @@ class Midas(object):
     def help():
         print(HELP_INSTRUCTION)
 
+
     def add_selection(self, df_name_raw: str, selection: str):
         df_name = DFName(df_name_raw)
         # note that the selection is str because 
         logging("add_selection", df_name)
         # FIXME make sure this null checking is correct
         predicate = self.ui_comm.get_predicate_info(df_name, selection)
-        self.event_loop.tick(df_name, predicate)
+        self.event_loop.tick(predicate)
         return
 
     def bind(self, df_name: DFName, cb):
-        # , to_visualize: bool
-        # need to create TickItem
         item = TickItem(df_name, cb)
         return self.event_loop.add_callback(item)
 

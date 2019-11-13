@@ -1,11 +1,8 @@
 from enum import Enum
+from midas.midas_algebra.selection import SelectionValue
 from midas.state_types import DFName
-from typing import NamedTuple, Callable, List, Union, Any, Optional, Dict, Tuple
+from typing import NamedTuple, Callable, List, Any
 from datetime import datetime
-from midas.midas_algebra.dataframe import MidasDataFrame
-
-from .vis_types import SelectionPredicate
-
 
 class TickIOType(Enum):
     predicate = "predicate"
@@ -21,5 +18,5 @@ class TickSpec(NamedTuple):
 
 class TickItem(NamedTuple):
     df_name: DFName
-    call: Callable[[SelectionPredicate], Any]
+    call: Callable[[List[SelectionValue]], Any]
     # visualize: bool

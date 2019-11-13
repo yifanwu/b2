@@ -7,10 +7,6 @@ from typing import Tuple, List
 from pandas import DataFrame  # type: ignore
 from IPython import get_ipython  # type: ignore
 
-import random
-import string
-
-from .errors import InternalLogicalError
 
 def isnotebook():
     try:
@@ -42,6 +38,7 @@ def abs_path(p: str):
     return path.join(
         path.dirname(path.abspath(__file__)),
         p)
+
 
 def check_path(p: str):
     if not path.exists(p):

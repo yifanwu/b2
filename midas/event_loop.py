@@ -1,9 +1,8 @@
 from typing import Dict, Callable, List, Any
 from datetime import datetime
 
+from .midas_algebra.selection import SelectionValue
 from midas.state_types import DFName
-from midas.vis_types import SelectionPredicate
-
 from .event_types import TickSpec, TickItem
 
 from .state import State
@@ -31,8 +30,9 @@ class EventLoop(object):
             self.tick_funcs[item.df_name] = [item]
 
 
-    def tick(self, df_name: DFName, predicate: SelectionPredicate):
+    def tick(self, predicate: List[SelectionValue]):
         # tell state to change
+        df_name = predicate[0].column.df_name
         df_info = self.state.append_df_predicates(df_name, predicate)
         self.current_tick += 1
         self.tick_log.append(TickSpec(self.current_tick, df_name, datetime.now()))

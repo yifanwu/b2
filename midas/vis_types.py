@@ -1,6 +1,9 @@
 from datetime import datetime
 from enum import Enum
+from midas.midas_algebra.selection import SelectionValue
+from midas.state_types import DFName
 from typing import NamedTuple, List, Union, Any, Optional, Dict, Tuple
+
 
 # hope fully no recursive imports...
 from .widget.widget import MidasWidget
@@ -21,40 +24,41 @@ class Channel(Enum):
 # hack
 VegaSpecType = Dict[str, Any]
 
-
-# class PredicateType(Enum):
-#     one_dim_categorical = "one_dim_categorical"
-#     one_dim_linear = "one_dim_linear"
-#     two_dim_linear = "two_dim_linear"
-    # we can add other two dim combos, but not common right now...
-
-class TwoDimSelectionPredicate(NamedTuple):
-    """
-    going to assume that two dimension is both linear
-    """
+class SelectionEvent():
     interaction_time: datetime
-    x_column: str
-    y_column: str
-    x: Tuple[float, float]
-    y: Tuple[float, float]
-    dimension = 2
+    predicate: List[SelectionValue]
+    df_name: DFName
 
 
-class NullSelectionPredicate(NamedTuple):
-    interaction_time: datetime
-    dimension = 0
+# class TwoDimSelectionPredicate(SelectionPredicate):
+#     # assume that two dimension is both linear
+#     def __init__(self, df_name: DFName, x_column: str, y_column: str, x: Tuple[float, float], y: Tuple[float, float]):
+#         self.df_name = df_name
+#         self.dimension = 2
+#         self.interaction_time = datetime.now()
+#         self.x_column = x_column
+#         self.y_column = y_column
+#         self.x = x
+#         self.y = y
 
 
-class OneDimSelectionPredicate(NamedTuple):
-    interaction_time: datetime
-    x_column: str
-    is_categoritcal: bool
-    # the first is selecting linear scale, the second categorical scale
-    x: Union[Tuple[float, float], List[str]]
-    dimension = 1
-    
+# class NullSelectionPredicate(SelectionPredicate):
+#     def __init__(self, df_name: DFName):
+#         self.df_name = df_name
+#         self.dimension = 0
+#         self.interaction_time = datetime.now()
 
-SelectionPredicate = Union[TwoDimSelectionPredicate, OneDimSelectionPredicate, NullSelectionPredicate]
+
+# class OneDimSelectionPredicate(SelectionPredicate):
+#     def __init__(self, df_name: DFName, x_column: str,
+#       x: Union[Tuple[float, float], List[str]],
+#       is_categoritcal: bool):
+#         self.df_name = df_name
+#         self.dimension = 1
+#         self.interaction_time = datetime.now()
+#         self.x_column = x_column
+#         self.is_categoritcal = is_categoritcal
+#         self.x = x
 
 
 class DfTransform(Enum):
