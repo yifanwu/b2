@@ -65,13 +65,13 @@ class Midas(object):
     def from_records(self, records):
         table = Table.from_records(records)
         df_name = find_name()
-        MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
+        return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
 
     def read_table(self, filepath_or_buffer, *args, **vargs):
         table = Table.read_table(filepath_or_buffer, *args, **vargs)
         df_name = find_name()
-        MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
+        return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
 
     def with_columns(self, *labels_and_values, **formatter):
@@ -79,7 +79,7 @@ class Midas(object):
         print(labels_and_values)
         table = Table().with_columns(*labels_and_values, **formatter)
         df_name = find_name()
-        MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
+        return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
 
     # def register_df(self, df_name_raw: str, df_raw: DataFrame) -> MidasDataFrame:
