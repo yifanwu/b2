@@ -1,7 +1,7 @@
 from __future__ import absolute_import
-from pandas import DataFrame, Series  # type: ignore
 from IPython import get_ipython  # type: ignore
 from typing import Optional, Union
+from datascience import Table
 # from pyperclip import copy
 
 try:
@@ -23,7 +23,7 @@ from .midas_algebra.context import Context
 from .midas_magic import MidasMagic
 from .util.instructions import HELP_INSTRUCTION
 from .util.errors import NullValueError, DfNotFoundError, InternalLogicalError, UserError, logging, check_not_null, DebugException
-from .util.utils import isnotebook
+from .util.utils import isnotebook, find_name
 from .util.helper import get_df_by_predicate
 
 from .event_loop import EventLoop
@@ -60,23 +60,41 @@ class Midas(object):
             self.state.add_df,
             self.get_stream,
             self.ui_comm.navigate_to_chart,
-            self._eval,
+            # self._eval,
             self.context.apply_selection)
 
 
-    def register_df(self, df_name_raw: str, df_raw: DataFrame) -> MidasDataFrame:
-        """we will add this both to state
-           and to render
-        """
-        df_name = DFName(df_name_raw)
-        logging("register_df", df_name)
-        # FIXME: need to figure out where to propate df_name...
-        df = MidasDataFrame.from_data(df_raw, df_name, self.rt_funcs)
-        # TOTAL HACK
-        globals()[df_name_raw] = df
-        # self.state.add_df(df, True)
-        # retuns
-        return df
+    def from_records(self, records):
+        table = Table.from_records(records)
+        df_name = find_name()
+        MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
+
+
+    def read_table(self, filepath_or_buffer, *args, **vargs):
+        table = Table.read_table(filepath_or_buffer, args, vargs)
+        df_name = find_name()
+        MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
+
+
+    def with_columns(self, label, values, formatter=None):
+        table = Table.with_columns(label, values, formatter)
+        df_name = find_name()
+        MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
+
+
+    # def register_df(self, df_name_raw: str, df_raw: DataFrame) -> MidasDataFrame:
+    #     """we will add this both to state
+    #        and to render
+    #     """
+    #     df_name = DFName(df_name_raw)
+    #     logging("register_df", df_name)
+    #     # FIXME: need to figure out where to propate df_name...
+    #     df = MidasDataFrame.from_data(df_raw, df_name, self.rt_funcs)
+    #     # TOTAL HACK
+    #     globals()[df_name_raw] = df
+    #     # self.state.add_df(df, True)
+    #     # retuns
+    #     return df
 
 
     def link(self, df_interact: MidasDataFrame, df_update: MidasDataFrame):
@@ -105,10 +123,10 @@ class Midas(object):
         return self.state.has_df(DFName(df_name_raw))
 
 
-    def register_series(self, series: Series, name: str):
-        # turn it into a df
-        df = series.to_frame()
-        return self.register_df(name, df)
+    # def register_series(self, series: Series, name: str):
+    #     # turn it into a df
+    #     df = series.to_frame()
+    #     return self.register_df(name, df)
 
 
     def get_stream(self, df: Union[str, MidasDataFrame]) -> MidasSelectionStream:

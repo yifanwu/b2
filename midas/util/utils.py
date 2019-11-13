@@ -2,6 +2,8 @@
 
 import codecs
 from os import path
+import traceback
+import ast
 
 from typing import Tuple, List
 from pandas import DataFrame  # type: ignore
@@ -49,6 +51,13 @@ def get_content(path):
     """Get content of file."""
     with codecs.open(abs_path(path), encoding='utf-8') as f:
         return f.read()
+
+
+def find_name():
+    prev_line = traceback.format_stack()[-3]
+    code = prev_line.splitlines()[1]
+    a = ast.parse(code.strip()).body[0].targets[0].id # type: ignore
+    return a
 
 
 def sanitize_dataframe(df):
