@@ -19,12 +19,10 @@ from midas.event_types import TickItem
 from .state import State
 from .ui_comm import UiComm
 from .midas_algebra.context import Context
-# from .config import DEBOUNCE_RATE_MS
 from .midas_magic import MidasMagic
 from .util.instructions import HELP_INSTRUCTION
-from .util.errors import NullValueError, DfNotFoundError, InternalLogicalError, UserError, logging, check_not_null, DebugException
+from .util.errors import UserError, logging, check_not_null
 from .util.utils import isnotebook, find_name
-from .util.helper import get_df_by_predicate
 
 from .event_loop import EventLoop
 
@@ -71,13 +69,15 @@ class Midas(object):
 
 
     def read_table(self, filepath_or_buffer, *args, **vargs):
-        table = Table.read_table(filepath_or_buffer, args, vargs)
+        table = Table.read_table(filepath_or_buffer, *args, **vargs)
         df_name = find_name()
         MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
 
-    def with_columns(self, label, values, formatter=None):
-        table = Table.with_columns(label, values, formatter)
+    def with_columns(self, *labels_and_values, **formatter):
+        print("new column!")
+        print(labels_and_values)
+        table = Table().with_columns(*labels_and_values, **formatter)
         df_name = find_name()
         MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
@@ -96,18 +96,18 @@ class Midas(object):
     #     # retuns
     #     return df
 
-
-    def link(self, df_interact: MidasDataFrame, df_update: MidasDataFrame):
-        if (df_interact.df_name is None) or (df_update.df_name is None):
-            # send error
-            self.ui_comm.send_user_error("The DFs you wish to link must both have been assigned")
-            return
-        # basically replace the data in the tick cycles, while keeping the same name
-        def transformation(predicate):
-            df_update.apply_selection(predicate).assign(df_update.df_name)
-            return
-        self.bind(df_interact.df_name, transformation)
-        return
+    # TODO: fix!!! we'd have to add this to the event loop
+    # def link(self, df_interact: MidasDataFrame, df_update: MidasDataFrame):
+    #     if (df_interact.df_name is None) or (df_update.df_name is None):
+    #         # send error
+    #         self.ui_comm.send_user_error("The DFs you wish to link must both have been assigned")
+    #         return
+    #     # basically replace the data in the tick cycles, while keeping the same name
+    #     def transformation(predicate):
+    #         df_update.apply_selection(predicate).show(df_update.df_name)
+    #         return
+    #     self.bind(df_interact.df_name, transformation)
+    #     return
 
 
     def refresh_comm(self):

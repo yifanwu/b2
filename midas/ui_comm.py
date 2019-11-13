@@ -5,17 +5,15 @@ from typing import Dict, Callable, Any, List
 import json
 
 from .constants import MIDAS_CELL_COMM_NAME
-from midas.midas_algebra.data_types import NotAllCaseHandledError
 from midas.state_types import DFName
 
 from midas.midas_algebra.dataframe import MidasDataFrame
 from midas.midas_algebra.selection import NumericRangeSelection, StringSetSelection, SingleValueSelection, ColumnRef
 from .util.utils import get_min_max_tuple_from_list
-from .util.errors import InternalLogicalError, MockComm, debug_log
+from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import ChartType, Channel, ChartInfo
-from .util.helper import transform_df, get_chart_title
 from .widget.showme import gen_spec
-from .util.data_processing import sanitize_dataframe
+from .util.data_processing import sanitize_dataframe, transform_df
 
 class UiComm(object):
     comm: Comm
@@ -56,7 +54,7 @@ class UiComm(object):
     
 
     def visualize(self, df: MidasDataFrame):
-        if (len(df.pandas_value.columns) > 2):
+        if (len(df.table.columns) > 2):
             self.send_user_error(f"Dataframe {df.df_name} not visualized")
         else:
             if (df.df_name in self.vis_spec):
@@ -85,10 +83,10 @@ class UiComm(object):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         
-        df = mdf.pandas_value
+        df = mdf.table
         if (len(df.columns) > 2):
             raise InternalLogicalError("create_chart should not be called")
-        chart_title = get_chart_title(mdf.df_name) # type: ignore
+        chart_title = mdf.df_name
         chart_info = gen_spec(df, chart_title)
         if chart_info:
             # now we set the date for everyone
@@ -129,10 +127,10 @@ class UiComm(object):
         chart_info = self.vis_spec[df.df_name]
         if chart_info is None:
             raise InternalLogicalError("Cannot update since not done before")
-        pandas_df = df.pandas_value
-        vis_df = pandas_df
+        table = df.table
+        vis_df = table
         if chart_info.additional_transforms:
-            vis_df = transform_df(chart_info.additional_transforms, pandas_df)
+            vis_df = transform_df(chart_info.additional_transforms, table)
 
         sanitizied_df = sanitize_dataframe(vis_df)
         # we have created it such that the data is an array

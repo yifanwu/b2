@@ -2,11 +2,8 @@ from datetime import datetime
 from enum import Enum
 from midas.midas_algebra.selection import SelectionValue
 from midas.state_types import DFName
-from typing import NamedTuple, List, Union, Any, Optional, Dict, Tuple
+from typing import NamedTuple, List, Any, Optional, Dict
 
-
-# hope fully no recursive imports...
-from .widget.widget import MidasWidget
 
 class ChartType(Enum):
     bar_categorical = "bar_categorical"

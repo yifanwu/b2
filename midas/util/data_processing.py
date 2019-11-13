@@ -1,18 +1,46 @@
-from pandas import DataFrame, Series, cut  # type: ignore
+from datascience import Table
+import numpy as np
 from math import log10, pow
 from typing import Optional
 
-from midas.util.errors import InternalLogicalError
+from .errors import InternalLogicalError
 from midas.defaults import COUNT_COL_NAME
+from midas.vis_types import DfTransform
+
+
+
+def transform_df(transform: DfTransform, df: Table):
+    first_col = df.labels[0]
+    if (transform == DfTransform.categorical_distribution):
+        # sum is the default
+        return df.group(first_col)
+        # return get_categorical_distribution(df[first_col], first_col)
+    elif (transform == DfTransform.numeric_distribution):
+        return get_numeric_distribution(df[first_col], first_col)
+
+
+def get_chart_title(df_name: str):
+    # one level of indirection in case we need to change in the future
+    return df_name
+
+
+# def get_selection_by_predicate(df_info: DFInfo, history_index: int) -> Optional[SelectionEvent]:
+#     check_not_null(df_info)
+#     if (len(df_info.predicates) > history_index):
+#         predicate = df_info.predicates[history_index]
+#         return predicate
+#     else:
+#         return None
+
 
 MAX_BINS = 20
 
-def get_categorical_distribution(data: Series, column_name: str) -> Optional[DataFrame]:
-    # TODO: just select the top 10
-    if not data.empty:
-        return data.value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
-    else:
-        return None
+# def get_categorical_distribution(data: Table, column_name: str) -> Optional[DataFrame]:
+#     # TODO: just select the top 10
+#     if not data.empty:
+#         return data.value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
+#     else:
+#         return None
 
     # def get_bins(data: Series):
 
@@ -36,52 +64,55 @@ def snap_to_nice_number(n: float):
     return (int(n / zeroes) + 1) * zeroes
 
 
-def get_numeric_distribution(data: Series,  column_name: str) -> Optional[DataFrame]:
-    if not data.empty:
-        current_max_bins = data.nunique()
-        if (current_max_bins < MAX_BINS):
-            # no binning needed
-            return data.value_counts() \
-                       .to_frame(COUNT_COL_NAME) \
-                       .rename_axis(column_name) \
-                       .reset_index() \
-                       .sort_values(by=[column_name])
-        else:
-            min_bucket_count = round(MAX_BINS/current_max_bins)
-            d_max = data.max()
-            d_min = data.min()
-            min_bucket_size = (d_max - d_min) / min_bucket_count
-            bound = snap_to_nice_number(min_bucket_size)
-            d_nice_min = int(d_min/bound) * bound
-            bins = [d_nice_min]
-            cur = d_nice_min
-            while (cur < d_max):
-                cur += bound
-                bins.append(cur)
-                return cut(data, bins=bins, labels=bins[1:]) \
-                            .value_counts() \
-                            .to_frame(COUNT_COL_NAME) \
-                            .rename_axis(column_name) \
-                            .reset_index() \
-                            .sort_values(by=[column_name])
+def get_numeric_distribution(table: Table,  column_name: str) -> Table:
+    first_col = table.labels[0]
+    column = table.column(first_col)
+    unique_vals = np.unique(column)
+    current_max_bins = len(unique_vals)
+    if (current_max_bins < MAX_BINS):
+        # no binning needed
+        return table.group(first_col)
     else:
-        return None
+        min_bucket_count = round(MAX_BINS/current_max_bins)
+        d_max = unique_vals[-1]
+        d_min = unique_vals[0]
+        min_bucket_size = (d_max - d_min) / min_bucket_count
+        bound = snap_to_nice_number(min_bucket_size)
+        d_nice_min = int(d_min/bound) * bound
+        bins = [d_nice_min]
+        cur = d_nice_min
+        while (cur < d_max):
+            cur += bound
+            bins.append(cur)
+        # def binne_val(v):
+        count_col, name_col = np.histogram(column, bins)
+        return Table().with_columns({
+          first_col: name_col,
+          COUNT_COL_NAME: count_col  
+        })
+
+        # 
+            # return cut(data, bins=bins, labels=bins[1:]) \
+            #             .value_counts() \
+            #             .to_frame(COUNT_COL_NAME) \
+            #             .rename_axis(column_name) \
+            #             .reset_index() \
+            #             .sort_values(by=[column_name])
 
 
 
-def sanitize_dataframe(df):
+
+def sanitize_dataframe(df: Table):
     """Sanitize a DataFrame to prepare it for serialization.
     
     copied from the ipyvega project
     * Make a copy
-    * Raise ValueError if it has a hierarchical index.
     * Convert categoricals to strings.
     * Convert np.bool_ dtypes to Python bool objects
     * Convert np.int dtypes to Python int objects
     * Convert floats to objects and replace NaNs/infs with None.
     * Convert DateTime dtypes into appropriate string representations
     """
-    import pandas as pd
     import numpy as np
 
     if df is None:
@@ -89,18 +120,14 @@ def sanitize_dataframe(df):
 
     df = df.copy()
 
-    if isinstance(df.index, pd.core.index.MultiIndex):
-        raise ValueError('Hierarchical indices not supported')
-    if isinstance(df.columns, pd.core.index.MultiIndex):
-        raise ValueError('Hierarchical indices not supported')
-
     def to_list_if_array(val):
         if isinstance(val, np.ndarray):
             return val.tolist()
         else:
             return val
 
-    for col_name, dtype in df.dtypes.iteritems():
+    for col_name in df.labels:
+        dtype = df.column(col_name).dtype
         if str(dtype) == 'category':
             # XXXX: work around bug in to_json for categorical types
             # https://github.com/pydata/pandas/issues/10778
@@ -128,3 +155,35 @@ def sanitize_dataframe(df):
             df[col_name] = col.where(col.notnull(), None)
     return df
 
+
+def dataframe_to_dict(df: Table):
+    clean_df = sanitize_dataframe(df)
+    return clean_df.to_dict(orient='records')
+
+
+
+def prepare_spec(spec, data=None):
+    """Prepare a Vega-Lite spec for sending to the frontend.
+
+    This allows data to be passed in either as part of the spec
+    or separately. If separately, the data is assumed to be a
+    pandas DataFrame or object that can be converted to to a DataFrame.
+
+    Note that if data is not None, this modifies spec in-place
+    """
+    import pandas as pd
+
+    if isinstance(data, pd.DataFrame):
+        # We have to do the isinstance test first because we can't
+        # compare a DataFrame to None.
+        # data = sanitize_dataframe(data)
+        spec['data'] = {'values': dataframe_to_dict(data)}
+    elif data is None:
+        # Assume data is within spec & do nothing
+        # It may be deep in the spec rather than at the top level
+        pass
+    else:
+        # As a last resort try to pass the data to a DataFrame and use it
+        data = pd.DataFrame(data)
+        spec['data'] = {'values': dataframe_to_dict(data)}
+    return spec

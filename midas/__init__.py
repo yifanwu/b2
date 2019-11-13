@@ -2,12 +2,9 @@ from __future__ import absolute_import
 from warnings import warn
 
 from .midas import Midas
-from .midas_algebra.column import ColumnExpr
 from .midas_algebra.dataframe import MidasDataFrame
 
-C = ColumnExpr
-
-__all__ = ['Midas', 'C', 'MidasDataFrame']
+__all__ = ['Midas', 'MidasDataFrame']
 
 __version__ = '0.0.1'
 
