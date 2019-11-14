@@ -13,7 +13,7 @@ from .util.utils import get_min_max_tuple_from_list
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import ChartType, Channel, ChartInfo
 from .widget.showme import gen_spec
-from .util.data_processing import sanitize_dataframe, transform_df
+from .util.data_processing import dataframe_to_dict, transform_df
 
 class UiComm(object):
     comm: Comm
@@ -67,10 +67,8 @@ class UiComm(object):
         debug_log(f"creating profile {df.df_name}")
         if df.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
-        # clean_df = sanitize_dataframe(df.pandas_value)
-        # data = json.dumps(clean_df.to_json(orient="table"))
         columns = [{"columnName": c.name, "columnType": c.c_type.value} for c in df.columns]
-        # print(columns)
+        debug_log(f"Creating profile with columns {columns}")
         message = {
             "type": "profiler",
             "dfName": df.df_name,
@@ -89,16 +87,15 @@ class UiComm(object):
         chart_title = mdf.df_name
         chart_info = gen_spec(df, chart_title)
         if chart_info:
-            # now we set the date for everyone
             vis_df = df
             if chart_info.additional_transforms:
                 vis_df = transform_df(chart_info.additional_transforms, df)
             if vis_df is None:
                 self.send_user_error(f"Df {mdf.df_name} is empty")
                 return
-            sanitizied_df = sanitize_dataframe(vis_df)
+            records = dataframe_to_dict(vis_df)
             # we have created it such that the data is an array
-            chart_info.vega_spec["data"][0]["values"] = sanitizied_df.to_dict(orient='records')
+            chart_info.vega_spec["data"][0]["values"] = records
             # set the spec
             self.vis_spec[mdf.df_name] = chart_info # type: ignore
             # see if we need to apply any transforms
@@ -110,7 +107,6 @@ class UiComm(object):
                 'vega': vega
             }
             self.comm.send(message)
-            # return self._visualize_df_with_spec(df_name, spec, set_data=False)
         else:
             # TODO: add better explanations
             self.comm.send({
@@ -132,11 +128,8 @@ class UiComm(object):
         if chart_info.additional_transforms:
             vis_df = transform_df(chart_info.additional_transforms, table)
 
-        sanitizied_df = sanitize_dataframe(vis_df)
-        # we have created it such that the data is an array
-        new_data = sanitizied_df.to_dict(orient='records')
+        new_data = dataframe_to_dict(vis_df)
 
-        # should be very similar to above
         self.comm.send({
             "type": "chart_update_data",
             "dfName": df.df_name,

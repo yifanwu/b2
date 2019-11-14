@@ -2,7 +2,6 @@ from pandas import DataFrame  # type: ignore
 from datetime import datetime
 from typing import Dict, List
 
-from .midas_algebra.selection import SelectionValue
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo
 from .util.errors import InternalLogicalError, debug_log
 from .vis_types import SelectionEvent
@@ -25,7 +24,7 @@ class State(object):
     # FIXME: maybe in the future df_name could be just added to DataFrame
     # @check_df_name
     def add_df(self, mdf: MidasDataFrame, is_base_df: bool=False):
-        debug_log("adding")
+        debug_log("adding df")
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         created_on = datetime.now()
@@ -47,7 +46,7 @@ class State(object):
         return df_name in self.dfs
 
 
-    def append_df_predicates(self, df_name: DFName, predicate: List[SelectionValue]) -> DFInfo:
+    def append_df_predicates(self, df_name: DFName, predicate: SelectionEvent) -> DFInfo:
         df_info = self.dfs.get(df_name)
         # idx = len(df_info.predicates)
         if df_info:

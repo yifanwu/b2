@@ -2,22 +2,25 @@ from datascience import Table
 import numpy as np
 from math import log10, pow
 from typing import Optional
+from pandas import notnull
 
 from .errors import InternalLogicalError
 from midas.defaults import COUNT_COL_NAME
 from midas.vis_types import DfTransform
+from midas.util.errors import type_check_with_warning
 
 
 
 def transform_df(transform: DfTransform, df: Table):
+    type_check_with_warning(df, Table)
+    # check ty
     first_col = df.labels[0]
     if (transform == DfTransform.categorical_distribution):
         # sum is the default
         return df.group(first_col)
         # return get_categorical_distribution(df[first_col], first_col)
     elif (transform == DfTransform.numeric_distribution):
-        return get_numeric_distribution(df[first_col], first_col)
-
+        return get_numeric_distribution(df)
 
 def get_chart_title(df_name: str):
     # one level of indirection in case we need to change in the future
@@ -64,7 +67,8 @@ def snap_to_nice_number(n: float):
     return (int(n / zeroes) + 1) * zeroes
 
 
-def get_numeric_distribution(table: Table,  column_name: str) -> Table:
+def get_numeric_distribution(table: Table) -> Table:
+    type_check_with_warning(table, Table)
     first_col = table.labels[0]
     column = table.column(first_col)
     unique_vals = np.unique(column)
@@ -102,6 +106,7 @@ def get_numeric_distribution(table: Table,  column_name: str) -> Table:
 
 
 
+# TODO: we need to test this...
 def sanitize_dataframe(df: Table):
     """Sanitize a DataFrame to prepare it for serialization.
     
@@ -142,23 +147,32 @@ def sanitize_dataframe(df: Table):
             # For floats, convert to Python float: np.float is not JSON serializable
             # Also convert NaN/inf values to null, as they are not JSON serializable
             col = df[col_name]
-            bad_values = col.isnull() | np.isinf(col)
-            df[col_name] = col.astype(object).where(~bad_values, None)
+            bad_values = np.isnan(col) | np.isinf(col)
+            df[col_name] = col.astype(object)[bad_values]= None
         elif str(dtype).startswith('datetime'):
             # Convert datetimes to strings
             # astype(str) will choose the appropriate resolution
-            df[col_name] = df[col_name].astype(str).replace('NaT', '')
+            new_column = df[col_name].astype(str)
+            new_column[new_column == 'NaT'] = ''
+            df[col_name] = new_column
         elif dtype == object:
             # Convert numpy arrays saved as objects to lists
             # Arrays are not JSON serializable
-            col = df[col_name].apply(to_list_if_array, convert_dtype=False)
-            df[col_name] = col.where(col.notnull(), None)
+            col = np.vectorize(to_list_if_array)(df[col_name])
+            col[notnull(col)] = None
+            df[col_name] = col.astype(object)
     return df
 
 
 def dataframe_to_dict(df: Table):
     clean_df = sanitize_dataframe(df)
-    return clean_df.to_dict(orient='records')
+    def s(x):
+        k = {}
+        for i, v in enumerate(x):
+            k[clean_df.labels[i]] = v
+        return k
+    return list(map(s, clean_df.rows))
+    # return clean_df.to_dict(orient='records')
 
 
 
