@@ -25,6 +25,8 @@ class SelectionEvent(object):
         self.predicate = predicate
         self.df_name = df_name
         self.id = get_random_string(5)
+    def __repr__(self):
+        return f"df: {self.df_name}\n  predicates: {self.predicate}"
 
 
 class DfTransform(Enum):

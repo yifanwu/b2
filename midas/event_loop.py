@@ -9,7 +9,7 @@ from midas.state_types import DFName
 from .event_types import TickSpec, TickItem
 from .config import MidasConfig
 from .state import State
-from .util.errors import logging
+from .util.errors import logging, debug_log
 
 
 def gather_current_selection(current_selection: Dict[DFName, SelectionEvent], df_name: DFName) -> List[SelectionEvent]:
@@ -63,7 +63,12 @@ class EventLoop(object):
             for a_df_name in self.state.dfs:
                 s = gather_current_selection(all_predicate, a_df_name)
                 if len(s) > 0:
-                    self.state.dfs[a_df_name].df.apply_selection(s)
+                    debug_log("applying the filtering logic")
+                    new_df = self.state.dfs[a_df_name].original_df.apply_selection(s)
+                    new_df.df_name = a_df_name
+                    # FIXME: i think update and add are the same
+                    self.state.add_df(new_df)
+
 
         # now run
         if items:

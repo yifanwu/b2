@@ -57,6 +57,7 @@ def find_name(throw_error=False) -> Optional[str]:
         return a
     elif throw_error:
         raise UserError("We expect you to assing this compute to a variable")
+    debug_log("find_name did NOT find a name")
     return None
 
 ifnone = lambda a, b: b if a is None else a

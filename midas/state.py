@@ -1,9 +1,8 @@
-from pandas import DataFrame  # type: ignore
 from datetime import datetime
 from typing import Dict, List
 
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo
-from .util.errors import InternalLogicalError, debug_log
+from .util.errors import InternalLogicalError, debug_log, type_check_with_warning
 from .vis_types import SelectionEvent
 from .state_types import DFName
 from .ui_comm import UiComm
@@ -23,16 +22,17 @@ class State(object):
 
     def add_df(self, mdf: MidasDataFrame, is_base_df: bool=False):
         debug_log("adding df")
+        # type_check_with_warning(mdf, MidasDataFrame)
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
-        created_on = datetime.now()
-        selections: List[SelectionEvent] = []
-        df_info = DFInfo(mdf, created_on, selections)
         # if 
         if (mdf.df_name in self.dfs):
-            self.dfs[mdf.df_name] = self.dfs[mdf.df_name]._replace(df = mdf)
+            self.dfs[mdf.df_name].update_df(mdf)
         else:
-            self.dfs[mdf.df_name] = df_info # type: ignore 
+            created_on = datetime.now()
+            selections: List[SelectionEvent] = []
+            df_info = DFInfo(mdf, created_on, selections)
+            self.dfs[mdf.df_name] = df_info
             # we also need to manage the UI component
         if is_base_df:
             self.ui_comm.create_profile(mdf)

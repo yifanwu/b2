@@ -4,7 +4,7 @@ from math import log10, pow
 from typing import Optional
 from pandas import notnull
 
-from .errors import InternalLogicalError
+from .errors import InternalLogicalError, debug_log
 from midas.defaults import COUNT_COL_NAME
 from midas.vis_types import DfTransform
 from midas.util.errors import type_check_with_warning
@@ -16,9 +16,7 @@ def transform_df(transform: DfTransform, df: Table):
     # check ty
     first_col = df.labels[0]
     if (transform == DfTransform.categorical_distribution):
-        # sum is the default
         return df.group(first_col)
-        # return get_categorical_distribution(df[first_col], first_col)
     elif (transform == DfTransform.numeric_distribution):
         return get_numeric_distribution(df)
 
@@ -27,25 +25,7 @@ def get_chart_title(df_name: str):
     return df_name
 
 
-# def get_selection_by_predicate(df_info: DFInfo, history_index: int) -> Optional[SelectionEvent]:
-#     check_not_null(df_info)
-#     if (len(df_info.predicates) > history_index):
-#         predicate = df_info.predicates[history_index]
-#         return predicate
-#     else:
-#         return None
-
-
 MAX_BINS = 20
-
-# def get_categorical_distribution(data: Table, column_name: str) -> Optional[DataFrame]:
-#     # TODO: just select the top 10
-#     if not data.empty:
-#         return data.value_counts().to_frame(COUNT_COL_NAME).rename_axis(column_name).reset_index()
-#     else:
-#         return None
-
-    # def get_bins(data: Series):
 
 
 def snap_to_nice_number(n: float):
@@ -94,16 +74,6 @@ def get_numeric_distribution(table: Table) -> Table:
           first_col: name_col,
           COUNT_COL_NAME: count_col  
         })
-
-        # 
-            # return cut(data, bins=bins, labels=bins[1:]) \
-            #             .value_counts() \
-            #             .to_frame(COUNT_COL_NAME) \
-            #             .rename_axis(column_name) \
-            #             .reset_index() \
-            #             .sort_values(by=[column_name])
-
-
 
 
 # TODO: we need to test this...

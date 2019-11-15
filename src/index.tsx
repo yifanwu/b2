@@ -32,7 +32,8 @@ declare global {
 export function load_ipython_extension() {
   createMidasComponent();
 
-  $([Jupyter.events]).on("kernel_starting.Kernel", function() {
+  // @ryan was this ever fixed?
+  $([Jupyter.events]).on("kernel_created.Kernel", function() {
     LogSteps("!!Kernel starting!!");
     createMidasComponent(false);
   });
