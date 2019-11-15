@@ -2,7 +2,7 @@ import React, { RefObject } from "react";
 
 import MidasElement from "./MidasElement";
 import Profiler from "./Profiler";
-import { hashCode, LogInternalError, LogSteps } from "../utils";
+import { hashCode, LogInternalError, LogSteps, get_df_id } from "../utils";
 import { AlertType } from "../types";
 import {
   SortableContainer,
@@ -155,7 +155,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     });
   }
 
-  
+
   navigate(dfName: string) {
     // TODO @yifan/@ryan
     const elmnt = document.getElementById(get_df_id(dfName));
@@ -321,7 +321,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     const chartDivs = elements.map(({
       notebookCellId, dfName, vegaSpec, changeStep: chanageStep, newData }, index) => {
       // const ref = this.setMidasElementRef(dfName);
-      return <div id={get_df_id(dfName)}><MidasElement
+      return <MidasElement
         index={index}
         cellId={notebookCellId}
         key={dfName}
@@ -336,7 +336,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         // ref={ref}
         // ref={(r) => this.setMidasElementRef(dfName, r)}
         removeChart={() => this.removeDataFrame(dfName)}
-      /></div>;
+      />;
     });
     const alertDivs = alerts.map((a, i) => {
       const close = this.closeAlert(a.aId);
@@ -363,8 +363,4 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
       </div>
     );
   }
-}
-
-function get_df_id(dfName: string) {
-  return `df-${dfName}-chart`;
 }

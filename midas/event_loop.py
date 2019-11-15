@@ -49,11 +49,12 @@ class EventLoop(object):
         # tell state to change
         self.current_tick += 1
         self.tick_log.append(TickSpec(self.current_tick, df_name, datetime.now()))
-        logging("tick", f"processing {df_name} with history {self.current_tick}")
+        # logging("tick", f"processing {df_name}")
+        #  with history {self.current_tick}")
         # TODO check if predicate the same as before
         # lineage_data: DataFrame = None
         items = self.tick_funcs.get(df_name)
-        logging("tick", f"for predicate{all_predicate}")
+        # logging("tick", f"for predicate{all_predicate}")
 
         # update the charts if there are linking by default
         #   we would need to access all that is currently selected
@@ -63,7 +64,7 @@ class EventLoop(object):
             for a_df_name in self.state.dfs:
                 s = gather_current_selection(all_predicate, a_df_name)
                 if len(s) > 0:
-                    debug_log("applying the filtering logic")
+                    # debug_log("applying the filtering logic")
                     new_df = self.state.dfs[a_df_name].original_df.apply_selection(s)
                     new_df.df_name = a_df_name
                     # FIXME: i think update and add are the same

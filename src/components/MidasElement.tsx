@@ -9,7 +9,7 @@ import { makeElementId } from "../config";
 import { Spec, View } from "vega";
 import vegaEmbed from "vega-embed";
 import { MIDAS_INSTANCE_NAME, SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, Y_DOMAIN_SIGNAL, DEBOUNCE_RATE } from "../constants";
-import { LogDebug, LogInternalError } from "../utils";
+import { LogDebug, LogInternalError, get_df_id } from "../utils";
 
 interface MidasElementProps {
   changeStep: number;
@@ -45,8 +45,7 @@ function getDebouncedFunction(dfName: string, comm: any, tick: (dfName: string) 
 
     const c = Jupyter.notebook.insert_cell_below("code");
     const date = new Date().toLocaleString("en-US");
-    const text = `# [MIDAS] You selected the following from ${dfName} at time ${date}\nm.add_selection_by_interaction("${dfName}", ${valueStr})
-    `;
+    const text = `# [MIDAS] You selected the following from ${dfName} at time ${date}\nm.add_selection_by_interaction("${dfName}", ${valueStr})`;
     c.set_text(text);
     c.execute();
     // comm.send(msg);
@@ -141,10 +140,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
    * is refreshed, this may not work.
    */
   selectCell() {
-    let cell = Jupyter.notebook.get_msg_cell(this.props.cellId);
-    let index = Jupyter.notebook.find_cell_index(cell);
+    const cell = Jupyter.notebook.get_msg_cell(this.props.cellId);
+    const index = Jupyter.notebook.find_cell_index(cell);
     Jupyter.notebook.select(index);
-    Jupyter.CodeCell.msg_cells[this.props.cellId].code_mirror.display.lineDiv.scrollIntoViewIfNeeded();
+    const cell_div = Jupyter.CodeCell.msg_cells[this.props.cellId]
+    if (cell_div) {
+      cell_div.code_mirror.display.lineDiv.scrollIntoViewIfNeeded();
+    }
   }
 
   getPythonButtonClicked() {
@@ -190,7 +192,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         this.state.view.signal(Y_DOMAIN_SIGNAL, y_scale.domain());
     };
     return (
-      <div className="midas-element">
+      <div className="midas-element" id={get_df_id(this.props.dfName)}>
         <div className="midas-header">
           <DragHandle/>
           <span className="midas-title">{this.props.title}</span>

@@ -171,7 +171,6 @@ class UiComm(object):
 
     def get_predicate_info(self, df_name: DFName, selection) -> List[SelectionValue]:
         if (len(selection) == 0):
-            # predicate = NullSelectionPredicate(df_name)
             return []
         # loads
         predicate_raw = selection
@@ -183,30 +182,19 @@ class UiComm(object):
             y_value = get_min_max_tuple_from_list(predicate_raw[Channel.y.value])
             x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
             y_selection = NumericRangeSelection(ColumnRef(y_column, df_name), y_value[0], y_value[1])
-            # predicate = TwoDimSelectionPredicate(df_name, x_column, y_column, x_value, y_value)
             return [x_selection, y_selection]
         if (vis.chart_type == ChartType.bar_categorical):
             x_value = predicate_raw[Channel.x.value]
             predicate = StringSetSelection(ColumnRef(x_column, df_name), x_value)
             return [predicate]
         if (vis.chart_type == ChartType.bar_linear):
-            print("===debug===")
-            print(predicate_raw[Channel.x.value])
-            # bounds = []
-            # left = literal_eval((predicate_raw[Channel.x.value][0].replace('(','[')))
-            # bounds.append(left[0])
-            # right = literal_eval((predicate_raw[Channel.x.value][-1].replace('(','[')))
-            # bounds.append(right[1]
-            # x_value = get_min_max_tuple_from_list([bound_left, bound_right])
             x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
             x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
-            # predicate = OneDimSelectionPredicate(df_name, x_column, x_value, is_categorical)
             return [x_selection]
         if (vis.chart_type == ChartType.line):
             x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
             x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
             return [x_selection]
-        # now 
         raise InternalLogicalError("Not all chart_info handled")
 
 

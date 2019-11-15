@@ -34,3 +34,7 @@ export function hashCode(str: string) {
   }
   return hash;
 }
+
+export function get_df_id(dfName: string) {
+  return `df-${dfName}-chart`;
+}

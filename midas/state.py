@@ -21,7 +21,7 @@ class State(object):
         self.shelf_selections = {}
 
     def add_df(self, mdf: MidasDataFrame, is_base_df: bool=False):
-        debug_log("adding df")
+        # debug_log("adding df")
         # type_check_with_warning(mdf, MidasDataFrame)
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")

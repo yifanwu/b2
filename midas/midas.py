@@ -108,6 +108,12 @@ class Midas(object):
         return MidasSelectionStream(df_name, df_info.predicates, self.bind)
 
 
+    # @Shloak add join info here
+    def add_join_info(self, join_info):
+        self.context.add_join_info(join_info)
+        
+
+
     def refresh_comm(self):
         self.ui_comm.set_comm()
 
@@ -154,7 +160,7 @@ class Midas(object):
         # note that the selection is str because 
         # logging("add_selection", df_name)
         self.state.append_df_predicates(selection)
-        self.update_current_selection(selection)
+        self.   (selection)
         self.event_loop.tick(selection.df_name, selection, self.current_selection)
         return
 
