@@ -1,7 +1,7 @@
 from enum import Enum
-from midas.midas_algebra.selection import SelectionValue
+from midas.vis_types import SelectionEvent
 from midas.state_types import DFName
-from typing import NamedTuple, Callable, List, Any
+from typing import NamedTuple, Callable, Any
 from datetime import datetime
 
 class TickIOType(Enum):
@@ -18,5 +18,4 @@ class TickSpec(NamedTuple):
 
 class TickItem(NamedTuple):
     df_name: DFName
-    call: Callable[[List[SelectionValue]], Any]
-    # visualize: bool
+    call: Callable[[SelectionEvent], Any]

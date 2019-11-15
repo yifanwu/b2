@@ -8,9 +8,10 @@ import { MidasSidebar } from "./components/MidasSidebar";
 // TODO: maybe don't need these types...
 // but just in case things get more complicated
 type NotificationCommLoad = { type: string; style: string, value: string };
-type AddSelectionLoad = { type: string; value: string };
-type ReactiveCommLoad = { type: string; value: string };
-type NavigateCommLoad = { type: string; value: string };
+// type AddSelectionLoad = { type: string; value: string };
+// type ReactiveCommLoad = { type: string; value: string };
+// type NavigateCommLoad
+type BasicLoad = { type: string; value: string };
 type UpdateCommLoad = {
   type: string;
   dfName: string;
@@ -27,7 +28,7 @@ type ChartRenderComm = {
   vega: string;
 };
 
-type MidasCommLoad = NotificationCommLoad | ReactiveCommLoad | ProfilerComm | ChartRenderComm | NavigateCommLoad | UpdateCommLoad;
+type MidasCommLoad = BasicLoad| NotificationCommLoad | ProfilerComm | ChartRenderComm  | UpdateCommLoad;
 
 /**
  * Makes the comm responsible for discovery of which visualization
@@ -71,19 +72,28 @@ function make_on_msg(refToSidebar: MidasSidebar) {
         return;
       }
       case "add-selection": {
-        const selectionLoad = load as AddSelectionLoad;
+        const selectionLoad = load as BasicLoad;
         refToSelectionShelf.addSelectionItem(selectionLoad.value);
         break;
       }
       case "reactive": {
         const cellId = msg.parent_header.msg_id;
-        const reactiveLoad = load as ReactiveCommLoad;
+        const reactiveLoad = load as BasicLoad;
         refToMidas.captureCell(reactiveLoad.value, cellId);
         refToMidas.addAlert(`Success adding cell to ${reactiveLoad.value}`, AlertType.Confirmation);
         return;
       }
+      // this is slightly awkward
+      case "create_then_execute_cell": {
+        // const cellId = msg.parent_header.msg_id;
+        const cellLoad = load as BasicLoad;
+        const c = Jupyter.notebook.insert_cell_below("code");
+        c.set_text(cellLoad.value);
+        c.execute();
+        return;
+      }
       case "navigate_to_vis": {
-        const navigateLoad = load as NavigateCommLoad;
+        const navigateLoad = load as BasicLoad;
         refToMidas.navigate(navigateLoad.value);
         return;
       }
@@ -103,16 +113,16 @@ function make_on_msg(refToSidebar: MidasSidebar) {
         return;
       }
       case "chart_render": {
-        const cellId = msg.parent_header.msg_id;
         const chartRenderLoad = load as ChartRenderComm;
         LogSteps("Chart", chartRenderLoad.dfName);
+        const cellId = msg.parent_header.msg_id;
         const spec = JSON.parse(chartRenderLoad.vega);
         refToMidas.addDataFrame(chartRenderLoad.dfName, spec, cellId);
         return;
       }
       case "chart_update_data": {
         const updateLoad = load as UpdateCommLoad;
-        console.log("chart update with data");
+        LogSteps("Chart update", updateLoad.dfName);
         console.log(updateLoad.newData);
         refToMidas.replaceData(updateLoad.dfName, updateLoad.newData);
         return;

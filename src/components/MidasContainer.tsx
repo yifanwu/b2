@@ -155,9 +155,10 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     });
   }
 
+  
   navigate(dfName: string) {
     // TODO @yifan/@ryan
-    const elmnt = document.getElementById("content");
+    const elmnt = document.getElementById(get_df_id(dfName));
     elmnt.scrollIntoView();
   }
 
@@ -320,7 +321,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     const chartDivs = elements.map(({
       notebookCellId, dfName, vegaSpec, changeStep: chanageStep, newData }, index) => {
       // const ref = this.setMidasElementRef(dfName);
-      return <MidasElement
+      return <div id={get_df_id(dfName)}><MidasElement
         index={index}
         cellId={notebookCellId}
         key={dfName}
@@ -335,7 +336,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         // ref={ref}
         // ref={(r) => this.setMidasElementRef(dfName, r)}
         removeChart={() => this.removeDataFrame(dfName)}
-      />;
+      /></div>;
     });
     const alertDivs = alerts.map((a, i) => {
       const close = this.closeAlert(a.aId);
@@ -362,4 +363,8 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
       </div>
     );
   }
+}
+
+function get_df_id(dfName: string) {
+  return `df-${dfName}-chart`;
 }

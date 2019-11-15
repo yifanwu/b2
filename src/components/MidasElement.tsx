@@ -37,14 +37,21 @@ function getDebouncedFunction(dfName: string, comm: any, tick: (dfName: string) 
   const callback = (signalName: string, value: any) => {
     // also need to call into python state...
     const valueStr = JSON.stringify(value);
-    const msg = {
-      command: "selection",
-      dfName,
-      value: valueStr
-    };
-    comm.send(msg);
+    // const msg = {
+    //   command: "selection",
+    //   dfName,
+    //   value: valueStr
+    // };
+
+    const c = Jupyter.notebook.insert_cell_below("code");
+    const date = new Date().toLocaleString("en-US");
+    const text = `# [MIDAS] You selected the following from ${dfName} at time ${date}\nm.add_selection_by_interaction("${dfName}", ${valueStr})
+    `;
+    c.set_text(text);
+    c.execute();
+    // comm.send(msg);
     LogDebug("Sending to comm the selection");
-    console.log(msg);
+    // console.log(msg);
     // const pythonCommand = `${MIDAS_INSTANCE_NAME}.js_add_selection("${dfName}", '${valueStr}')`;
     // IPython.notebook.kernel.execute(pythonCommand);
     // FIXME: there might be some async issues between the midas and the python

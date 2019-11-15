@@ -1,3 +1,4 @@
+from datetime import datetime
 from midas.midas_algebra.selection import SelectionValue
 from ipykernel.comm import Comm # type: ignore
 from json import loads
@@ -11,7 +12,7 @@ from midas.midas_algebra.dataframe import MidasDataFrame
 from midas.midas_algebra.selection import NumericRangeSelection, StringSetSelection, SingleValueSelection, ColumnRef
 from .util.utils import get_min_max_tuple_from_list
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
-from .vis_types import ChartType, Channel, ChartInfo
+from .vis_types import ChartType, Channel, ChartInfo, SelectionEvent
 from .widget.showme import gen_spec
 from .util.data_processing import dataframe_to_dict, transform_df
 
@@ -21,12 +22,12 @@ class UiComm(object):
     is_in_ipynb: bool
     tmp_debug: str
 
-    def __init__(self, is_in_ipynb: bool, add_selection: Callable[[str, str], Any]):
+    def __init__(self, is_in_ipynb: bool, ui_add_selection: Callable[[SelectionEvent], Any]):
         self.next_id = 0
         self.vis_spec = {}
         self.is_in_ipynb = is_in_ipynb
         self.set_comm()
-        self.add_selection = add_selection
+        self.ui_add_selection = ui_add_selection
 
 
     def set_comm(self):
@@ -38,15 +39,19 @@ class UiComm(object):
                 # data_raw = loads(data_str)
                 data = data_raw["content"]["data"]
                 command = data["command"]
-                if (command == "selection"):
-                    df_name = data["dfName"]
-                    value = data["value"]
-                    self.send_debug_msg(f"Data: {command} {df_name} {value}")
-                    self.add_selection(df_name, value)
-                else:
-                    m = f"Command {command} not handled!"
-                    self.send_debug_msg(m)
-                    raise NotAllCaseHandledError(m)
+                # if (command == "selection"):
+                #     df_name = data["dfName"]
+                #     value = data["value"]
+                #     self.send_debug_msg(f"Data: {command} {df_name} {value}")
+                #     # now we need to process the value
+                #     predicate = self.get_predicate_info(df_name, value)
+                #     date = datetime.now()
+                #     selection_event = SelectionEvent(date, predicate, DFName(df_name))
+                #     self.ui_add_selection(selection_event)
+                # else:
+                m = f"Command {command} not handled!"
+                self.send_debug_msg(m)
+                raise NotAllCaseHandledError(m)
 
             self.comm.on_msg(handle_msg)
         else:
@@ -78,6 +83,7 @@ class UiComm(object):
         return
 
     def create_chart(self, mdf: MidasDataFrame):
+        debug_log(f"creating chart {mdf.df_name}")
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         
@@ -144,6 +150,11 @@ class UiComm(object):
             "value": message
         })
 
+    def execute_current_cell(self):
+        self.comm.send({
+            "type": "execute_current_cell"
+        })
+
     def send_debug_msg(self, message: str):
         self.comm.send({
             "type": "notification",
@@ -152,15 +163,18 @@ class UiComm(object):
         })
 
     def navigate_to_chart(self, df_name: DFName):
-        # @ryan --- I think this should be very simialr to the concurrent scrolling
-        #           do you mind looking into it?
-        raise NotImplementedError()
+        self.comm.send({
+            "type": "navigate_to_vis",
+            "value": df_name
+        })
+        
 
-    def get_predicate_info(self, df_name: DFName, selection: str) -> List[SelectionValue]:
+    def get_predicate_info(self, df_name: DFName, selection) -> List[SelectionValue]:
         if (len(selection) == 0):
             # predicate = NullSelectionPredicate(df_name)
             return []
-        predicate_raw = loads(selection)
+        # loads
+        predicate_raw = selection
         vis = self.vis_spec[df_name]
         x_column = vis.encodings[Channel.x]
         y_column = vis.encodings[Channel.y]

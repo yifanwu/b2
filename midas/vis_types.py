@@ -1,9 +1,10 @@
 from datetime import datetime
 from enum import Enum
-from midas.midas_algebra.selection import SelectionValue
-from midas.state_types import DFName
 from typing import NamedTuple, List, Any, Optional, Dict
 
+from midas.midas_algebra.selection import SelectionValue
+from midas.state_types import DFName
+from midas.util.utils import get_random_string
 
 class ChartType(Enum):
     bar_categorical = "bar_categorical"
@@ -18,49 +19,21 @@ class Channel(Enum):
     color = "color"
 
 
-# hack
-VegaSpecType = Dict[str, Any]
-
-class SelectionEvent():
-    interaction_time: datetime
-    predicate: List[SelectionValue]
-    df_name: DFName
-
-
-# class TwoDimSelectionPredicate(SelectionPredicate):
-#     # assume that two dimension is both linear
-#     def __init__(self, df_name: DFName, x_column: str, y_column: str, x: Tuple[float, float], y: Tuple[float, float]):
-#         self.df_name = df_name
-#         self.dimension = 2
-#         self.interaction_time = datetime.now()
-#         self.x_column = x_column
-#         self.y_column = y_column
-#         self.x = x
-#         self.y = y
-
-
-# class NullSelectionPredicate(SelectionPredicate):
-#     def __init__(self, df_name: DFName):
-#         self.df_name = df_name
-#         self.dimension = 0
-#         self.interaction_time = datetime.now()
-
-
-# class OneDimSelectionPredicate(SelectionPredicate):
-#     def __init__(self, df_name: DFName, x_column: str,
-#       x: Union[Tuple[float, float], List[str]],
-#       is_categoritcal: bool):
-#         self.df_name = df_name
-#         self.dimension = 1
-#         self.interaction_time = datetime.now()
-#         self.x_column = x_column
-#         self.is_categoritcal = is_categoritcal
-#         self.x = x
+class SelectionEvent(object):
+    def __init__(self, interaction_time: datetime, predicate: List[SelectionValue], df_name: DFName):
+        self.interaction_time = interaction_time
+        self.predicate = predicate
+        self.df_name = df_name
+        self.id = get_random_string(5)
 
 
 class DfTransform(Enum):
     categorical_distribution = "categorical_distribution"
     numeric_distribution = "numeric_distribution"
+
+
+# basic stub for Vega typing
+VegaSpecType = Dict[str, Any]
 
 
 class ChartInfo(NamedTuple):

@@ -21,8 +21,6 @@ class State(object):
         self.ui_comm = uiComm
         self.shelf_selections = {}
 
-    # FIXME: maybe in the future df_name could be just added to DataFrame
-    # @check_df_name
     def add_df(self, mdf: MidasDataFrame, is_base_df: bool=False):
         debug_log("adding df")
         if mdf.df_name is None:
@@ -38,19 +36,21 @@ class State(object):
             # we also need to manage the UI component
         if is_base_df:
             self.ui_comm.create_profile(mdf)
-        else:
-            self.ui_comm.visualize(mdf)
+            # if base_df only has two columns, try to visualize!
+        # else:
+        self.ui_comm.visualize(mdf)
         return
 
     def has_df(self, df_name: DFName):
         return df_name in self.dfs
 
 
-    def append_df_predicates(self, df_name: DFName, predicate: SelectionEvent) -> DFInfo:
+    def append_df_predicates(self, selection: SelectionEvent) -> DFInfo:
+        df_name = selection.df_name
         df_info = self.dfs.get(df_name)
         # idx = len(df_info.predicates)
         if df_info:
-            df_info.predicates.append(predicate)
+            df_info.predicates.append(selection)
             return df_info
         raise InternalLogicalError(f"Df ({df_name}) should be defined!")
 

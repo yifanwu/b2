@@ -1,5 +1,5 @@
-# taken from https://github.com/vega/ipyvega/blob/master/vega/utils.py
-
+import random
+import string
 import codecs
 from midas.util.errors import UserError, InternalLogicalError, debug_log
 from os import path
@@ -22,24 +22,10 @@ def isnotebook():
     except NameError:
         return False      # Probably standard Python interpreter
 
-# def in_ipynb():
-#     try:
-#         get_ipython()
-#         return True
-#     except NameError:
-#         return False
-
-# try:
-#     from IPython.display import get_ipython
-# except ImportError as err:
-#     def in_ipynb():
-#         return False
 
 def abs_path(p: str):
     """Make path absolute."""
-    return path.join(
-        path.dirname(path.abspath(__file__)),
-        p)
+    return path.join(path.dirname(path.abspath(__file__)), p)
 
 
 def check_path(p: str):
@@ -51,6 +37,12 @@ def get_content(path):
     """Get content of file."""
     with codecs.open(abs_path(path), encoding='utf-8') as f:
         return f.read()
+
+
+def get_random_string(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
 
 
 def find_name(throw_error=False) -> Optional[str]:

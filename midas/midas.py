@@ -1,6 +1,7 @@
 from __future__ import absolute_import
+from datetime import datetime
 from IPython import get_ipython  # type: ignore
-from typing import Optional, Union
+from typing import Optional, Union, List, Dict
 from datascience import Table
 # from pyperclip import copy
 
@@ -13,20 +14,25 @@ except ImportError as err:
 
 from .stream import MidasSelectionStream
 
-from .midas_algebra.dataframe import MidasDataFrame, DFInfo, RuntimeFunctions
+from midas.midas_algebra.selection import SelectionValue
+from midas.midas_algebra.dataframe import MidasDataFrame, DFInfo, RuntimeFunctions
+from midas.midas_algebra.context import Context
+
+from midas.vis_types import SelectionEvent
 from midas.state_types import DFName
 from midas.event_types import TickItem
 from .state import State
 from .ui_comm import UiComm
-from .midas_algebra.context import Context
 from .midas_magic import MidasMagic
 from .util.instructions import HELP_INSTRUCTION
 from .util.errors import UserError, logging, check_not_null
 from .util.utils import isnotebook, find_name
-
+from .config import default_midas_config, MidasConfig
 from .event_loop import EventLoop
 
+
 is_in_ipynb = isnotebook()
+
 
 class Midas(object):
     """[summary]
@@ -36,19 +42,17 @@ class Midas(object):
     ui_comm: UiComm
     state: State
     context: Context
-    shelf_selections: dict #TODO Change
     rt_funcs: RuntimeFunctions
+    current_selection: Dict[DFName, SelectionEvent]
 
-    def __init__(self):
-        # self.is_processing_tick: bool = False
-        # FIXME: have a better mock up experience for testing, if we are not in notebook...
-        # check if we are in a ipython environment
-        ui_comm = UiComm(is_in_ipynb, self.add_selection)
+    def __init__(self, config: MidasConfig=default_midas_config):
+        ui_comm = UiComm(is_in_ipynb, self.js_add_selection)
         self.ui_comm = ui_comm
         self.shelf_selections = {}
         self.state = State(ui_comm)
         self.context = Context(self.state.dfs)
-        self.event_loop = EventLoop(self.state)
+        self.event_loop = EventLoop(self.context, self.state, config)
+        self.current_selection = {}
         if is_in_ipynb:
             ip = get_ipython()
             magics = MidasMagic(ip, ui_comm)
@@ -82,53 +86,6 @@ class Midas(object):
         return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
 
-    # def register_df(self, df_name_raw: str, df_raw: DataFrame) -> MidasDataFrame:
-    #     """we will add this both to state
-    #        and to render
-    #     """
-    #     df_name = DFName(df_name_raw)
-    #     logging("register_df", df_name)
-    #     # FIXME: need to figure out where to propate df_name...
-    #     df = MidasDataFrame.from_data(df_raw, df_name, self.rt_funcs)
-    #     # TOTAL HACK
-    #     globals()[df_name_raw] = df
-    #     # self.state.add_df(df, True)
-    #     # retuns
-    #     return df
-
-    # TODO: fix!!! we'd have to add this to the event loop
-    # def link(self, df_interact: MidasDataFrame, df_update: MidasDataFrame):
-    #     if (df_interact.df_name is None) or (df_update.df_name is None):
-    #         # send error
-    #         self.ui_comm.send_user_error("The DFs you wish to link must both have been assigned")
-    #         return
-    #     # basically replace the data in the tick cycles, while keeping the same name
-    #     def transformation(predicate):
-    #         df_update.apply_selection(predicate).show(df_update.df_name)
-    #         return
-    #     self.bind(df_interact.df_name, transformation)
-    #     return
-
-
-    def refresh_comm(self):
-        self.ui_comm.set_comm()
-
-
-    def _eval(self, code: str):
-        # ran here because it has the correct scope
-        return eval(code)
-
-
-    def has_df(self, df_name_raw: str):
-        return self.state.has_df(DFName(df_name_raw))
-
-
-    # def register_series(self, series: Series, name: str):
-    #     # turn it into a df
-    #     df = series.to_frame()
-    #     return self.register_df(name, df)
-
-
     def get_stream(self, df: Union[str, MidasDataFrame]) -> MidasSelectionStream:
         """[summary]
         
@@ -150,6 +107,15 @@ class Midas(object):
         check_not_null(df_info)
         return MidasSelectionStream(df_name, df_info.predicates, self.bind)
 
+
+    def refresh_comm(self):
+        self.ui_comm.set_comm()
+
+
+    def has_df(self, df_name_raw: str):
+        return self.state.has_df(DFName(df_name_raw))
+
+
     # the re
     def get_df_info(self, df_name: DFName) -> Optional[DFInfo]:
         return self.state.dfs.get(df_name)
@@ -164,18 +130,47 @@ class Midas(object):
         print(HELP_INSTRUCTION)
 
 
-    def add_selection(self, df_name_raw: str, selection: str):
-        df_name = DFName(df_name_raw)
-        # note that the selection is str because 
-        logging("add_selection", df_name)
-        # FIXME make sure this null checking is correct
-        predicate = self.ui_comm.get_predicate_info(df_name, selection)
-        self.event_loop.tick(predicate)
+    def js_add_selection(self, selection: SelectionEvent):
+        # cell_to_create = f"# based on your interaction on df {selection.df_name}"
+        # self.create_cell_with_text(cell_to_create)
+        # self.ui_comm.execute_current_cell()
         return
+
+
+    def update_current_selection(self, selection: SelectionEvent):
+        self.current_selection[selection.df_name] = selection
+        # if selection.df_name in self.current_selection:
+        return
+
+    def add_selection_by_interaction(self, df_name_raw: str, value):
+        df_name = DFName(df_name_raw)
+        predicate = self.ui_comm.get_predicate_info(df_name, value)
+        date = datetime.now()
+        selection_event = SelectionEvent(date, predicate, DFName(df_name))
+        self.add_selection(selection_event)
+
+
+    def add_selection(self, selection: SelectionEvent):
+        # note that the selection is str because 
+        # logging("add_selection", df_name)
+        self.state.append_df_predicates(selection)
+        self.update_current_selection(selection)
+        self.event_loop.tick(selection.df_name, selection, self.current_selection)
+        return
+
+
+    def create_cell_with_text(self, s):
+        d = datetime.now()
+        annotated = f"# auto-created on {d}\n{s}"
+        get_ipython().set_next_input(annotated)
+        # then execute it
+        self.ui_comm.execute_current_cell()
+
 
     def bind(self, df_name: DFName, cb):
         item = TickItem(df_name, cb)
         return self.event_loop.add_callback(item)
+
 
     def add_facet(self, df_name: str, facet_column: str):
         # 
