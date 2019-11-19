@@ -1,11 +1,7 @@
-
-from pandas import DataFrame
-
-from midas.defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
+from midas.defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL, X_DOMAIN_BY_DATA_SIGNAL, X_DOMAIN_SIGNAL
 from .shared_one_dim import gen_x_brush_signal, gen_x_brush_mark
 from .shared_all import gen_spec_base, gen_y_domain_signals, gen_width_height_signals
 from midas.defaults import SELECTION_SIGNAL
-# from .data_processing import set_data_attr
 
 def gen_bar_chart_spec(x_field: str, y_field: str):
     spec_base = gen_spec_base()
@@ -17,6 +13,11 @@ def gen_bar_chart_spec(x_field: str, y_field: str):
                 "type": "extent",
                 "field": y_field,
                 "signal": Y_DOMAIN_BY_DATA_SIGNAL
+            },
+            {
+                "type": "extent",
+                "field": x_field,
+                "signal": X_DOMAIN_BY_DATA_SIGNAL
             }
         ]
     }]
@@ -24,7 +25,8 @@ def gen_bar_chart_spec(x_field: str, y_field: str):
         {
             "name": X_SCALE,
             "type": "band",
-            "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
+            # "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
+            "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
             "range": "width",
             "padding": 0.05,
             "round": True

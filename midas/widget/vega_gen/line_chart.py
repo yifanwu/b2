@@ -1,7 +1,7 @@
 
 from pandas import DataFrame
 
-from midas.defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
+from midas.defaults import DEFAULT_DATA_SOURCE, X_SCALE, Y_SCALE, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL, X_DOMAIN_BY_DATA_SIGNAL, X_DOMAIN_SIGNAL
 from .shared_all import gen_spec_base
 from .shared_one_dim import gen_x_brush_signal, gen_x_brush_mark
 from .shared_all import gen_spec_base, gen_y_domain_signals, gen_width_height_signals
@@ -29,6 +29,11 @@ def gen_linechart_spec(x_field: str, y_field: str, date_format: str=""):
                 "type": "extent",
                 "field": y_field,
                 "signal": Y_DOMAIN_BY_DATA_SIGNAL
+            },
+            {
+                "type": "extent",
+                "field": x_field,
+                "signal": X_DOMAIN_BY_DATA_SIGNAL
             }
         ]
     }]
@@ -39,8 +44,8 @@ def gen_linechart_spec(x_field: str, y_field: str, date_format: str=""):
             "name": X_SCALE,
             "type": "time",
             "zero": False,
-            "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
-            # "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
+            # "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
+            "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
             "range": "width"
         },
         {

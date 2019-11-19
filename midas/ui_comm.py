@@ -21,59 +21,74 @@ class UiComm(object):
     vis_spec: Dict[DFName, ChartInfo]
     is_in_ipynb: bool
     tmp_debug: str
+    midas_instance_name: str
 
-    def __init__(self, is_in_ipynb: bool, ui_add_selection: Callable[[SelectionEvent], Any]):
+    def __init__(self, is_in_ipynb: bool, ui_add_selection: Callable[[SelectionEvent], Any], midas_instance_name: str):
         self.next_id = 0
         self.vis_spec = {}
         self.is_in_ipynb = is_in_ipynb
         self.set_comm()
         self.ui_add_selection = ui_add_selection
+        self.midas_instance_name = midas_instance_name
 
 
     def set_comm(self):
         if self.is_in_ipynb:
-            self.comm = Comm(target_name=MIDAS_CELL_COMM_NAME)
+            self.comm = Comm(target_name = MIDAS_CELL_COMM_NAME)
+            # tell the JS side what the assigned name is
+            self.comm.send({
+                "type": "midas_instance_name",
+                "value": self.midas_instance_name
+            })
 
             def handle_msg(data_raw):
                 self.tmp_debug = data_raw
                 # data_raw = loads(data_str)
                 data = data_raw["content"]["data"]
-                command = data["command"]
-                # if (command == "selection"):
-                #     df_name = data["dfName"]
-                #     value = data["value"]
-                #     self.send_debug_msg(f"Data: {command} {df_name} {value}")
-                #     # now we need to process the value
-                #     predicate = self.get_predicate_info(df_name, value)
-                #     date = datetime.now()
-                #     selection_event = SelectionEvent(date, predicate, DFName(df_name))
-                #     self.ui_add_selection(selection_event)
-                # else:
-                m = f"Command {command} not handled!"
-                self.send_debug_msg(m)
-                raise NotAllCaseHandledError(m)
+                if "command" in data:
+                    command = data["command"]
+                    if (command == "refresh-comm"):
+                        self.send_debug_msg("Refreshing comm")
+                        self.set_comm()
+                        return
+                    # if (command == "selection"):
+                    #     df_name = data["dfName"]
+                    #     value = data["value"]
+                    #     self.send_debug_msg(f"Data: {command} {df_name} {value}")
+                    #     # now we need to process the value
+                    #     predicate = self.get_predicate_info(df_name, value)
+                    #     date = datetime.now()
+                    #     selection_event = SelectionEvent(date, predicate, DFName(df_name))
+                    #     self.ui_add_selection(selection_event)
+                    else:
+                        m = f"Command {command} not handled!"
+                        self.send_debug_msg(m)
+                        raise NotAllCaseHandledError(m)
+                else:
+                    debug_log(f"Got message from JS Comm: {data}")
 
             self.comm.on_msg(handle_msg)
         else:
             self.comm = MockComm()
     
 
-    def visualize(self, df: MidasDataFrame):
+    def visualize(self, df: MidasDataFrame) -> bool:
         if (len(df.table.columns) > 2):
             self.send_user_error(f"Dataframe {df.df_name} not visualized")
+            return False
         else:
             if (df.df_name in self.vis_spec):
                 self.update_chart(df)
             else:
                 self.create_chart(df)
-        return
+            return True
 
     def create_profile(self, df: MidasDataFrame):
         debug_log(f"creating profile {df.df_name}")
         if df.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         columns = [{"columnName": c.name, "columnType": c.c_type.value} for c in df.columns]
-        debug_log(f"Creating profile with columns {columns}")
+        # debug_log(f"Creating profile with columns {columns}")
         message = {
             "type": "profiler",
             "dfName": df.df_name,
@@ -170,28 +185,29 @@ class UiComm(object):
         
 
     def get_predicate_info(self, df_name: DFName, selection) -> List[SelectionValue]:
-        if (len(selection) == 0):
+        debug_log(f"selection is {selection}")
+        if selection is None:
             return []
         # loads
         predicate_raw = selection
         vis = self.vis_spec[df_name]
         x_column = vis.encodings[Channel.x]
         y_column = vis.encodings[Channel.y]
-        if (vis.chart_type == ChartType.scatter):
+        if vis.chart_type == ChartType.scatter:
             x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
             y_value = get_min_max_tuple_from_list(predicate_raw[Channel.y.value])
             x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
             y_selection = NumericRangeSelection(ColumnRef(y_column, df_name), y_value[0], y_value[1])
             return [x_selection, y_selection]
-        if (vis.chart_type == ChartType.bar_categorical):
+        if vis.chart_type == ChartType.bar_categorical:
             x_value = predicate_raw[Channel.x.value]
             predicate = StringSetSelection(ColumnRef(x_column, df_name), x_value)
             return [predicate]
-        if (vis.chart_type == ChartType.bar_linear):
+        if vis.chart_type == ChartType.bar_linear:
             x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
             x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
             return [x_selection]
-        if (vis.chart_type == ChartType.line):
+        if vis.chart_type == ChartType.line:
             x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
             x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
             return [x_selection]

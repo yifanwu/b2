@@ -8,7 +8,7 @@ import {
 import { makeElementId } from "../config";
 import { Spec, View } from "vega";
 import vegaEmbed from "vega-embed";
-import { MIDAS_INSTANCE_NAME, SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, Y_DOMAIN_SIGNAL, DEBOUNCE_RATE } from "../constants";
+import { MIDAS_INSTANCE_NAME, SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, Y_DOMAIN_SIGNAL, DEBOUNCE_RATE, Y_SCALE, X_SCALE, X_DOMAIN_SIGNAL } from "../constants";
 import { LogDebug, LogInternalError, get_df_id } from "../utils";
 
 interface MidasElementProps {
@@ -27,6 +27,9 @@ interface MidasElementState {
   elementId: string;
   hidden: boolean;
   view: View;
+  // both are initial domains that we are fixing
+  yDomain: any;
+  xDomain: any;
 }
 
 const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
@@ -36,24 +39,15 @@ const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;�
 function getDebouncedFunction(dfName: string, comm: any, tick: (dfName: string) => void) {
   const callback = (signalName: string, value: any) => {
     // also need to call into python state...
-    const valueStr = JSON.stringify(value);
-    // const msg = {
-    //   command: "selection",
-    //   dfName,
-    //   value: valueStr
-    // };
+    let valueStr = JSON.stringify(value);
+    valueStr = (valueStr === "null") ? "None" : valueStr;
 
-    const c = Jupyter.notebook.insert_cell_below("code");
+    const c = Jupyter.notebook.insert_cell_above("code");
     const date = new Date().toLocaleString("en-US");
     const text = `# [MIDAS] You selected the following from ${dfName} at time ${date}\nm.add_selection_by_interaction("${dfName}", ${valueStr})`;
     c.set_text(text);
     c.execute();
-    // comm.send(msg);
     LogDebug("Sending to comm the selection");
-    // console.log(msg);
-    // const pythonCommand = `${MIDAS_INSTANCE_NAME}.js_add_selection("${dfName}", '${valueStr}')`;
-    // IPython.notebook.kernel.execute(pythonCommand);
-    // FIXME: there might be some async issues between the midas and the python
     tick(dfName);
   };
 
@@ -61,7 +55,6 @@ function getDebouncedFunction(dfName: string, comm: any, tick: (dfName: string) 
     const n = new Date();
     let l = (window as any).lastInvoked;
     (window as any).lastInvoked = n;
-    // const cb = new Function("name", "value", callback);
     if (l) {
       if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
         clearTimeout((window as any).lastInvokedTimer);
@@ -88,6 +81,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       hidden: false,
       view: null,
       elementId,
+      yDomain: null,
+      xDomain: null
     };
   }
 
@@ -101,7 +96,16 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const { dfName, vegaSpec, tick } = this.props;
     vegaEmbed(`#${this.state.elementId}`, vegaSpec)
       .then((res: any) => {
-        this.setState({ view: res.view });
+        const view = res.view;
+        const xDomain = view.scale(X_SCALE).domain();
+        const yDomain = view.scale(Y_SCALE).domain();
+        this.setState({
+          view,
+          xDomain,
+          yDomain
+        });
+        this.state.view.signal(Y_DOMAIN_SIGNAL, yDomain);
+        this.state.view.signal(X_DOMAIN_SIGNAL, xDomain);
         LogDebug(`Registering signal for TICK, with signal ${SELECTION_SIGNAL}`);
         res.view.addSignalListener(SELECTION_SIGNAL, getDebouncedFunction(dfName, this.props.comm, tick));
       })
@@ -186,8 +190,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const fixYScale = () => {
       console.log("FIXING Y");
         // access the current scale
+        // const y_scale = this.view.scale(Y_SCALE);
+        // we need a ts-ignore because the typing for view is not complete!
         // @ts-ignore
-        const y_scale = this.view.scale(Y_SCALE);
+        const y_scale = this.state.view.scale(Y_SCALE);
         // then set the current scale
         this.state.view.signal(Y_DOMAIN_SIGNAL, y_scale.domain());
     };

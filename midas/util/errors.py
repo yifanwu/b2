@@ -1,4 +1,5 @@
 from typing import Any, Optional
+from midas.config import IS_DEBUG
 
 class bcolors:
     HEADER = '\033[95m'
@@ -79,9 +80,11 @@ def report_error_to_user(msg: str):
 
 
 def logging(function: str, msg: str):
-    print(bcolors.GREEN + f"[{function}]\t\t" + msg + bcolors.ENDC)
+    if IS_DEBUG:
+        print(bcolors.GREEN + f"[{function}]\t\t" + msg + bcolors.ENDC)
 
 
 def debug_log(msg: str):
-    print(bcolors.WARNING + msg + bcolors.ENDC)
+    if IS_DEBUG:
+        print(bcolors.WARNING + msg + bcolors.ENDC)
     

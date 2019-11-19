@@ -53,6 +53,7 @@ interface ContainerState {
   allReactiveCells: Set<number>;
   alerts: AlertItem[];
   comm: any; // unfortunately not typed
+  midasPythonInstanceName: string;
 }
 
 const ALERT_ALIVE_TIME = 5000;
@@ -86,7 +87,8 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
       idToCell: new Map(),
       reactiveCells: new Map(),
       allReactiveCells: new Set(),
-      alerts: []
+      alerts: [],
+      midasPythonInstanceName: null,
     };
   }
 
@@ -100,9 +102,12 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     return this.state.idToCell[name];
   }
 
+  setMidasPythonInstanceName(midasPythonInstanceName: string) {
+    this.setState({ midasPythonInstanceName });
+  }
 
-  set_comm(comm: any) {
-    this.setState({comm});
+  setComm(comm: any) {
+    this.setState({ comm });
   }
   /**
    * Stores the cell id at which the given data frame was defined.

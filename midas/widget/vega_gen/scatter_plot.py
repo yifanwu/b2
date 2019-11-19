@@ -2,7 +2,7 @@
 from typing import Optional, Dict
 from pandas import DataFrame
 
-from midas.defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, Y_PIXEL_SIGNAL, SELECTION_SIGNAL, BRUSH_MARK, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL
+from midas.defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, Y_PIXEL_SIGNAL, SELECTION_SIGNAL, BRUSH_MARK, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL, X_DOMAIN_BY_DATA_SIGNAL, X_DOMAIN_SIGNAL
 from .shared_all import gen_spec_base, gen_y_domain_signals, gen_width_height_signals
 
 
@@ -16,6 +16,11 @@ def gen_scatterplot_spec(x_field: str, y_field: str):
                 "type": "extent",
                 "field": y_field,
                 "signal": Y_DOMAIN_BY_DATA_SIGNAL
+            },
+            {
+                "type": "extent",
+                "field": x_field,
+                "signal": X_DOMAIN_BY_DATA_SIGNAL
             }
         ]
     }]
@@ -26,8 +31,8 @@ def gen_scatterplot_spec(x_field: str, y_field: str):
             "round": True,
             "nice": True,
             "zero": False,
-            # "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
-            "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
+            "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
+            # "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
             "range": "width"
         },
         {

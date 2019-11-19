@@ -1,6 +1,7 @@
 /// <reference path="./external/Jupyter.d.ts" />
 import { MIDAS_CELL_COMM_NAME } from "./constants";
 import { LogSteps, LogDebug } from "./utils";
+import { createMidasComponent } from "./setup";
 import { AlertType } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
 
@@ -11,6 +12,7 @@ type NotificationCommLoad = { type: string; style: string, value: string };
 // type AddSelectionLoad = { type: string; value: string };
 // type ReactiveCommLoad = { type: string; value: string };
 // type NavigateCommLoad
+type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
 type UpdateCommLoad = {
   type: string;
@@ -28,32 +30,50 @@ type ChartRenderComm = {
   vega: string;
 };
 
-type MidasCommLoad = BasicLoad| NotificationCommLoad | ProfilerComm | ChartRenderComm  | UpdateCommLoad;
+type MidasCommLoad = CommandLoad | BasicLoad| NotificationCommLoad | ProfilerComm | ChartRenderComm  | UpdateCommLoad;
 
 /**
  * Makes the comm responsible for discovery of which visualization
  * corresponds to which cell, accomplished through inspecting the
  * metadata of the message sent.
  */
-export function makeComm(refToSidebar: MidasSidebar) {
+export function makeComm() {
   LogSteps("makeComm");
+  // refToSidebar: MidasSidebar
   Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
       LogDebug(`makeComm first message: ${JSON.stringify(msg)}`);
       // comm is the frontend comm instance
       // msg is the comm_open message, which can carry data
-      const on_msg = make_on_msg(refToSidebar);
-      refToSidebar.set_comm(comm);
-      comm.on_msg(on_msg);
+      // first message handler
+      const set_on_msg = (onMessage: (r: MidasSidebar) => void ) => { comm.on_msg = onMessage; };
+      comm.on_msg((msg: any) => {
+        // the first time
+        const load = msg.content.data as CommandLoad;
+        if (load.type === "init") {
+          const ref = createMidasComponent();
+          const on_msg = makeOnMsg(ref);
+          set_on_msg(on_msg);
+        }
+      });
+
       comm.on_close(function (msg: any) {
         LogSteps(`CommClose`, msg);
       });
-      comm.send({"test boo hoo": "great"});
+
+      if ((window.performance) && (performance.navigation.type === 1)) {
+        // Page is reloaded, use comm to make python side reconnect to the comm
+        // this should be ran only once
+        LogDebug("Refresh-comm called");
+        comm.send({
+          "command": "refresh-comm"
+        });
+      }
     });
 }
 
 
-function make_on_msg(refToSidebar: MidasSidebar) {
+function makeOnMsg(refToSidebar: MidasSidebar) {
 
   let refToMidas = refToSidebar.getMidasContainerRef();
   let refToProfilerShelf = refToSidebar.getProfilerShelfRef();
@@ -64,6 +84,19 @@ function make_on_msg(refToSidebar: MidasSidebar) {
     const load = msg.content.data as MidasCommLoad;
     console.log(load.type);
     switch (load.type) {
+      case "hide": {
+        refToSidebar.hide();
+        return;
+      }
+      case "show": {
+        refToSidebar.show();
+        return;
+      }
+      case "midas_instance_name": {
+        const instanceLoad = load as BasicLoad;
+        refToMidas.setMidasPythonInstanceName(instanceLoad.value);
+        return;
+      }
       case "notification": {
         const errorLoad = load as NotificationCommLoad;
         LogDebug(`sending error ${errorLoad.value}`);
@@ -130,4 +163,5 @@ function make_on_msg(refToSidebar: MidasSidebar) {
     }
   };
 }
+
 

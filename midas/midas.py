@@ -14,7 +14,6 @@ except ImportError as err:
 
 from .stream import MidasSelectionStream
 
-from midas.midas_algebra.selection import SelectionValue
 from midas.midas_algebra.dataframe import MidasDataFrame, DFInfo, RuntimeFunctions
 from midas.midas_algebra.context import Context
 
@@ -27,7 +26,7 @@ from .midas_magic import MidasMagic
 from .util.instructions import HELP_INSTRUCTION
 from .util.errors import UserError, logging, check_not_null
 from .util.utils import isnotebook, find_name
-from .config import default_midas_config, MidasConfig
+from .config import default_midas_config, MIDAS_INSTANCE_NAME, MidasConfig
 from .event_loop import EventLoop
 
 
@@ -46,7 +45,9 @@ class Midas(object):
     current_selection: Dict[DFName, SelectionEvent]
 
     def __init__(self, config: MidasConfig=default_midas_config):
-        ui_comm = UiComm(is_in_ipynb, self.js_add_selection)
+        # check the assigned name, if it is not 'm', then complain
+        assigned_name = find_name(True)
+        ui_comm = UiComm(is_in_ipynb, self.js_add_selection, assigned_name)
         self.ui_comm = ui_comm
         self.shelf_selections = {}
         self.state = State(ui_comm)
@@ -79,8 +80,6 @@ class Midas(object):
 
 
     def with_columns(self, *labels_and_values, **formatter):
-        print("new column!")
-        print(labels_and_values)
         table = Table().with_columns(*labels_and_values, **formatter)
         df_name = find_name()
         return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
