@@ -3,21 +3,28 @@ import MidasContainer from "./MidasContainer";
 import { SelectionShelf } from "./SelectionShelf";
 import { ProfilerShelf } from "./ProfilerShelf";
 
+interface MidasSidebarProps {
+  comm: any;
+}
+
 interface MidasSidebarState {
   isShown: boolean;
 }
 
-export class MidasSidebar extends React.Component<{}, {}> {
+export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSidebarState> {
 
   midasContainerRef: MidasContainer;
   selectionShelfRef: SelectionShelf;
   profilerShelfRef: ProfilerShelf;
 
-  constructor(props?: {}) {
+  constructor(props?: MidasSidebarProps) {
     super(props);
     this.state = {
       isShown: true
     };
+
+    this.hide = this.hide.bind(this);
+    this.show = this.show.bind(this);
 
     this.setMidasContainerRef = this.setMidasContainerRef.bind(this);
     this.setProfilerShelfRef = this.setProfilerShelfRef.bind(this);
@@ -55,24 +62,23 @@ export class MidasSidebar extends React.Component<{}, {}> {
     return this.selectionShelfRef;
   }
 
-  set_comm(comm: any) {
-    this.midasContainerRef.setComm(comm);
-  }
-
   render() {
     const midbar = (
       <div id="midas-midbar">
         <ProfilerShelf ref={this.setProfilerShelfRef}/>
         <SelectionShelf ref={this.setSelectionShelfRef}/>
     </div>);
-  return (
-    <div style={{this.state.isShown ? "block" : "none"}}>
-      <div id="midas-resizer"></div>
-      <div className="midas-inside">
-        { midbar }
-        <MidasContainer ref={this.setMidasContainerRef}></MidasContainer>
+    const display = this.state.isShown ? "block" : "none"
+    return (
+      <div style={{ "display": display }}>
+        <div id="midas-resizer"></div>
+        <div className="midas-inside">
+          { midbar }
+          <MidasContainer
+            comm={this.props.comm}
+            ref={this.setMidasContainerRef}/>
+        </div>
       </div>
-    </div>
-  );
+    );
   }
 }

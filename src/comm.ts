@@ -5,25 +5,27 @@ import { createMidasComponent } from "./setup";
 import { AlertType } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
 
-// types could be of: name, error, reactive
-// TODO: maybe don't need these types...
-// but just in case things get more complicated
-type NotificationCommLoad = { type: string; style: string, value: string };
-// type AddSelectionLoad = { type: string; value: string };
-// type ReactiveCommLoad = { type: string; value: string };
-// type NavigateCommLoad
 type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
+
+type NotificationCommLoad = {
+  type: string;
+  style: string;
+  value: string;
+};
+
 type UpdateCommLoad = {
   type: string;
   dfName: string;
   newData: any;
 };
+
 type ProfilerComm = {
   type: string;
   dfName: string;
   columns: string; // decoded to ProfilerColumns
 };
+
 type ChartRenderComm = {
   type: string;
   dfName: string;
@@ -43,15 +45,16 @@ export function makeComm() {
   Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
       LogDebug(`makeComm first message: ${JSON.stringify(msg)}`);
-      // comm is the frontend comm instance
-      // msg is the comm_open message, which can carry data
-      // first message handler
-      const set_on_msg = (onMessage: (r: MidasSidebar) => void ) => { comm.on_msg = onMessage; };
+      const set_on_msg = (onMessage: (r: MidasSidebar) => void ) => {
+        comm.on_msg(onMessage);
+        LogDebug("set the handler to new");
+      };
       comm.on_msg((msg: any) => {
         // the first time
-        const load = msg.content.data as CommandLoad;
-        if (load.type === "init") {
-          const ref = createMidasComponent();
+        const load = msg.content.data as BasicLoad;
+        const midas_instance_name = load.value;
+        if (load.type === "midas_instance_name") {
+          const ref = createMidasComponent(midas_instance_name, comm, true);
           const on_msg = makeOnMsg(ref);
           set_on_msg(on_msg);
         }
@@ -65,9 +68,10 @@ export function makeComm() {
         // Page is reloaded, use comm to make python side reconnect to the comm
         // this should be ran only once
         LogDebug("Refresh-comm called");
-        comm.send({
-          "command": "refresh-comm"
-        });
+        // FIXME: commenting the below out because there are some infinite loops going on here...
+        // comm.send({
+        //   "command": "refresh-comm"
+        // });
       }
     });
 }
@@ -90,11 +94,6 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
       }
       case "show": {
         refToSidebar.show();
-        return;
-      }
-      case "midas_instance_name": {
-        const instanceLoad = load as BasicLoad;
-        refToMidas.setMidasPythonInstanceName(instanceLoad.value);
         return;
       }
       case "notification": {
@@ -136,7 +135,6 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
         const dataLoad = load as ProfilerComm;
         LogSteps("Profiler", dataLoad.dfName);
         const tableName = dataLoad.dfName;
-        // not sure what happened, but the data appears to have been stringified twice...
         const columnItems = JSON.parse(dataLoad.columns);
         // DataProps
         refToProfilerShelf.addOrReplaceTableItem(tableName, columnItems, cellId);

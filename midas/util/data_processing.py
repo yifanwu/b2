@@ -1,12 +1,12 @@
 from datascience import Table
 import numpy as np
 from math import log10, pow
-from typing import Optional
+from typing import Tuple, Any, cast
 from pandas import notnull
 
 from .errors import InternalLogicalError, debug_log
 from midas.defaults import COUNT_COL_NAME
-from midas.vis_types import DfTransform
+from midas.vis_types import DfTransformType, DfTransform, NumericDistribution
 from midas.util.errors import type_check_with_warning
 
 
@@ -15,10 +15,10 @@ def transform_df(transform: DfTransform, df: Table):
     type_check_with_warning(df, Table)
     # check ty
     first_col = df.labels[0]
-    if (transform == DfTransform.categorical_distribution):
+    if transform.df_transform_type == DfTransformType.categorical_distribution:
         return df.group(first_col)
-    elif (transform == DfTransform.numeric_distribution):
-        return get_numeric_distribution(df)
+    elif transform.df_transform_type == DfTransformType.numeric_distribution:
+        return get_numeric_distribution(df, cast(NumericDistribution, transform))
 
 def get_chart_title(df_name: str):
     # one level of indirection in case we need to change in the future
@@ -29,6 +29,9 @@ MAX_BINS = 20
 
 
 def snap_to_nice_number(n: float):
+    # print("Nice nubmer", n)
+    if n == np.inf:
+        raise InternalLogicalError("Should not have gotten infinity")
     if n <= 0:
         raise InternalLogicalError(f"Got {n}")
     if (n <= 1):
@@ -46,8 +49,12 @@ def snap_to_nice_number(n: float):
     zeroes = pow(10, int(log10(n)))
     return (int(n / zeroes) + 1) * zeroes
 
-
-def get_numeric_distribution(table: Table) -> Table:
+# TODO(P1): since the bin sizes changes from update to update
+#           we want a more user friendly way to show some details
+# TODO(P2): the distribution is a little too coarse grained
+#           with data like this: s = np.random.normal(0, 0.1, 20)
+def get_numeric_distribution(table: Table, transform: NumericDistribution) -> Table:
+    # debug_log("processing numeric distribution")
     type_check_with_warning(table, Table)
     first_col = table.labels[0]
     column = table.column(first_col)
@@ -55,25 +62,38 @@ def get_numeric_distribution(table: Table) -> Table:
     current_max_bins = len(unique_vals)
     if (current_max_bins < MAX_BINS):
         # no binning needed
-        return table.group(first_col)
+        result = table.group(first_col)
+        return result
     else:
-        min_bucket_count = round(MAX_BINS/current_max_bins)
-        d_max = unique_vals[-1]
-        d_min = unique_vals[0]
-        min_bucket_size = (d_max - d_min) / min_bucket_count
-        bound = snap_to_nice_number(min_bucket_size)
-        d_nice_min = int(d_min/bound) * bound
-        bins = [d_nice_min]
-        cur = d_nice_min
-        while (cur < d_max):
-            cur += bound
-            bins.append(cur)
-        # def binne_val(v):
-        count_col, name_col = np.histogram(column, bins)
-        return Table().with_columns({
-          first_col: name_col,
-          COUNT_COL_NAME: count_col  
+        if transform.bins is None:
+            min_bucket_count = round(current_max_bins/MAX_BINS)
+            d_max = unique_vals[-1]
+            d_min = unique_vals[0]
+            min_bucket_size = (d_max - d_min) / min_bucket_count
+            # print(MAX_BINS, current_max_bins, d_max, d_min)
+            bound = snap_to_nice_number(min_bucket_size)
+            print("bound size", bound)
+            d_nice_min = int(d_min/bound) * bound
+            bins = [d_nice_min]
+            cur = d_nice_min
+            while (cur < d_max):
+                cur += bound
+                bins.append(cur)
+            transform.bins = bins
+            # def binne_val(v):
+            # print("column", column)
+            # print("bins", bins)
+        count_col, name_col = np.histogram(column, transform.bins)
+        # print(count_col)
+        # print(name_col[:-1])
+        result = Table().with_columns({
+            # note that we have -1 because the boundaries have one more
+            first_col: name_col[:-1],
+            COUNT_COL_NAME: count_col
         })
+        # print("===")
+        # print(result)
+        return result
 
 
 # TODO: we need to test this...
@@ -116,9 +136,12 @@ def sanitize_dataframe(df: Table):
         elif np.issubdtype(dtype, np.floating):
             # For floats, convert to Python float: np.float is not JSON serializable
             # Also convert NaN/inf values to null, as they are not JSON serializable
+            print("floating")
             col = df[col_name]
             bad_values = np.isnan(col) | np.isinf(col)
-            df[col_name] = col.astype(object)[bad_values]= None
+            print(bad_values)
+            df[col_name] = np.where(bad_values, None, col).astype(object)
+            # col.astype(object)[~bad_values]= None
         elif str(dtype).startswith('datetime'):
             # Convert datetimes to strings
             # astype(str) will choose the appropriate resolution
@@ -129,8 +152,7 @@ def sanitize_dataframe(df: Table):
             # Convert numpy arrays saved as objects to lists
             # Arrays are not JSON serializable
             col = np.vectorize(to_list_if_array)(df[col_name])
-            col[notnull(col)] = None
-            df[col_name] = col.astype(object)
+            df[col_name] = np.where(notnull(col), col, None).astype(object)
     return df
 
 

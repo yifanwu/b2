@@ -35,8 +35,8 @@ function syncWidth(parentSelector: string, childSelector: string, marginAdjust =
   $(childSelector).width(parentwidth - marginAdjust );
 }
 
-export function createMidasComponent(is_first_time: boolean = true): MidasSidebar {
-  LogSteps("createMidasComponent");
+export function createMidasComponent(midas_instance_name: string, comm: any, is_first_time: boolean = true): MidasSidebar {
+  LogSteps("createMidasComponent", midas_instance_name);
 
   if (is_first_time) {
     $(window).resize(function() {
@@ -47,7 +47,10 @@ export function createMidasComponent(is_first_time: boolean = true): MidasSideba
   }
 
   let midasRef;
-  ReactDOM.render(<MidasSidebar ref={(comp) => midasRef = comp}/>, document.getElementById("midas-sidebar-wrapper"));
+  ReactDOM.render(<MidasSidebar
+    ref={(comp) => midasRef = comp}
+    comm={comm}
+    />, document.getElementById("midas-sidebar-wrapper"));
 
   if (is_first_time) {
     makeResizer((delta) => {

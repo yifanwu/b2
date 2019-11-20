@@ -29,9 +29,26 @@ class SelectionEvent(object):
         return f"df: {self.df_name}\n  predicates: {self.predicate}"
 
 
-class DfTransform(Enum):
+class DfTransformType(Enum):
     categorical_distribution = "categorical_distribution"
     numeric_distribution = "numeric_distribution"
+
+class DfTransform(object):
+    df_transform_type: DfTransformType
+    pass
+
+class NumericDistribution(DfTransform):
+    def __init__(self):
+        self.df_transform_type = DfTransformType.numeric_distribution
+        self.bins = None
+
+    def set_bin(self, bins):
+        self.bins = bins
+
+
+class CategoricalDistribution(DfTransform):
+    def __init__(self):
+        self.df_transform_type = DfTransformType.categorical_distribution
 
 
 # basic stub for Vega typing

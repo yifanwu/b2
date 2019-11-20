@@ -2,27 +2,32 @@
 from typing import Optional, Dict
 from pandas import DataFrame
 
-from midas.defaults import DEFAULT_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, Y_PIXEL_SIGNAL, SELECTION_SIGNAL, BRUSH_MARK, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL, X_DOMAIN_BY_DATA_SIGNAL, X_DOMAIN_SIGNAL
-from .shared_all import gen_spec_base, gen_y_domain_signals, gen_width_height_signals
+from midas.defaults import FILTERED_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCALE, Y_PIXEL_SIGNAL, SELECTION_SIGNAL, BRUSH_MARK, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL, X_DOMAIN_BY_DATA_SIGNAL, X_DOMAIN_SIGNAL, BASE_DATA_SOURCE
+from .shared_all import gen_spec_base, gen_domain_signals, gen_width_height_signals
 
 
 def gen_scatterplot_spec(x_field: str, y_field: str):
     spec_base = gen_spec_base()
-    spec_base["data"] = [{
-        "name": DEFAULT_DATA_SOURCE,
+    spec_base["data"] = [
+        {
+            "name": BASE_DATA_SOURCE,
+            "values": []
+        },
+        {
+        "name": FILTERED_DATA_SOURCE,
         "values": [],
-        "transform": [
-            {
-                "type": "extent",
-                "field": y_field,
-                "signal": Y_DOMAIN_BY_DATA_SIGNAL
-            },
-            {
-                "type": "extent",
-                "field": x_field,
-                "signal": X_DOMAIN_BY_DATA_SIGNAL
-            }
-        ]
+        # "transform": [
+        #     {
+        #         "type": "extent",
+        #         "field": y_field,
+        #         "signal": Y_DOMAIN_BY_DATA_SIGNAL
+        #     },
+        #     {
+        #         "type": "extent",
+        #         "field": x_field,
+        #         "signal": X_DOMAIN_BY_DATA_SIGNAL
+        #     }
+        # ]
     }]
     spec_base["scales"] = [
         {
@@ -31,8 +36,8 @@ def gen_scatterplot_spec(x_field: str, y_field: str):
             "round": True,
             "nice": True,
             "zero": False,
-            "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
-            # "domain": {"data": DEFAULT_DATA_SOURCE, "field": x_field},
+            # "domain": {"signal": f"{X_DOMAIN_SIGNAL} ? {X_DOMAIN_SIGNAL} : {X_DOMAIN_BY_DATA_SIGNAL}"},
+            "domain": {"data": BASE_DATA_SOURCE, "field": x_field},
             "range": "width"
         },
         {
@@ -41,8 +46,8 @@ def gen_scatterplot_spec(x_field: str, y_field: str):
             "round": True,
             "nice": True,
             "zero": False,
-            "domain": {"signal": f"{Y_DOMAIN_SIGNAL} ? {Y_DOMAIN_SIGNAL} : {Y_DOMAIN_BY_DATA_SIGNAL}"},
-            # {"data": DEFAULT_DATA_SOURCE, "field": y_field},
+            # "domain": {"signal": f"{Y_DOMAIN_SIGNAL} ? {Y_DOMAIN_SIGNAL} : {Y_DOMAIN_BY_DATA_SIGNAL}"},
+            "domain": {"data": BASE_DATA_SOURCE, "field": y_field},
             "range": "height"
         }
     ]
@@ -68,17 +73,36 @@ def gen_scatterplot_spec(x_field: str, y_field: str):
         {
             "name": "marks",
             "type": "symbol",
-            "from": {"data": DEFAULT_DATA_SOURCE},
+            "from": {"data": FILTERED_DATA_SOURCE},
             "encode": {
                 "update": {
-                "x": {"scale": X_SCALE, "field": x_field},
-                "y": {"scale": Y_SCALE, "field": y_field},
-                "size": {"value": 4},
-                "shape": {"value": "circle"},
-                "strokeWidth": {"value": 5},
-                "opacity": {"value": 0.5},
-                "stroke": {"value": "#4682b4"},
-                "fill": {"value": "transparent"}
+                    "x": {"scale": X_SCALE, "field": x_field},
+                    "y": {"scale": Y_SCALE, "field": y_field},
+                    "size": {"value": 4},
+                    "shape": {"value": "circle"},
+                    "strokeWidth": {"value": 5},
+                    "opacity": {"value": 0.5},
+                    "stroke": {"value": "#4682b4"},
+                    "fill": {"value": "transparent"}
+                }
+            }
+        },
+        {
+            "name": "marks",
+            "type": "symbol",
+            "from": {"data": BASE_DATA_SOURCE},
+            "encode": {
+                "update": {
+                    "x": {"scale": X_SCALE, "field": x_field},
+                    "y": {"scale": Y_SCALE, "field": y_field},
+                    "size": {"value": 4},
+                    "shape": {"value": "circle"},
+                    "strokeWidth": {"value": 5},
+                    "opacity": {"value": 0.5},
+                    "fill": {
+                        "value": "#ccc",
+                        "opacity": {"value": 0.6}
+                    }
                 }
             }
         },
@@ -100,7 +124,7 @@ def gen_scatterplot_spec(x_field: str, y_field: str):
         }
     ]
     spec_base["signals"] = gen_width_height_signals() + \
-        gen_y_domain_signals() + \
+        gen_domain_signals() + \
         [{
             "name": SELECTION_SIGNAL,
             "on": [

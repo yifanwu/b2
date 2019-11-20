@@ -14,7 +14,7 @@ from .vega_gen.line_chart import gen_linechart_spec
 from midas.defaults import COUNT_COL_NAME
 
 from midas.util.errors import type_check_with_warning, InternalLogicalError
-from midas.vis_types import ChartInfo, ChartType, Channel, DfTransform
+from midas.vis_types import ChartInfo, ChartType, Channel, DfTransform, NumericDistribution, CategoricalDistribution
 
 def gen_spec(df: Table, chart_title: str) -> Optional[ChartInfo]:
     """Implements basic show me like feature
@@ -37,13 +37,13 @@ def gen_spec(df: Table, chart_title: str) -> Optional[ChartInfo]:
     elif (df_len == 1):
         first_col = df.labels[0]
         if (is_string_dtype(df[first_col])):
-            additional_transforms = DfTransform.categorical_distribution
+            additional_transforms = CategoricalDistribution()
             chart_type = ChartType.bar_categorical
         elif (is_datetime64_any_dtype(df[first_col])):
-            additional_transforms = DfTransform.categorical_distribution
+            additional_transforms = NumericDistribution()
             chart_type = ChartType.line
         else:
-            additional_transforms = DfTransform.numeric_distribution
+            additional_transforms = NumericDistribution()
             chart_type = ChartType.bar_linear
         encoding = {
             Channel.x: first_col,

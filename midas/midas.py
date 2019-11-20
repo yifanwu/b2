@@ -47,6 +47,8 @@ class Midas(object):
     def __init__(self, config: MidasConfig=default_midas_config):
         # check the assigned name, if it is not 'm', then complain
         assigned_name = find_name(True)
+        if assigned_name is None:
+            raise UserError("must assign a name")
         ui_comm = UiComm(is_in_ipynb, self.js_add_selection, assigned_name)
         self.ui_comm = ui_comm
         self.shelf_selections = {}

@@ -27,18 +27,17 @@ class UiComm(object):
         self.next_id = 0
         self.vis_spec = {}
         self.is_in_ipynb = is_in_ipynb
-        self.set_comm()
+        self.set_comm(midas_instance_name)
         self.ui_add_selection = ui_add_selection
-        self.midas_instance_name = midas_instance_name
+        
 
-
-    def set_comm(self):
+    def set_comm(self, midas_instance_name: str):
         if self.is_in_ipynb:
             self.comm = Comm(target_name = MIDAS_CELL_COMM_NAME)
             # tell the JS side what the assigned name is
             self.comm.send({
                 "type": "midas_instance_name",
-                "value": self.midas_instance_name
+                "value": midas_instance_name
             })
 
             def handle_msg(data_raw):
@@ -49,7 +48,7 @@ class UiComm(object):
                     command = data["command"]
                     if (command == "refresh-comm"):
                         self.send_debug_msg("Refreshing comm")
-                        self.set_comm()
+                        self.set_comm(midas_instance_name)
                         return
                     # if (command == "selection"):
                     #     df_name = data["dfName"]
@@ -116,7 +115,9 @@ class UiComm(object):
                 return
             records = dataframe_to_dict(vis_df)
             # we have created it such that the data is an array
+            # base
             chart_info.vega_spec["data"][0]["values"] = records
+            # filtered --- set to be the same
             # set the spec
             self.vis_spec[mdf.df_name] = chart_info # type: ignore
             # see if we need to apply any transforms
@@ -150,7 +151,8 @@ class UiComm(object):
             vis_df = transform_df(chart_info.additional_transforms, table)
 
         new_data = dataframe_to_dict(vis_df)
-
+        print("new data")
+        print(new_data)
         self.comm.send({
             "type": "chart_update_data",
             "dfName": df.df_name,

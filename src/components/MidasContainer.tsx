@@ -52,8 +52,11 @@ interface ContainerState {
   reactiveCells: Map<string, number[]>;
   allReactiveCells: Set<number>;
   alerts: AlertItem[];
-  comm: any; // unfortunately not typed
   midasPythonInstanceName: string;
+}
+
+interface ContainerProps {
+  comm: any;
 }
 
 const ALERT_ALIVE_TIME = 5000;
@@ -65,10 +68,10 @@ const MidasSortableContainer = SortableContainer(({children}: {children: any}) =
 /**
  * Container for the MidasElements that hold the visualization.
  */
-export default class MidasContainer extends React.Component<{}, ContainerState> {
+export default class MidasContainer extends React.Component<ContainerProps, ContainerState> {
   // refLookup: Map<string, typeof MidasElement>;
 
-  constructor(props?: {}) {
+  constructor(props?: ContainerProps) {
     super(props);
 
     // NOTE: maybe other binds needed as well...
@@ -79,7 +82,6 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     // this.refLookup = new Map();
 
     this.state = {
-      comm: null,
       notebookMetaData: [],
       profiles: [],
       elements: [],
@@ -106,9 +108,6 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
     this.setState({ midasPythonInstanceName });
   }
 
-  setComm(comm: any) {
-    this.setState({ comm });
-  }
   /**
    * Stores the cell id at which the given data frame was defined.
    * @param name the name of the data frame
@@ -169,6 +168,8 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
 
 
   addAlert(msg: string, alertType: AlertType = AlertType.Error) {
+    throw Error("who is calling");
+
     // make this disappearing
     const aId = hashCode(msg) * 100 + Math.round(Math.random() * 100);
     this.setState(prevState => {
@@ -315,7 +316,7 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
   // }
 
   render() {
-    const { comm, elements, profiles, alerts } = this.state;
+    const { elements, profiles, alerts } = this.state;
     const profilerDivs = profiles.map(({dfName, data}) => (
       <Profiler
         key={dfName}
@@ -331,15 +332,12 @@ export default class MidasContainer extends React.Component<{}, ContainerState> 
         cellId={notebookCellId}
         key={dfName}
         dfName={dfName}
-        comm={comm}
+        comm={this.props.comm}
         tick={this.tick}
-        // FIXME: title need to change
         title={dfName}
         vegaSpec={vegaSpec}
         changeStep={chanageStep}
         newData={newData}
-        // ref={ref}
-        // ref={(r) => this.setMidasElementRef(dfName, r)}
         removeChart={() => this.removeDataFrame(dfName)}
       />;
     });
