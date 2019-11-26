@@ -26,10 +26,10 @@ declare global {
 
 
 export function load_ipython_extension() {
+
+  Jupyter.notebook.events.on('kernel_connected.Kernel', function() {
+    LogSteps("!!Kernel starting!!");
+  });
+
   makeComm();
-  // @ryan was this ever fixed?
-  // $([Jupyter.events]).on("kernel_created.Kernel", function() {
-  //   LogSteps("!!Kernel starting!!");
-  //   createMidasComponent(false);
-  // });
 }
