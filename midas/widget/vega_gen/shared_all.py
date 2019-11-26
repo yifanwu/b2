@@ -53,18 +53,20 @@ def gen_width_height_signals():
     ]
 
 
-def gen_spec_base() -> VegaSpecType:
+def gen_spec_base(config=None) -> VegaSpecType:
     # commented out the following which can change label orientation
-    # "config": {
-    #     "axisX": {
-    #         "labelAngle": 45,
-    #     }
-    # }
+    has_angle = (config is None) or ("label_angle" not in config)
+    labelAngle = 0 if has_angle else config["label_angle"]
     base = {
             "$schema": "https://vega.github.io/schema/vega/v5.json",
             "width": CHART_WIDTH,
             "height": CHART_HEIGHT,
-            "padding": 5
+            "padding": 5,
+            "config": {
+                "axisX": {
+                    "labelAngle": labelAngle,
+                }
+            }
         }
     return base
 

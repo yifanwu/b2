@@ -6,8 +6,8 @@ from midas.defaults import FILTERED_DATA_SOURCE, X_SCALE, X_PIXEL_SIGNAL, Y_SCAL
 from .shared_all import gen_spec_base, gen_domain_signals, gen_width_height_signals
 
 
-def gen_scatterplot_spec(x_field: str, y_field: str):
-    spec_base = gen_spec_base()
+def gen_scatterplot_spec(spec_base, x_field: str, y_field: str):
+    # spec_base = gen_spec_base()
     spec_base["data"] = [
         {
             "name": BASE_DATA_SOURCE,

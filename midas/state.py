@@ -20,14 +20,14 @@ class State(object):
         self.ui_comm = uiComm
         self.shelf_selections = {}
 
-    def add_df(self, mdf: MidasDataFrame, is_base_df: bool=False):
+    def add_df(self, mdf: MidasDataFrame, config):
         # debug_log("adding df")
         # type_check_with_warning(mdf, MidasDataFrame)
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
 
         is_visualized = False
-        if is_base_df:
+        if config.is_base_df:
             self.ui_comm.create_profile(mdf)
             # if base_df only has two columns, try to visualize!
         # else:

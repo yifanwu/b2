@@ -80,6 +80,8 @@ def get_numeric_distribution(table: Table, transform: NumericDistribution) -> Ta
                 cur += bound
                 bins.append(cur)
             transform.bins = bins
+        else:
+            debug_log("bins has been set already")
             # def binne_val(v):
             # print("column", column)
             # print("bins", bins)
@@ -136,10 +138,8 @@ def sanitize_dataframe(df: Table):
         elif np.issubdtype(dtype, np.floating):
             # For floats, convert to Python float: np.float is not JSON serializable
             # Also convert NaN/inf values to null, as they are not JSON serializable
-            print("floating")
             col = df[col_name]
             bad_values = np.isnan(col) | np.isinf(col)
-            print(bad_values)
             df[col_name] = np.where(bad_values, None, col).astype(object)
             # col.astype(object)[~bad_values]= None
         elif str(dtype).startswith('datetime'):

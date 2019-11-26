@@ -11,12 +11,13 @@ from midas.midas_algebra.dataframe import MidasDataFrame
 from .vega_gen.bar_chart import gen_bar_chart_spec
 from .vega_gen.scatter_plot import gen_scatterplot_spec
 from .vega_gen.line_chart import gen_linechart_spec
-from midas.defaults import COUNT_COL_NAME
+from .vega_gen.shared_all import gen_spec_base
 
+from midas.defaults import COUNT_COL_NAME
 from midas.util.errors import type_check_with_warning, InternalLogicalError
 from midas.vis_types import ChartInfo, ChartType, Channel, DfTransform, NumericDistribution, CategoricalDistribution
 
-def gen_spec(df: Table, chart_title: str) -> Optional[ChartInfo]:
+def gen_spec(df: Table, chart_title: str, config) -> Optional[ChartInfo]:
     """Implements basic show me like feature
         if there is only one column, try to do a distribution with reasonable binning
         if one categorical, one numeric, barchart
@@ -75,17 +76,20 @@ def gen_spec(df: Table, chart_title: str) -> Optional[ChartInfo]:
             
     if chart_type:
         if encoding:
+            spec_base = gen_spec_base(config)
             if (chart_type == ChartType.bar_linear) or (chart_type == ChartType.bar_categorical):
-                vega_spec = gen_bar_chart_spec(encoding[Channel.x], encoding[Channel.y])
+                vega_spec = gen_bar_chart_spec(spec_base,
+                    encoding[Channel.x],
+                    encoding[Channel.y])
             elif (chart_type == ChartType.scatter):
-                vega_spec = gen_scatterplot_spec(encoding[Channel.x], encoding[Channel.y])
+                vega_spec = gen_scatterplot_spec(spec_base,
+                    encoding[Channel.x],
+                    encoding[Channel.y])
             else:
-                vega_spec = gen_linechart_spec(encoding[Channel.x], encoding[Channel.y])
+                vega_spec = gen_linechart_spec(spec_base,
+                    encoding[Channel.x],
+                    encoding[Channel.y])
             return ChartInfo(chart_type, encoding, vega_spec, chart_title,
             additional_transforms)
 
     raise InternalLogicalError(f"Failed to generate spec:\nchart_type {chart_type}\nencoding: {encoding}")
-
-
-# def _gen_spec_helper(chart_type: ChartType, encoding: Dict[Channel, str], data: DataFrame, additional_transforms: Optional[DfTransform]) -> ChartInfo:
-    

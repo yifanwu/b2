@@ -13,8 +13,10 @@ from midas.midas_algebra.selection import NumericRangeSelection, StringSetSelect
 from .util.utils import get_min_max_tuple_from_list
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import ChartType, Channel, ChartInfo, SelectionEvent
-from .widget.showme import gen_spec
 from .util.data_processing import dataframe_to_dict, transform_df
+
+class Updated():
+    MidasDataFrame
 
 class UiComm(object):
     comm: Comm
@@ -50,6 +52,14 @@ class UiComm(object):
                         self.send_debug_msg("Refreshing comm")
                         self.set_comm(midas_instance_name)
                         return
+                    if (command == "cell-ran"):
+                        if "code" in data:
+                            code = data["code"]
+                            # TODO: some information we can analyze later...
+                            # analyze the code that was ran
+                            # if it was a mdias_df
+                            # self.actual_visualize()
+                        return
                     # if (command == "selection"):
                     #     df_name = data["dfName"]
                     #     value = data["value"]
@@ -70,8 +80,19 @@ class UiComm(object):
         else:
             self.comm = MockComm()
     
+    # should be idempotent in case the code analysis has false positives
+    # def actual_visualize(self, df_name: str):
+    #     df = self.current_df_chain[DFName(df_name)]
 
-    def visualize(self, df: MidasDataFrame) -> bool:
+    def visualize(self, df: MidasDataFrame, is_original: bool=True):
+        # if it is filter based, then we update_chart, otherweise, we need to REPLACE the chart
+        # let's put this on a stack and only keep the most recent one
+        # the visualize is actually trigger
+        if df.df_name is None:
+            raise InternalLogicalError("df_name should be defined already")
+        
+        if df is None:
+            raise InternalLogicalError("df should be defined already")
         if (len(df.table.columns) > 2):
             self.send_user_error(f"Dataframe {df.df_name} not visualized")
             return False
@@ -105,7 +126,7 @@ class UiComm(object):
         if (len(df.columns) > 2):
             raise InternalLogicalError("create_chart should not be called")
         chart_title = mdf.df_name
-        chart_info = gen_spec(df, chart_title)
+        chart_info = gen_spec(df, chart_title, mdf.chart_config)
         if chart_info:
             vis_df = df
             if chart_info.additional_transforms:

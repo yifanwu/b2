@@ -14,7 +14,7 @@ except ImportError as err:
 
 from .stream import MidasSelectionStream
 
-from midas.midas_algebra.dataframe import MidasDataFrame, DFInfo, RuntimeFunctions
+from midas.midas_algebra.dataframe import MidasDataFrame, DFInfo, JoinInfo, RuntimeFunctions
 from midas.midas_algebra.context import Context
 
 from midas.vis_types import SelectionEvent
@@ -81,6 +81,13 @@ class Midas(object):
         return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
 
+    def from_df(self, df):
+        # take a pandas df
+        table = Table.from_df(df)
+        df_name = find_name()
+        return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
+
+
     def with_columns(self, *labels_and_values, **formatter):
         table = Table().with_columns(*labels_and_values, **formatter)
         df_name = find_name()
@@ -109,11 +116,9 @@ class Midas(object):
         return MidasSelectionStream(df_name, df_info.predicates, self.bind)
 
 
-    # @Shloak add join info here
-    def add_join_info(self, join_info):
-        self.context.add_info()
-        
-
+    def add_join_info(self, join_info: JoinInfo):
+        self.context.add_join_info(join_info)
+            
 
     def refresh_comm(self):
         self.ui_comm.set_comm()

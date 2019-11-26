@@ -212,6 +212,14 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
   addDataFrame(dfName: string, vegaSpec: Spec, notebookCellId: number) {
     console.log(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`);
     if (this.state.elements.filter(e => e.dfName === dfName).length > 0) {
+      // replace the vega definition, must maintain the element's original position
+      this.setState(prevState => {
+        const e = prevState.elements.filter(e => e.dfName === dfName)[0];
+        e.notebookCellId = notebookCellId;
+        e.vegaSpec = vegaSpec;
+        e.changeStep = 1;
+        return prevState;
+      });
       return;
     }
 

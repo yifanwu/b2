@@ -187,16 +187,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
    * Renders this component.
    */
   render() {
-    const fixYScale = () => {
-      console.log("FIXING Y");
-        // access the current scale
-        // const y_scale = this.view.scale(Y_SCALE);
-        // we need a ts-ignore because the typing for view is not complete!
-        // @ts-ignore
-        const y_scale = this.state.view.scale(Y_SCALE);
-        // then set the current scale
-        this.state.view.signal(Y_DOMAIN_SIGNAL, y_scale.domain());
-    };
     return (
       <div className="midas-element" id={get_df_id(this.props.dfName)}>
         <div className="midas-header">
@@ -205,24 +195,17 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           <div className="midas-header-options"></div>
           <button
             className={"midas-header-button"}
-            onClick={() => fixYScale()}>
-            Fix Y scale
-          </button>
-          <button
-            className={"midas-header-button"}
             onClick={() => this.getPythonButtonClicked()}>
-            get code
+            code
           </button>
           <button
             className={"midas-header-button"}
             onClick={() => this.selectCell()}
-          >find original cell</button>
-            <button
-              className={"midas-header-button"}
-              onClick={() => this.addSelectionButtonClicked()}>
-                Add Selection
-            </button>
-
+          >cell</button>
+          <button
+            className={"midas-header-button"}
+            onClick={() => this.addSelectionButtonClicked()}
+          >clip</button>
           <button
             className={"midas-header-button"}
             onClick={() => this.toggleHiddenStatus()}>
@@ -233,7 +216,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
             onClick={(e) => this.props.removeChart(e)}>
             x
           </button>
-
         </div>
         <div
           id={this.state.elementId}

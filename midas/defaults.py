@@ -7,8 +7,8 @@ COUNT_COL_NAME = "count"
 X_PIXEL_SIGNAL = "xBrushPixel"
 Y_PIXEL_SIGNAL = "yBrushPixel"
 Y_SELECT_SIGNAL = "yBrush"
-CHART_HEIGHT = 200
-CHART_WIDTH = 400
+CHART_HEIGHT = 100
+CHART_WIDTH = 200
 # note that this is overloaded across the barchart and scatter plot
 SELECTION_SIGNAL = "selectionRange"
 X_SCALE = "xscale"

@@ -35,8 +35,9 @@
 
 .midas-element {
   margin-bottom: 10pt;
-  width: 350pt;
-  height: 250pt;
+  width: 200pt;
+  /* the height being specified limits the folding */
+  /* height: 250pt; */
 }
 
 #midas-floater-wrapper.closed {
@@ -85,6 +86,8 @@
 
 .editable-text-header, .column-item-header {
   width: 100%;
+  /* hard code... */
+  height: 20px;
   padding: 2.5pt;
   margin: 2.5pt;
   display: flex;

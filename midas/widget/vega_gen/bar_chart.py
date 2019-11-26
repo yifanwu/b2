@@ -1,10 +1,10 @@
 from midas.defaults import FILTERED_DATA_SOURCE, X_SCALE, Y_SCALE, Y_DOMAIN_SIGNAL, Y_DOMAIN_BY_DATA_SIGNAL, BASE_DATA_SOURCE, X_DOMAIN_SIGNAL
 from .shared_one_dim import gen_x_brush_signal, gen_x_brush_mark
-from .shared_all import gen_spec_base, gen_domain_signals, gen_width_height_signals
+from .shared_all import gen_domain_signals, gen_width_height_signals
 from midas.defaults import SELECTION_SIGNAL
 
-def gen_bar_chart_spec(x_field: str, y_field: str):
-    spec_base = gen_spec_base()
+def gen_bar_chart_spec(spec_base, x_field: str, y_field: str):
+    # spec_base = gen_spec_base()
     spec_base["data"] = [
         {
             "name": BASE_DATA_SOURCE,

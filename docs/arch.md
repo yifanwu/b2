@@ -1,14 +1,15 @@
 # Architecture
 
-## Simple Interactive Control for a Single DF
+We need to coordinate the state in the code with the state in the JS end.
 
-## Selection
+The connection is somewhat deep. For instance, 
 
-## Reactive loop
 
-In the signal callback, refresh the rendering
+## Synchronizing state
 
-* compute the dependent computations on the selection df again
-  * we have to capture the dependent computation, for now we are just going to seek the user's help, where they will have a function that takes in the dependent DF and generate the new DF.
+There are three ways the charts could update:
 
-* pass this via the python <widget_name>.update
+- Base data is set/replaced (this requires a full vega replacement)
+- Filter data is set/replaced
+
+Also when the base data is being created, we need to see if the filtered data need to be created...

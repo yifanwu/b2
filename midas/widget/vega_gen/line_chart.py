@@ -8,9 +8,8 @@ from .shared_all import gen_spec_base, gen_domain_signals, gen_width_height_sign
 
 # note that if we don't specify, it's automatically inferred
 # :%Y-%m-%d
-def gen_linechart_spec(x_field: str, y_field: str, date_format: str=""):
+def gen_linechart_spec(spec_base, x_field: str, y_field: str, date_format: str=""):
     # spec_base = gen_scatterplot_spec(x_field, y_field, data)
-    spec_base = gen_spec_base()
     # line chart need special spec because it needs the time
     spec_base["data"] = [{
             "name": FILTERED_DATA_SOURCE,
