@@ -2,3 +2,5 @@ jupyter
 pandas
 datascience
 asttokens
+pyperclip
+
