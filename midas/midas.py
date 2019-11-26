@@ -3,7 +3,7 @@ from datetime import datetime
 from IPython import get_ipython  # type: ignore
 from typing import Optional, Union, List, Dict
 from datascience import Table
-# from pyperclip import copy
+from pyperclip import copy
 
 try:
     from IPython.display import display  # type: ignore
@@ -215,6 +215,23 @@ class Midas(object):
                 self.ui_comm.custom_message('add-selection', name)
         else: 
             self.ui_comm.send_user_error(f'no selection on {df_name} yet')
+
+    def js_get_current_chart_code(self, df_name: str) -> Optional[str]:
+        # figure out how to derive the current df
+        # don't have a story yet for complicated things...
+        # decide on if we want to focus on complex code gen...
+        if self.state.has_df(df_name):
+            # TODO: get predicates working again
+            code = self.state.get_df(df_name).df.get_code()
+            print(code)
+            copy(code)
+            return code
+        # something went wrong, so let's tell comes...
+        self.midas_cell_comm.send({
+            'type': 'error',
+            'value': f'no selection on {df_name} yet'
+        })
+        return
 
 
 __all__ = ['Midas']

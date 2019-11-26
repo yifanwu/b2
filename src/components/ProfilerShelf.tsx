@@ -37,6 +37,7 @@ export class ProfilerShelf extends React.Component<{}, ColumnShelfState> {
     const tableDivs = Object.keys(this.state.tables).map((tableName) => {
       const columns = this.state.tables[tableName].map((c) => <ColumnItem
         key={`column-${tableName}-${c.columnName}`}
+        tableName={tableName}
         columnName={c.columnName}
         columnType={c.columnType}
         onDelete={() => this.hideItem(tableName, c.columnName)}
