@@ -32,4 +32,5 @@ export function load_ipython_extension() {
   });
 
   makeComm();
+
 }

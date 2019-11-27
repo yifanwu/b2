@@ -33,3 +33,5 @@ You will need to understand how [git submodules](https://git-scm.com/book/en/v2/
 To test the Python pieces: `pytest -q ./tests/test_rendering.py`.
 
 Publish a new version to pypi with `python3 setup.py sdist upload`.
+
+It is also recommended that you install PyRight if you are using the VSCode editor, or PyCharm, which should come with type checking.

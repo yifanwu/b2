@@ -57,6 +57,14 @@ export function makeComm() {
           const ref = createMidasComponent(midas_instance_name, comm, true);
           const on_msg = makeOnMsg(ref);
           set_on_msg(on_msg);
+          // also start watching cell execution
+          Jupyter.notebook.events.on("finished_execute.CodeCell", function(evt: any, data: any) {
+            // console.log("FINISHED excuting cell", 
+            comm.send({
+              command: "cell-ran",
+              code: data.cell.get_text()
+            });
+          });
         }
       });
 

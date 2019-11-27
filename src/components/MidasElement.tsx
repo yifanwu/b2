@@ -36,7 +36,7 @@ const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;â
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
-function getDebouncedFunction(dfName: string, comm: any, tick: (dfName: string) => void) {
+function getDebouncedFunction(dfName: string, tick: (dfName: string) => void) {
   const callback = (signalName: string, value: any) => {
     // also need to call into python state...
     let valueStr = JSON.stringify(value);
@@ -107,7 +107,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         this.state.view.signal(Y_DOMAIN_SIGNAL, yDomain);
         this.state.view.signal(X_DOMAIN_SIGNAL, xDomain);
         LogDebug(`Registering signal for TICK, with signal ${SELECTION_SIGNAL}`);
-        res.view.addSignalListener(SELECTION_SIGNAL, getDebouncedFunction(dfName, this.props.comm, tick));
+        res.view.addSignalListener(SELECTION_SIGNAL, getDebouncedFunction(dfName, tick));
       })
       .catch((err: Error) => console.error(err));
   }
@@ -178,9 +178,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 
   addSelectionButtonClicked() {
-    const execute = `m.js_add_selection_to_shelf('${this.props.title}')`;
-    console.log("clicked, and executing", execute);
-    IPython.notebook.kernel.execute(execute);
+    // const execute = `m.js_add_selection_to_shelf('${this.props.title}')`;
+    // console.log("clicked, and executing", execute);
+    // IPython.notebook.kernel.execute(execute);
+    // we want to send this to comm
+    this.props.comm.send({
+      "command": "get_code_clipboard",
+      "df_name": this.props.title
+    });
   }
 
   /**

@@ -2,13 +2,14 @@ from datetime import datetime
 from midas.midas_algebra.selection import SelectionValue
 from ipykernel.comm import Comm # type: ignore
 from json import loads
-from typing import Dict, Callable, Any, List
+from typing import Dict, Callable, Any, List, cast
 import json
+from pyperclip import copy
 
 from .constants import MIDAS_CELL_COMM_NAME
 from midas.state_types import DFName
 
-from midas.midas_algebra.dataframe import MidasDataFrame
+from midas.midas_algebra.dataframe import MidasDataFrame, VisualizedDFInfo
 from midas.midas_algebra.selection import NumericRangeSelection, StringSetSelection, SingleValueSelection, ColumnRef
 from .util.utils import get_min_max_tuple_from_list
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
@@ -24,13 +25,15 @@ class UiComm(object):
     is_in_ipynb: bool
     tmp_debug: str
     midas_instance_name: str
+    
 
-    def __init__(self, is_in_ipynb: bool, ui_add_selection: Callable[[SelectionEvent], Any], midas_instance_name: str):
+    def __init__(self, is_in_ipynb: bool, midas_instance_name: str, get_df_fun):
         self.next_id = 0
         self.vis_spec = {}
+        self.shelf_selections = {}
         self.is_in_ipynb = is_in_ipynb
         self.set_comm(midas_instance_name)
-        self.ui_add_selection = ui_add_selection
+        self.get_df = get_df_fun
         
 
     def set_comm(self, midas_instance_name: str):
@@ -48,11 +51,11 @@ class UiComm(object):
                 data = data_raw["content"]["data"]
                 if "command" in data:
                     command = data["command"]
-                    if (command == "refresh-comm"):
+                    if command == "refresh-comm":
                         self.send_debug_msg("Refreshing comm")
                         self.set_comm(midas_instance_name)
                         return
-                    if (command == "cell-ran"):
+                    if command == "cell-ran":
                         if "code" in data:
                             code = data["code"]
                             # TODO: some information we can analyze later...
@@ -60,6 +63,29 @@ class UiComm(object):
                             # if it was a mdias_df
                             # self.actual_visualize()
                         return
+                    if command == "get_code_clipboard":
+                        df_name = DFName(data["df_name"])
+                        df = self.get_df(df_name)
+                        if df:
+                            # TODO: get predicates working again
+                            code = df.df.get_code()
+                            copy(code)
+                            return code
+                        # something went wrong, so let's tell comes...
+                        self.send_user_error(f'no selection on {df_name} yet')
+                    if command == "add_selection":
+                        df_name = DFName(data["df_name"])
+                        df_info = cast(VisualizedDFInfo, self.get_df(df_name))
+                        predicates = df_info.predicates
+                        if (len(predicates) > 0):
+                            predicate = predicates[-1]
+                            name = f"{predicate.df_name}_{len(predicates)}"
+
+                            self.shelf_selections[name] = (predicate, df_name)
+                            self.custom_message('add-selection', name)
+                        else: 
+                            self.send_user_error(f'no selection on {df_name} yet')
+                        # then need to trigger the method on midas...
                     # if (command == "selection"):
                     #     df_name = data["dfName"]
                     #     value = data["value"]
@@ -235,6 +261,15 @@ class UiComm(object):
             x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
             return [x_selection]
         raise InternalLogicalError("Not all chart_info handled")
+
+
+    def update_selection_shelf_selection_name(self, old_name: str, new_name: str):
+      self.shelf_selections[new_name] = self.shelf_selections[old_name]
+      del self.shelf_selections[old_name]
+    
+
+    def remove_selection_from_shelf(self, df_name: str):
+      del self.shelf_selections[df_name]
 
 
     def create_custom_visualization(self, spec):
