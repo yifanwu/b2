@@ -73,12 +73,13 @@ class Midas(object):
             self.add_df,
             self.show_df,
             self.get_stream,
-            self.ui_comm.navigate_to_chart,
-            self.context.apply_selection)
+            self.context.apply_selection,
+            self.add_join_info)
 
     def add_df(self, mdf: MidasDataFrame):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
+        debug_log(f"+ Addign df {mdf.df_name}")
         self.dfs[mdf.df_name] = DFInfo(mdf)
 
 
@@ -90,6 +91,8 @@ class Midas(object):
             found_df = self.dfs[mdf.df_name]
             if isinstance(found_df, VisualizedDFInfo):
                 found_df.update_df(mdf)
+                # also 
+                self.ui_comm.update_chart(mdf)
                 self.ui_comm.navigate_to_chart(mdf.df_name)
             else:
                 is_visualized = False

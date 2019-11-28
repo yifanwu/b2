@@ -54,7 +54,9 @@ class EventLoop(object):
         #   we would need to access all that is currently selected and update the charts
         if self.config.linked:
             # ELSE we would know that the invididual links would be greated
-            for a_df_name in self.dfs_ref:
+            # note that we need to put it into a list, because otherwise it's an interator 
+            #   and we are modifying state, for instance, when we do a join, a a new df_name might be inserted
+            for a_df_name in list(self.dfs_ref):
                 df_info = self.dfs_ref[a_df_name]
                 if isinstance(df_info, VisualizedDFInfo):
                     s = gather_current_selection(all_predicate, a_df_name)
