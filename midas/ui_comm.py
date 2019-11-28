@@ -1,20 +1,22 @@
 from datetime import datetime
 from midas.midas_algebra.selection import SelectionValue
 from ipykernel.comm import Comm # type: ignore
-from json import loads
+# from json import loads
 from typing import Dict, Callable, Any, List, cast
 import json
 from pyperclip import copy
+import ast
 
 from .constants import MIDAS_CELL_COMM_NAME
 from midas.state_types import DFName
 
-from midas.midas_algebra.dataframe import MidasDataFrame, VisualizedDFInfo
+from midas.midas_algebra.dataframe import MidasDataFrame, VisualizedDFInfo, DFInfo
 from midas.midas_algebra.selection import NumericRangeSelection, StringSetSelection, SingleValueSelection, ColumnRef
 from .util.utils import get_min_max_tuple_from_list
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import ChartType, Channel, ChartInfo, SelectionEvent
 from .util.data_processing import dataframe_to_dict, transform_df
+from midas.widget.showme import gen_spec
 
 class Updated():
     MidasDataFrame
@@ -27,7 +29,7 @@ class UiComm(object):
     midas_instance_name: str
     
 
-    def __init__(self, is_in_ipynb: bool, midas_instance_name: str, get_df_fun):
+    def __init__(self, is_in_ipynb: bool, midas_instance_name: str, get_df_fun: Callable[[DFName], DFInfo]):
         self.next_id = 0
         self.vis_spec = {}
         self.shelf_selections = {}
@@ -58,6 +60,11 @@ class UiComm(object):
                     if command == "cell-ran":
                         if "code" in data:
                             code = data["code"]
+                            assigned_dfs = self.get_dfs_from_code_str(code)
+                            assigned_dfs_str = ",".join([cast(str, df.df_name) for df in assigned_dfs])
+                            # self.send_debug_msg(f"Cell-ran receive for {code}, with processed {assigned_dfs_str}")
+                            for df in assigned_dfs:
+                                df.show()
                             # TODO: some information we can analyze later...
                             # analyze the code that was ran
                             # if it was a mdias_df
@@ -184,6 +191,29 @@ class UiComm(object):
             })
         return
 
+
+    def get_dfs_from_code_str(self, code: str) -> List[MidasDataFrame]:
+        # do a regex to see if there anything assinged
+        # @Shloak maybe look into how we can keeo state in this class
+        assignments = []
+        class CustomNodeTransformer(ast.NodeTransformer):
+            def visit_Assign(self, node):
+                assignments.append(node.targets[0].id)
+                return node
+        nodes = ast.parse(code)
+        CustomNodeTransformer().visit(nodes)
+        assignements_str = ",".join(assignments)
+        debug_log(f"Parsed {assignements_str}")
+
+        df_assignments = []
+        for a in assignments:
+            r = self.get_df(DFName(a))
+            if r is not None:
+                df_assignments.append(r.df)
+            else:
+                debug_log(f"We cannot find {a} in current state")
+        return df_assignments
+    
 
     def update_chart(self, df: MidasDataFrame):
         # first look up chart_info

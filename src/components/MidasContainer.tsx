@@ -59,7 +59,7 @@ interface ContainerProps {
   comm: any;
 }
 
-const ALERT_ALIVE_TIME = 5000;
+const ALERT_ALIVE_TIME = 10000;
 
 const MidasSortableContainer = SortableContainer(({children}: {children: any}) => {
   return <div>{children}</div>;
@@ -168,8 +168,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
 
   addAlert(msg: string, alertType: AlertType = AlertType.Error) {
-    throw Error("who is calling");
-
     // make this disappearing
     const aId = hashCode(msg) * 100 + Math.round(Math.random() * 100);
     this.setState(prevState => {
@@ -180,11 +178,9 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       });
       return prevState;
     });
-    if (alertType === AlertType.Confirmation) {
-      window.setTimeout(() => {
-        this.closeAlert(aId);
-      }, ALERT_ALIVE_TIME);
-    }
+    window.setTimeout(() => {
+      this.closeAlert(aId);
+    }, ALERT_ALIVE_TIME);
   }
 
   closeAlert(aId: number) {

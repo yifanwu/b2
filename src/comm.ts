@@ -59,11 +59,12 @@ export function makeComm() {
           set_on_msg(on_msg);
           // also start watching cell execution
           Jupyter.notebook.events.on("finished_execute.CodeCell", function(evt: any, data: any) {
-            // console.log("FINISHED excuting cell", 
+            const code = data.cell.get_text();
             comm.send({
               command: "cell-ran",
-              code: data.cell.get_text()
+              code,
             });
+            LogDebug(`FINISHED excuting cell with code: ${code}`);
           });
         }
       });

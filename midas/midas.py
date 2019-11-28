@@ -49,6 +49,7 @@ class Midas(object):
     rt_funcs: RuntimeFunctions
     current_selection: Dict[DFName, SelectionEvent]
     assigned_name: str
+    dfs: Dict[DFName, DFInfo]
 
     def __init__(self, config: MidasConfig=default_midas_config):
         # check the assigned name, if it is not 'm', then complain
@@ -70,34 +71,35 @@ class Midas(object):
 
         self.rt_funcs = RuntimeFunctions(
             self.add_df,
+            self.show_df,
             self.get_stream,
             self.ui_comm.navigate_to_chart,
-            # self._eval,
             self.context.apply_selection)
 
-    def add_df(self, mdf: MidasDataFrame, config):
-        # debug_log("adding df")
-        # type_check_with_warning(mdf, MidasDataFrame)
+    def add_df(self, mdf: MidasDataFrame):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
+        self.dfs[mdf.df_name] = DFInfo(mdf)
 
-        is_visualized = False
-        if config.is_base_df:
-            self.ui_comm.create_profile(mdf)
-            # if base_df only has two columns, try to visualize!
-        # else:
-        is_visualized = self.ui_comm.visualize(mdf)
-        
-        if (mdf.df_name in self.dfs):
-            debug_log(f"changing df {mdf.df_name} value")
-            self.dfs[mdf.df_name].update_df(mdf)
-        else:
-            if is_visualized:
-                df_info = VisualizedDFInfo(mdf)
+
+    def show_df(self, mdf: MidasDataFrame, chart_config):
+        if mdf.df_name is None:
+            raise InternalLogicalError("df should have a name to be updated")
+        # if it already exists
+        if mdf.df_name in self.dfs:
+            found_df = self.dfs[mdf.df_name]
+            if isinstance(found_df, VisualizedDFInfo):
+                found_df.update_df(mdf)
+                self.ui_comm.navigate_to_chart(mdf.df_name)
             else:
-                df_info = DFInfo(mdf)
-            self.dfs[mdf.df_name] = df_info
-        return
+                is_visualized = False
+                if chart_config.is_base_df:
+                    self.ui_comm.create_profile(mdf)
+                is_visualized = self.ui_comm.visualize(mdf)
+                if is_visualized:
+                    self.dfs[mdf.df_name] = VisualizedDFInfo(mdf)
+                # else, we don't do anything
+            return
 
 
     def has_df(self, df_name: DFName):

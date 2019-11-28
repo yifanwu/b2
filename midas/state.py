@@ -10,7 +10,6 @@ from .ui_comm import UiComm
 
 class State(object):
     # FIXME: we might want to support a history of MidasDataFrames! as opposed to an update in place for dfinfo
-    dfs: Dict[DFName, DFInfo]
     # series: Dict[str, Ser]
     nextId: int
 
