@@ -42,6 +42,7 @@ interface ContainerState {
   allReactiveCells: Set<number>;
   alerts: AlertItem[];
   midasPythonInstanceName: string;
+  alertCounter: number;
 }
 
 interface ContainerProps {
@@ -58,19 +59,14 @@ const MidasSortableContainer = SortableContainer(({children}: {children: any}) =
  * Container for the MidasElements that hold the visualization.
  */
 export default class MidasContainer extends React.Component<ContainerProps, ContainerState> {
-  // refLookup: Map<string, typeof MidasElement>;
-
   constructor(props?: ContainerProps) {
     super(props);
-
-    // NOTE: maybe other binds needed as well...
     this.tick = this.tick.bind(this);
     this.captureCell = this.captureCell.bind(this);
     this.addAlert = this.addAlert.bind(this);
-    this.closeAlert = this.closeAlert.bind(this);
-    // this.refLookup = new Map();
 
     this.state = {
+      alertCounter: 0,
       notebookMetaData: [],
       elements: [],
       refs: new Map(),
@@ -92,9 +88,11 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     return this.state.idToCell[name];
   }
 
+
   setMidasPythonInstanceName(midasPythonInstanceName: string) {
     this.setState({ midasPythonInstanceName });
   }
+
 
   /**
    * Stores the cell id at which the given data frame was defined.
@@ -157,7 +155,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
   addAlert(msg: string, alertType: AlertType = AlertType.Error) {
     // make this disappearing
-    const aId = hashCode(msg) * 100 + Math.round(Math.random() * 100);
+    const aId = this.state.alerts.length;
     this.setState(prevState => {
       prevState.alerts.push({
         msg,
@@ -168,21 +166,14 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     });
     const self = this;
     window.setTimeout(() => {
-      console.log("closing allerty id");
-      self.closeAlert(aId);
+      console.log(`closing allert ${aId}`);
+      // just move the allert counter ahead
+      self.setState(p => {
+        return { alertCounter: p.alertCounter + 1};
+      });
     }, ALERT_ALIVE_TIME);
   }
 
-  closeAlert(aId: number) {
-    return () => {
-     this.setState(prevState => {
-        const alerts = prevState.alerts.filter(a => a.aId !== aId);
-        return {
-          alerts
-        };
-      });
-    };
-  }
 
   resetState() {
     // TODO
@@ -216,12 +207,10 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         vegaSpec,
         changeStep: 1
       });
-      // prevState.notebookMetaData.push({
-      //   dfName,
-      // });
       return prevState;
     });
   }
+
 
   replaceData(dfName: string, data: any[]) {
     // need to invoke the replaceData function of the child...
@@ -267,17 +256,11 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     });
   }
 
-  // setMidasElementRef(dfName: string) {
-  //   return (ref: typeof MidasElement) => {
-  //     this.refLookup[dfName] = ref;
-  //   };
-  // }
 
   render() {
-    const { elements, alerts } = this.state;
+    const { elements, alerts, alertCounter } = this.state;
     const chartDivs = elements.map(({
       notebookCellId, dfName, vegaSpec, changeStep: chanageStep, newData }, index) => {
-      // const ref = this.setMidasElementRef(dfName);
       return <MidasElement
         index={index}
         cellId={notebookCellId}
@@ -292,17 +275,18 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         removeChart={() => this.removeDataFrame(dfName)}
       />;
     });
-    const alertDivs = alerts.map((a, i) => {
-      const close = this.closeAlert(a.aId);
+    const alertDivs = [];
+    for (let i = alertCounter; i < alerts.length; i ++) {
+      const a = alerts[i];
       const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-debug";
-      return <div
-            className={className}
-            key={`alert-${a.aId}`}
-          >
-            {a.msg}
-            <button className="notification-btn" onClick={close}>x</button>
-        </div>;
-      });
+      alertDivs.push(<div
+          className={`"midas-alert ${className}`}
+          key={`alert-${a.aId}`}
+        >
+          {a.msg}
+          <button className="notification-btn" onClick={close}>x</button>
+      </div>);
+    }
     return (
       <div id="midas-floater-container">
         <div className="midbar-shelf-header">

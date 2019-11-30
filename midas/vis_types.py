@@ -73,5 +73,3 @@ class ChartInfo(NamedTuple):
     encodings: Dict[Channel, str]
     vega_spec: VegaSpecType
     chart_title: str
-    additional_transforms: Optional[DfTransform]
-

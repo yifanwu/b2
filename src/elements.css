@@ -84,6 +84,11 @@
   flex-grow: 1;
 }
 
+.column-item-header:hover {
+  transform: scale(1.2);
+  border: 1px solid gray;
+}
+
 .editable-text-header, .column-item-header {
   width: 100%;
   /* hard code... */
@@ -93,6 +98,8 @@
   display: flex;
   align-items: center;
   background-color:#F7F7F7;
+  box-shadow: 0 3px 2px -2px gainsboro;
+  cursor: pointer;
 }
 
 .midbar-shelf-header {
@@ -113,6 +120,7 @@
 }
 
 #profiler-shelf {
+  overflow: scroll;
   border-bottom: 2px solid grey;
 }
 
@@ -129,6 +137,27 @@
   align-self: center;
   margin-right: 0;
   font-family: monospace;
+}
+
+/* have fading animation */
+/* note that we need to coodinate with ALERT_ALIVE_TIME */
+.midas-alert {
+  animation: logo-animation linear 10s;
+}
+
+@keyframes logo-animation{
+  0% {
+    opacity:1;
+  }
+  50% {
+    opacity:0.9;
+  }
+  80% {
+    opacity:0.7;
+  }
+  100% {
+    opacity:0.1;
+  }
 }
 
 .midas-alerts-error {
@@ -157,6 +186,11 @@
   font-family: monospace;
 }
 
+.close-btn {
+  cursor: pointer;
+  padding-left: 5px;
+}
+
 .notification-btn {
   font-family: monospace;
   border: 2px solid white; /* Green */
@@ -166,4 +200,36 @@
   margin-left: 5pt;
   margin-right: 1pt;
   border-radius: 50%;
+}
+
+#midas-sidebar-wrapper {
+  width: 800px;
+  box-sizing: border-box;
+}
+
+.midas-inside {
+  background-color: white;
+  position: fixed;
+  height: 91%;
+  margin: 0 10px 0 10px;
+  overflow: scroll;
+  display: flex;
+}
+
+
+#midas-resizer {
+  position: fixed;
+  z-index: 120;
+  height: 100%;
+  width: 10px;
+  background-color: rgba(0, 0, 255, 0);
+  cursor: col-resize;
+}
+
+#midas-midbar {
+  width: 100px;
+  border-right: 1pt;
+  border-color: #e3e3e3;
+  border-style: none solid none none;
+  box-sizing: border-box;
 }

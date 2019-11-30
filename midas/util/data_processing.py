@@ -1,23 +1,13 @@
 from datascience import Table
 import numpy as np
 from math import log10, pow
-from typing import Tuple, Any, cast
+from typing import cast
 from pandas import notnull
 
 from .errors import InternalLogicalError, debug_log
 from midas.constants import COUNT_COL_NAME, IS_OVERVIEW_FIELD_NAME
 from midas.vis_types import DfTransformType, DfTransform, NumericDistribution, FilterLabelOptions
 from midas.util.errors import type_check_with_warning
-
-
-def transform_df(transform: DfTransform, df: Table):
-    type_check_with_warning(df, Table)
-    # check ty
-    first_col = df.labels[0]
-    if transform.df_transform_type == DfTransformType.categorical_distribution:
-        return df.group(first_col)
-    elif transform.df_transform_type == DfTransformType.numeric_distribution:
-        return get_numeric_distribution(df, cast(NumericDistribution, transform))
 
 
 def get_chart_title(df_name: str):
@@ -72,23 +62,23 @@ def get_numeric_distribution(table: Table, transform: NumericDistribution) -> Ta
             min_bucket_size = (d_max - d_min) / min_bucket_count
             # print(MAX_BINS, current_max_bins, d_max, d_min)
             bound = snap_to_nice_number(min_bucket_size)
-            print("bound size", bound)
-            d_nice_min = int(d_min/bound) * bound
-            bins = [d_nice_min]
-            cur = d_nice_min
-            while (cur < d_max):
-                cur += bound
-                bins.append(cur)
-            transform.bins = bins
-        else:
-            debug_log("bins has been set already")
+        #     print("bound size", bound)
+        #     d_nice_min = int(d_min/bound) * bound
+        #     bins = [d_nice_min]
+        #     cur = d_nice_min
+        #     while (cur < d_max):
+        #         cur += bound
+        #         bins.append(cur)
+        #     transform.bins = bins
+        # else:
+        #     debug_log("bins has been set already")
 
-        count_col, name_col = np.histogram(column, transform.bins)
-        result = Table().with_columns({
-            # note that we have -1 because the boundaries have one more
-            first_col: name_col[:-1],
-            COUNT_COL_NAME: count_col
-        })
+        # count_col, name_col = np.histogram(column, transform.bins)
+        # result = Table().with_columns({
+        #     # note that we have -1 because the boundaries have one more
+        #     first_col: name_col[:-1],
+        #     COUNT_COL_NAME: count_col
+        # })
         return result
 
 

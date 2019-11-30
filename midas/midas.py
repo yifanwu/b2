@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from datetime import datetime
-from IPython import get_ipython  # type: ignore
+from IPython import get_ipython
 from typing import Optional, Union, List, Dict, cast
 from datascience import Table
 
@@ -83,6 +83,8 @@ class Midas(object):
         self.dfs[mdf.df_name] = DFInfo(mdf)
 
 
+    # 
+
     def show_df(self, mdf: MidasDataFrame, chart_config):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
@@ -149,6 +151,9 @@ class Midas(object):
     def from_ops(self, ops: RelationalOp):
         return MidasDataFrame(ops, self.rt_funcs)
 
+    # def bin(self, column: str, ranges):
+    #     # returns with new columsn `col_name_bin` and 
+    #     return 
 
     def with_columns(self, *labels_and_values, **formatter):
         table = Table().with_columns(*labels_and_values, **formatter)
@@ -214,14 +219,6 @@ class Midas(object):
         self.current_selection[selection.df_name] = selection
         self.event_loop.tick(selection.df_name, selection, self.current_selection)
         return
-
-
-    def create_cell_with_text(self, s):
-        d = datetime.now()
-        annotated = f"# auto-created on {d}\n{s}"
-        get_ipython().set_next_input(annotated)
-        # then execute it
-        self.ui_comm.execute_current_cell()
 
 
     def bind(self, df_name: DFName, cb):

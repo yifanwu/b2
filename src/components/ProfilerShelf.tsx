@@ -26,21 +26,21 @@ export class ProfilerShelf extends React.Component<{}, ColumnShelfState> {
     });
   }
 
-  hideItem(tableName: string, columnName: string) {
-    // this.setState(prevState => {
-    //   prevState.columnItems.splice(index, 1);
-    //   return prevState;
-    // });
+  hideItem(tableName: string, index: number) {
+    this.setState(prevState => {
+      prevState.tables[tableName].splice(index, 1);
+      return prevState;
+    });
   }
 
   render() {
     const tableDivs = Object.keys(this.state.tables).map((tableName) => {
-      const columns = this.state.tables[tableName].map((c) => <ColumnItem
+      const columns = this.state.tables[tableName].map((c, i) => <ColumnItem
         key={`column-${tableName}-${c.columnName}`}
         tableName={tableName}
         columnName={c.columnName}
         columnType={c.columnType}
-        onDelete={() => this.hideItem(tableName, c.columnName)}
+        onDelete={() => this.hideItem(tableName, i)}
       />);
       return <div key={`table-${tableName}`}>
         <div className="profiler-table-name">{tableName}</div>

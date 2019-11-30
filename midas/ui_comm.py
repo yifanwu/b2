@@ -1,20 +1,23 @@
 from datetime import datetime
+from IPython import get_ipython 
+from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_any_dtype 
 from midas.midas_algebra.selection import SelectionValue
 from ipykernel.comm import Comm # type: ignore
+import numpy as np
 # from json import loads
-from typing import Dict, Callable, Optional, List, cast
+from typing import Dict, Callable, Optional, List, cast, Tuple
 import json
 from pyperclip import copy
 import ast
 
-from .constants import MIDAS_CELL_COMM_NAME
+from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS
 from midas.state_types import DFName
 
-from midas.midas_algebra.dataframe import MidasDataFrame, VisualizedDFInfo, DFInfo
+from midas.midas_algebra.dataframe import MidasDataFrame, GroupBy, RelationalOp, VisualizedDFInfo, DFInfo
 from midas.midas_algebra.selection import NumericRangeSelection, StringSetSelection, ColumnRef
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import ChartType, Channel, ChartInfo, FilterLabelOptions
-from .util.data_processing import dataframe_to_dict, transform_df
+from .util.data_processing import dataframe_to_dict, snap_to_nice_number
 from midas.widget.showme import gen_spec
 
 class UiComm(object):
@@ -23,16 +26,16 @@ class UiComm(object):
     is_in_ipynb: bool
     tmp_debug: str
     midas_instance_name: str
-    
+    create_df_from_ops:  Callable[[RelationalOp], MidasDataFrame]
 
-    def __init__(self, is_in_ipynb: bool, midas_instance_name: str, get_df_fun: Callable[[DFName], Optional[DFInfo]]):
+    def __init__(self, is_in_ipynb: bool, midas_instance_name: str, get_df_fun: Callable[[DFName], Optional[DFInfo]], create_df_from_ops: Callable[[RelationalOp], MidasDataFrame]):
         self.next_id = 0
         self.vis_spec = {}
         self.shelf_selections = {}
         self.is_in_ipynb = is_in_ipynb
         self.set_comm(midas_instance_name)
         self.get_df = get_df_fun
-        
+        self.create_df_from_ops = create_df_from_ops
 
     def set_comm(self, midas_instance_name: str):
         if self.is_in_ipynb:
@@ -72,6 +75,13 @@ class UiComm(object):
                             return code
                         # something went wrong, so let's tell comes...
                         self.send_user_error(f'no selection on {df_name} yet')
+                    if command == "column-selected":
+                        column = data["column"]
+                        df_name = DFName(data["df_name"])
+                        code = self.create_distribution_query(column, df_name)
+                        self.create_cell_with_text(code)
+                        # now we need to figure out what kind of transformation is needed
+                        # if nothing, we just show the table
                     if command == "add_selection":
                         df_name = DFName(data["df_name"])
                         df_info = cast(VisualizedDFInfo, self.get_df(df_name))
@@ -153,13 +163,10 @@ class UiComm(object):
         chart_title = mdf.df_name
         chart_info = gen_spec(df, chart_title, mdf.chart_config)
         if chart_info:
-            vis_df = df
-            if chart_info.additional_transforms:
-                vis_df = transform_df(chart_info.additional_transforms, df)
-            if vis_df is None:
+            if df is None:
                 self.send_user_error(f"Df {mdf.df_name} is empty")
                 return
-            records = dataframe_to_dict(vis_df, FilterLabelOptions.unfiltered)
+            records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
             chart_info.vega_spec["data"]["values"] = records
             # filtered --- set to be the same
             # set the spec
@@ -213,11 +220,7 @@ class UiComm(object):
         if chart_info is None:
             raise InternalLogicalError("Cannot update since not done before")
         table = df.table
-        vis_df = table
-        if chart_info.additional_transforms:
-            vis_df = transform_df(chart_info.additional_transforms, table)
-
-        new_data = dataframe_to_dict(vis_df, FilterLabelOptions.filtered)
+        new_data = dataframe_to_dict(table, FilterLabelOptions.filtered)
         self.comm.send({
             "type": "chart_update_data",
             "dfName": df.df_name,
@@ -232,10 +235,16 @@ class UiComm(object):
             "value": message
         })
 
-    def execute_current_cell(self):
-        self.comm.send({
-            "type": "execute_current_cell"
-        })
+
+    def create_cell_with_text(self, s, execute=True):
+        d = datetime.now()
+        annotated = f"# auto-created on {d}\n{s}"
+        get_ipython().set_next_input(annotated)
+        # then execute it
+        if execute:
+            self.comm.send({
+                "type": "execute_current_cell"
+            })
 
     def send_debug_msg(self, message: str):
         self.comm.send({
@@ -317,4 +326,38 @@ class UiComm(object):
             "value": message
         })
 
-   
+    def create_distribution_query(self, col_name: str, df_name: str) -> str:
+        df_info = self.get_df(DFName(df_name))
+        if df_info is None:
+            raise InternalLogicalError("Should not be getting distribution on unregistered dataframes and columns")
+        df = df_info.df
+        # directly generating the queries out of convenience,
+        #   since lambda expressions are used...
+        col_value = df.table.column(col_name)
+        new_name = f"{col_name}_distribution"
+        if (is_string_dtype(col_value)):
+            code = f"{new_name} = {df.df_name}.group('{col_name}')"
+            return code
+        elif (is_datetime64_any_dtype(col_value)):
+            # TODO temporal bining, @Ryan?
+            raise NotImplementedError("Cannot bin temporal values yet")
+        else:
+            # we need to write the binning function and then print it out...
+            # get the bound
+            unique_vals = np.unique(col_value)
+            current_max_bins = len(unique_vals)
+            if (current_max_bins < MAX_BINS):
+                code = f"{new_name} = {df.df_name}.group('{col_name}')"
+                return code
+
+            min_bucket_count = round(current_max_bins/MAX_BINS)
+            d_max = unique_vals[-1]
+            d_min = unique_vals[0]
+            min_bucket_size = (d_max - d_min) / min_bucket_count
+            # print(MAX_BINS, current_max_bins, d_max, d_min)
+            bound = snap_to_nice_number(min_bucket_size)
+            binning_lambda = f"lambda x: int(x/{bound}) * {bound}"
+            bin_transform = f"{df.df_name}.append_column('{new_name}', table.apply({binning_lambda}, '{col_name}'))"
+            grouping_transform = "{new_name} = {df.df_name}.group('{col_name}')"
+            code = f"{binning_lambda}\n{bin_transform}\n{grouping_transform}"
+            return code
