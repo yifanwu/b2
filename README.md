@@ -25,7 +25,7 @@ Symlink files instead of copying files:
 python setup.py develop
 yarn install
 npm run build # yarn watch if in dev mode for continuous update
-jupyter nbextension install --py --symlink midas  # not needed in notebook >= 5.3
+jupyter nbextension install --py --symlink midas
 ```
 
 You will need to understand how [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) work.

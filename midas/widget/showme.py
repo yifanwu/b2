@@ -5,19 +5,17 @@ cases covered:
 """
 from typing import Optional, Dict
 from datascience.tables import Table
-from pandas.api.types import is_string_dtype, is_numeric_dtype, is_bool_dtype, is_datetime64_any_dtype  # type: ignore
+from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_any_dtype 
 
-from midas.midas_algebra.dataframe import MidasDataFrame
 from .vega_gen.bar_chart import gen_bar_chart_spec
 from .vega_gen.scatter_plot import gen_scatterplot_spec
 from .vega_gen.line_chart import gen_linechart_spec
-from .vega_gen.shared_all import gen_spec_base
 
-from midas.defaults import COUNT_COL_NAME
+from midas.constants import COUNT_COL_NAME
 from midas.util.errors import type_check_with_warning, InternalLogicalError
 from midas.vis_types import ChartInfo, ChartType, Channel, DfTransform, NumericDistribution, CategoricalDistribution
 
-def gen_spec(df: Table, chart_title: str, config) -> Optional[ChartInfo]:
+def gen_spec(df: Table, df_name: str, config) -> Optional[ChartInfo]:
     """Implements basic show me like feature
         if there is only one column, try to do a distribution with reasonable binning
         if one categorical, one numeric, barchart
@@ -76,20 +74,15 @@ def gen_spec(df: Table, chart_title: str, config) -> Optional[ChartInfo]:
             
     if chart_type:
         if encoding:
-            spec_base = gen_spec_base(config)
             if (chart_type == ChartType.bar_linear) or (chart_type == ChartType.bar_categorical):
-                vega_spec = gen_bar_chart_spec(spec_base,
-                    encoding[Channel.x],
-                    encoding[Channel.y])
+                vega_spec = gen_bar_chart_spec(encoding[Channel.x], encoding[Channel.y], df_name)
             elif (chart_type == ChartType.scatter):
-                vega_spec = gen_scatterplot_spec(spec_base,
-                    encoding[Channel.x],
-                    encoding[Channel.y])
+                vega_spec = gen_scatterplot_spec(encoding[Channel.x],
+                    encoding[Channel.y], df_name)
             else:
-                vega_spec = gen_linechart_spec(spec_base,
-                    encoding[Channel.x],
-                    encoding[Channel.y])
-            return ChartInfo(chart_type, encoding, vega_spec, chart_title,
+                vega_spec = gen_linechart_spec(encoding[Channel.x],
+                    encoding[Channel.y], df_name)
+            return ChartInfo(chart_type, encoding, vega_spec, df_name,
             additional_transforms)
 
     raise InternalLogicalError(f"Failed to generate spec:\nchart_type {chart_type}\nencoding: {encoding}")

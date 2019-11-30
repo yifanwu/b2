@@ -5,10 +5,9 @@ from typing import Tuple, Any, cast
 from pandas import notnull
 
 from .errors import InternalLogicalError, debug_log
-from midas.defaults import COUNT_COL_NAME
-from midas.vis_types import DfTransformType, DfTransform, NumericDistribution
+from midas.constants import COUNT_COL_NAME, IS_OVERVIEW_FIELD_NAME
+from midas.vis_types import DfTransformType, DfTransform, NumericDistribution, FilterLabelOptions
 from midas.util.errors import type_check_with_warning
-
 
 
 def transform_df(transform: DfTransform, df: Table):
@@ -19,6 +18,7 @@ def transform_df(transform: DfTransform, df: Table):
         return df.group(first_col)
     elif transform.df_transform_type == DfTransformType.numeric_distribution:
         return get_numeric_distribution(df, cast(NumericDistribution, transform))
+
 
 def get_chart_title(df_name: str):
     # one level of indirection in case we need to change in the future
@@ -82,19 +82,13 @@ def get_numeric_distribution(table: Table, transform: NumericDistribution) -> Ta
             transform.bins = bins
         else:
             debug_log("bins has been set already")
-            # def binne_val(v):
-            # print("column", column)
-            # print("bins", bins)
+
         count_col, name_col = np.histogram(column, transform.bins)
-        # print(count_col)
-        # print(name_col[:-1])
         result = Table().with_columns({
             # note that we have -1 because the boundaries have one more
             first_col: name_col[:-1],
             COUNT_COL_NAME: count_col
         })
-        # print("===")
-        # print(result)
         return result
 
 
@@ -156,40 +150,24 @@ def sanitize_dataframe(df: Table):
     return df
 
 
-def dataframe_to_dict(df: Table):
+def dataframe_to_dict(df: Table, include_filter_label: FilterLabelOptions):
+    """[summary]
+    
+    Arguments:
+        df {Table} -- [description]
+    
+    Keyword Arguments:
+        include_filter_label {bool} -- whether we should insert another column indicating (default: {False})
+    
+    Returns:
+        [type] -- [description]
+    """
     clean_df = sanitize_dataframe(df)
     def s(x):
         k = {}
         for i, v in enumerate(x):
             k[clean_df.labels[i]] = v
+        if include_filter_label != FilterLabelOptions.none:
+            k[IS_OVERVIEW_FIELD_NAME] = include_filter_label.value
         return k
     return list(map(s, clean_df.rows))
-    # return clean_df.to_dict(orient='records')
-
-
-
-def prepare_spec(spec, data=None):
-    """Prepare a Vega-Lite spec for sending to the frontend.
-
-    This allows data to be passed in either as part of the spec
-    or separately. If separately, the data is assumed to be a
-    pandas DataFrame or object that can be converted to to a DataFrame.
-
-    Note that if data is not None, this modifies spec in-place
-    """
-    import pandas as pd
-
-    if isinstance(data, pd.DataFrame):
-        # We have to do the isinstance test first because we can't
-        # compare a DataFrame to None.
-        # data = sanitize_dataframe(data)
-        spec['data'] = {'values': dataframe_to_dict(data)}
-    elif data is None:
-        # Assume data is within spec & do nothing
-        # It may be deep in the spec rather than at the top level
-        pass
-    else:
-        # As a last resort try to pass the data to a DataFrame and use it
-        data = pd.DataFrame(data)
-        spec['data'] = {'values': dataframe_to_dict(data)}
-    return spec

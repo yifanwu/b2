@@ -6,9 +6,11 @@ import {
   SortableHandle,
 } from "react-sortable-hoc";
 import { makeElementId } from "../config";
-import { Spec, View } from "vega";
+import { View } from "vega";
+// we are going to be rendering vega-lite now for its superior layout etc.
+import { TopLevelSpec } from "vega-lite";
 import vegaEmbed from "vega-embed";
-import { MIDAS_INSTANCE_NAME, SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, Y_DOMAIN_SIGNAL, DEBOUNCE_RATE, Y_SCALE, X_SCALE, X_DOMAIN_SIGNAL } from "../constants";
+import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE } from "../constants";
 import { LogDebug, LogInternalError, get_df_id } from "../utils";
 
 interface MidasElementProps {
@@ -18,7 +20,7 @@ interface MidasElementProps {
   removeChart: MouseEventHandler;
   dfName: string;
   title: string;
-  vegaSpec: Spec;
+  vegaSpec: TopLevelSpec;
   tick: (dfName: string) => void;
   comm: any; // unfortunately not typed
 }
@@ -28,8 +30,8 @@ interface MidasElementState {
   hidden: boolean;
   view: View;
   // both are initial domains that we are fixing
-  yDomain: any;
-  xDomain: any;
+  // yDomain: any;
+  // xDomain: any;
 }
 
 const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
@@ -81,8 +83,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       hidden: false,
       view: null,
       elementId,
-      yDomain: null,
-      xDomain: null
+      // yDomain: null,
+      // xDomain: null
     };
   }
 
@@ -97,15 +99,15 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     vegaEmbed(`#${this.state.elementId}`, vegaSpec)
       .then((res: any) => {
         const view = res.view;
-        const xDomain = view.scale(X_SCALE).domain();
-        const yDomain = view.scale(Y_SCALE).domain();
+        // const xDomain = view.scale(X_SCALE).domain();
+        // const yDomain = view.scale(Y_SCALE).domain();
         this.setState({
           view,
-          xDomain,
-          yDomain
+          // xDomain,
+          // yDomain
         });
-        this.state.view.signal(Y_DOMAIN_SIGNAL, yDomain);
-        this.state.view.signal(X_DOMAIN_SIGNAL, xDomain);
+        // this.state.view.signal(Y_DOMAIN_SIGNAL, yDomain);
+        // this.state.view.signal(X_DOMAIN_SIGNAL, xDomain);
         LogDebug(`Registering signal for TICK, with signal ${SELECTION_SIGNAL}`);
         res.view.addSignalListener(SELECTION_SIGNAL, getDebouncedFunction(dfName, tick));
       })
@@ -124,15 +126,12 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   componentWillReceiveProps(nextProps: MidasElementProps) {
     if (nextProps.changeStep > this.props.changeStep) {
-      const filter = new Function(
-        "datum",
-        "return (true)"
-      );
       const newValues = nextProps.newData;
+      // can do this in python too
       const changeSet = this.state.view
         .changeset()
-        .insert(newValues)
-        .remove(filter);
+        .remove((datum: any) => { datum.is_overview === 0; })
+        .insert(newValues);
 
       this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
     }
@@ -147,7 +146,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const cell = Jupyter.notebook.get_msg_cell(this.props.cellId);
     const index = Jupyter.notebook.find_cell_index(cell);
     Jupyter.notebook.select(index);
-    const cell_div = Jupyter.CodeCell.msg_cells[this.props.cellId]
+    const cell_div = Jupyter.CodeCell.msg_cells[this.props.cellId];
     if (cell_div) {
       cell_div.code_mirror.display.lineDiv.scrollIntoViewIfNeeded();
     }

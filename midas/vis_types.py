@@ -13,6 +13,13 @@ class ChartType(Enum):
     line = "line"
 
 
+# set to numerical values to save space.
+class FilterLabelOptions(Enum):
+    filtered=0
+    unfiltered=1
+    none=2
+
+
 class Channel(Enum):
     x = "x"
     y = "y"

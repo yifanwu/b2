@@ -2,7 +2,7 @@ from datetime import datetime
 from midas.midas_algebra.selection import SelectionValue
 from ipykernel.comm import Comm # type: ignore
 # from json import loads
-from typing import Dict, Callable, Any, List, cast
+from typing import Dict, Callable, Optional, List, cast
 import json
 from pyperclip import copy
 import ast
@@ -11,15 +11,11 @@ from .constants import MIDAS_CELL_COMM_NAME
 from midas.state_types import DFName
 
 from midas.midas_algebra.dataframe import MidasDataFrame, VisualizedDFInfo, DFInfo
-from midas.midas_algebra.selection import NumericRangeSelection, StringSetSelection, SingleValueSelection, ColumnRef
-from .util.utils import get_min_max_tuple_from_list
+from midas.midas_algebra.selection import NumericRangeSelection, StringSetSelection, ColumnRef
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
-from .vis_types import ChartType, Channel, ChartInfo, SelectionEvent
+from .vis_types import ChartType, Channel, ChartInfo, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, transform_df
 from midas.widget.showme import gen_spec
-
-class Updated():
-    MidasDataFrame
 
 class UiComm(object):
     comm: Comm
@@ -29,7 +25,7 @@ class UiComm(object):
     midas_instance_name: str
     
 
-    def __init__(self, is_in_ipynb: bool, midas_instance_name: str, get_df_fun: Callable[[DFName], DFInfo]):
+    def __init__(self, is_in_ipynb: bool, midas_instance_name: str, get_df_fun: Callable[[DFName], Optional[DFInfo]]):
         self.next_id = 0
         self.vis_spec = {}
         self.shelf_selections = {}
@@ -49,8 +45,8 @@ class UiComm(object):
 
             def handle_msg(data_raw):
                 self.tmp_debug = data_raw
-                # data_raw = loads(data_str)
                 data = data_raw["content"]["data"]
+                debug_log(f"got message {data}")
                 if "command" in data:
                     command = data["command"]
                     if command == "refresh-comm":
@@ -61,14 +57,10 @@ class UiComm(object):
                         if "code" in data:
                             code = data["code"]
                             assigned_dfs = self.get_dfs_from_code_str(code)
-                            assigned_dfs_str = ",".join([cast(str, df.df_name) for df in assigned_dfs])
+                            # assigned_dfs_str = ",".join([cast(str, df.df_name) for df in assigned_dfs])
                             # self.send_debug_msg(f"Cell-ran receive for {code}, with processed {assigned_dfs_str}")
                             for df in assigned_dfs:
                                 df.show()
-                            # TODO: some information we can analyze later...
-                            # analyze the code that was ran
-                            # if it was a mdias_df
-                            # self.actual_visualize()
                         return
                     if command == "get_code_clipboard":
                         df_name = DFName(data["df_name"])
@@ -167,10 +159,8 @@ class UiComm(object):
             if vis_df is None:
                 self.send_user_error(f"Df {mdf.df_name} is empty")
                 return
-            records = dataframe_to_dict(vis_df)
-            # we have created it such that the data is an array
-            # base
-            chart_info.vega_spec["data"][0]["values"] = records
+            records = dataframe_to_dict(vis_df, FilterLabelOptions.unfiltered)
+            chart_info.vega_spec["data"]["values"] = records
             # filtered --- set to be the same
             # set the spec
             self.vis_spec[mdf.df_name] = chart_info # type: ignore
@@ -227,9 +217,7 @@ class UiComm(object):
         if chart_info.additional_transforms:
             vis_df = transform_df(chart_info.additional_transforms, table)
 
-        new_data = dataframe_to_dict(vis_df)
-        print("new data")
-        print(new_data)
+        new_data = dataframe_to_dict(vis_df, FilterLabelOptions.filtered)
         self.comm.send({
             "type": "chart_update_data",
             "dfName": df.df_name,
@@ -273,21 +261,21 @@ class UiComm(object):
         x_column = vis.encodings[Channel.x]
         y_column = vis.encodings[Channel.y]
         if vis.chart_type == ChartType.scatter:
-            x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
-            y_value = get_min_max_tuple_from_list(predicate_raw[Channel.y.value])
+            x_value = predicate_raw[x_column]
+            y_value = predicate_raw[y_column]
             x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
             y_selection = NumericRangeSelection(ColumnRef(y_column, df_name), y_value[0], y_value[1])
             return [x_selection, y_selection]
         if vis.chart_type == ChartType.bar_categorical:
-            x_value = predicate_raw[Channel.x.value]
+            x_value = predicate_raw[x_column]
             predicate = StringSetSelection(ColumnRef(x_column, df_name), x_value)
             return [predicate]
         if vis.chart_type == ChartType.bar_linear:
-            x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
+            x_value = predicate_raw[x_column]
             x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
             return [x_selection]
         if vis.chart_type == ChartType.line:
-            x_value = get_min_max_tuple_from_list(predicate_raw[Channel.x.value])
+            x_value = predicate_raw[x_column]
             x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
             return [x_selection]
         raise InternalLogicalError("Not all chart_info handled")

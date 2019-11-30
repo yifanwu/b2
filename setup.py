@@ -28,6 +28,9 @@ DATA_FILES          = [
                             ]),
                             ('etc/jupyter/nbconfig/notebook.d' , ['midas.json'])
                         ]
+ENTRY_POINTS        = {'altair.vegalite.v3.renderer': ['notebook=midas:entry_point_renderer']}
+EXTRAS_REQUIRE      = {'widget': ['ipywidgets']}
+
 
 import io
 import os

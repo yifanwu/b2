@@ -1,14 +1,12 @@
 import React, { RefObject } from "react";
+import arrayMove from "array-move";
+import { TopLevelSpec } from "vega-lite";
+import { SortableContainer } from "react-sortable-hoc";
 
 import MidasElement from "./MidasElement";
 import Profiler from "./Profiler";
 import { hashCode, LogInternalError, LogSteps, get_df_id } from "../utils";
 import { AlertType } from "../types";
-import {
-  SortableContainer,
-} from "react-sortable-hoc";
-import { DataProps } from "@nteract/data-explorer/src/types";
-import { Spec } from "vega";
 
 // Mappings
 //  this stores the information connecting the cells to
@@ -21,18 +19,10 @@ interface MappingMetaData {
 interface ContainerElementState {
   dfName: string;
   notebookCellId: number;
-  vegaSpec: Spec;
+  vegaSpec: TopLevelSpec;
   newData?: any[];
   changeStep: number;
 }
-
-interface ProfilerInfo {
-  dfName: string;
-  notebookCellId: number;
-  data: DataProps;
-}
-
-import arrayMove from "array-move";
 
 interface AlertItem {
   msg: string;
@@ -42,7 +32,6 @@ interface AlertItem {
 
 interface ContainerState {
   notebookMetaData: MappingMetaData[];
-  profiles: ProfilerInfo[];
   // TODO: refact the name `elements` --- we now have different visual elements
   elements: ContainerElementState[];
   refs: Map<string, RefObject<HTMLDivElement>>;
@@ -83,7 +72,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
     this.state = {
       notebookMetaData: [],
-      profiles: [],
       elements: [],
       refs: new Map(),
       idToCell: new Map(),
@@ -178,14 +166,16 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       });
       return prevState;
     });
+    const self = this;
     window.setTimeout(() => {
-      this.closeAlert(aId);
+      console.log("closing allerty id");
+      self.closeAlert(aId);
     }, ALERT_ALIVE_TIME);
   }
 
   closeAlert(aId: number) {
     return () => {
-      this.setState(prevState => {
+     this.setState(prevState => {
         const alerts = prevState.alerts.filter(a => a.aId !== aId);
         return {
           alerts
@@ -205,7 +195,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
    * @param id the id of the data frame
    * @param dfName the name of the data frame
    */
-  addDataFrame(dfName: string, vegaSpec: Spec, notebookCellId: number) {
+  addDataFrame(dfName: string, vegaSpec: TopLevelSpec, notebookCellId: number) {
     console.log(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`);
     if (this.state.elements.filter(e => e.dfName === dfName).length > 0) {
       // replace the vega definition, must maintain the element's original position
@@ -263,46 +253,10 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     });
   }
 
-  /**
-   * This is a different type of visualization
-   */
-  addProfile(dfName: string, data: DataProps, notebookCellId: number) {
-    // see if it exists
-    if (this.state.profiles.filter(e => e.dfName === dfName).length > 0) {
-      return;
-    }
-    this.setState(prevState => {
-      prevState.profiles.push({
-        notebookCellId,
-        dfName,
-        data
-      });
-      // prevState.notebookMetaData.push({
-      //   dfName,
-      //   notebookCellId,
-      // });
-      return prevState;
-    });
-  }
-
    onSortEnd = ({oldIndex, newIndex}: {oldIndex: number, newIndex: number}) => {
-    interface ContainerState {
-      notebookMetaData: MappingMetaData[];
-      profiles: ProfilerInfo[];
-      // TODO: refact the name `elements` --- we now have different visual elements it seems.
-      elements: ContainerElementState[];
-      refs: Map<string, RefObject<HTMLDivElement>>;
-      // FIXME: the idToCell might not be needed given that we have refs.
-      idToCell: Map<string, number>;
-      // maps signals to cellIds
-      reactiveCells: Map<string, number[]>;
-      allReactiveCells: Set<number>;
-      alerts: AlertItem[];
-    }
     this.setState(prevState => {
       return {
         notebookMetaData: prevState.notebookMetaData,
-        profiles: prevState.profiles,
         elements: arrayMove(prevState.elements, oldIndex, newIndex),
         refs: prevState.refs,
         idToCell: prevState.idToCell,
@@ -320,14 +274,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
   // }
 
   render() {
-    const { elements, profiles, alerts } = this.state;
-    const profilerDivs = profiles.map(({dfName, data}) => (
-      <Profiler
-        key={dfName}
-        dfName={dfName}
-        data={data}
-      />
-    ));
+    const { elements, alerts } = this.state;
     const chartDivs = elements.map(({
       notebookCellId, dfName, vegaSpec, changeStep: chanageStep, newData }, index) => {
       // const ref = this.setMidasElementRef(dfName);
@@ -361,8 +308,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         <div className="midbar-shelf-header">
           Midas Monitor
         </div>
-
-        {profilerDivs}
         <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>
         {chartDivs}
         </MidasSortableContainer>
