@@ -13,16 +13,16 @@ import ast
 from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS
 from midas.state_types import DFName
 
-from midas.midas_algebra.dataframe import MidasDataFrame, GroupBy, RelationalOp, VisualizedDFInfo, DFInfo
-from midas.midas_algebra.selection import NumericRangeSelection, StringSetSelection, ColumnRef
+from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, VisualizedDFInfo, DFInfo
+from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
-from .vis_types import ChartType, Channel, ChartInfo, FilterLabelOptions
+from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, snap_to_nice_number
-from midas.widget.showme import gen_spec
+from midas.widget.showme import gen_spec, infer_encoding
 
 class UiComm(object):
     comm: Comm
-    vis_spec: Dict[DFName, ChartInfo]
+    vis_spec: Dict[DFName, EncodingSpec]
     is_in_ipynb: bool
     tmp_debug: str
     midas_instance_name: str
@@ -62,8 +62,14 @@ class UiComm(object):
                             assigned_dfs = self.get_dfs_from_code_str(code)
                             # assigned_dfs_str = ",".join([cast(str, df.df_name) for df in assigned_dfs])
                             # self.send_debug_msg(f"Cell-ran receive for {code}, with processed {assigned_dfs_str}")
+                            # we need to create the code
+                            code_lines = []
                             for df in assigned_dfs:
-                                df.show()
+                                encoding = infer_encoding(df)
+                                encoding_arg = f"shape={encoding.shape}, x={encoding.x}, y={encoding.y}"
+                                code_lines.append(f"{df.df_name}.show({encoding_arg})")
+                            code = "\n".join(code_lines)
+                            self.create_cell_with_text(code)
                         return
                     if command == "get_code_clipboard":
                         df_name = DFName(data["df_name"])
@@ -119,23 +125,13 @@ class UiComm(object):
     # def actual_visualize(self, df_name: str):
     #     df = self.current_df_chain[DFName(df_name)]
 
-    def visualize(self, df: MidasDataFrame, is_original: bool=True):
-        # if it is filter based, then we update_chart, otherweise, we need to REPLACE the chart
-        # let's put this on a stack and only keep the most recent one
-        # the visualize is actually trigger
-        if df.df_name is None:
-            raise InternalLogicalError("df_name should be defined already")
-        
-        if df is None:
-            raise InternalLogicalError("df should be defined already")
-        if (len(df.table.columns) > 2):
-            self.send_user_error(f"Dataframe {df.df_name} not visualized")
-            return False
-        else:
+    def visualize(self, df: MidasDataFrame, encoding: Optional[EncodingSpec]):
+        if encoding is not None:
+
             if (df.df_name in self.vis_spec):
                 self.update_chart(df)
             else:
-                self.create_chart(df)
+                self.create_chart(df, encoding)
             return True
 
     def create_profile(self, df: MidasDataFrame):
@@ -152,7 +148,8 @@ class UiComm(object):
         self.comm.send(message)
         return
 
-    def create_chart(self, mdf: MidasDataFrame):
+
+    def create_chart(self, mdf: MidasDataFrame, encoding: EncodingSpec):
         debug_log(f"creating chart {mdf.df_name}")
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
@@ -160,38 +157,22 @@ class UiComm(object):
         df = mdf.table
         if (len(df.columns) > 2):
             raise InternalLogicalError("create_chart should not be called")
-        chart_title = mdf.df_name
-        chart_info = gen_spec(df, chart_title, mdf.chart_config)
-        if chart_info:
-            if df is None:
-                self.send_user_error(f"Df {mdf.df_name} is empty")
-                return
-            records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
-            chart_info.vega_spec["data"]["values"] = records
-            # filtered --- set to be the same
-            # set the spec
-            self.vis_spec[mdf.df_name] = chart_info # type: ignore
-            # see if we need to apply any transforms
-            # note that visualizations must have 2 columns or less right now.
-            vega = json.dumps(chart_info.vega_spec)
-            message = {
-                'type': 'chart_render',
-                "dfName": mdf.df_name,
-                'vega': vega
-            }
-            self.comm.send(message)
-        else:
-            # TODO: add better explanations
-            self.comm.send({
-                "type": "error",
-                "value": "We could not generate the spec"
-            })
+        
+        self.vis_spec[mdf.df_name] = encoding
+        vega_lite = gen_spec(mdf.df_name, encoding)
+        records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
+        vega_lite["data"]["values"] = records 
+        vega = json.dumps(vega_lite)
+        message = {
+            'type': 'chart_render',
+            "dfName": mdf.df_name,
+            'vega': vega
+        }
+        self.comm.send(message)
         return
 
 
     def get_dfs_from_code_str(self, code: str) -> List[MidasDataFrame]:
-        # do a regex to see if there anything assinged
-        # @Shloak maybe look into how we can keeo state in this class
         assignments = []
         class CustomNodeTransformer(ast.NodeTransformer):
             def visit_Assign(self, node):
@@ -213,20 +194,18 @@ class UiComm(object):
     
 
     def update_chart(self, df: MidasDataFrame):
-        # first look up chart_info
         if df.df_name is None:
             raise InternalLogicalError("Missing df_name")
-        chart_info = self.vis_spec[df.df_name]
-        if chart_info is None:
+        if df.df_name not in self.vis_spec:
             raise InternalLogicalError("Cannot update since not done before")
-        table = df.table
-        new_data = dataframe_to_dict(table, FilterLabelOptions.filtered)
+        new_data = dataframe_to_dict(df, FilterLabelOptions.filtered)
         self.comm.send({
             "type": "chart_update_data",
             "dfName": df.df_name,
             "newData": new_data
         })
         return
+
 
     def send_user_error(self, message: str):
         self.comm.send({
@@ -264,30 +243,18 @@ class UiComm(object):
         debug_log(f"selection is {selection}")
         if selection is None:
             return []
-        # loads
-        predicate_raw = selection
         vis = self.vis_spec[df_name]
-        x_column = vis.encodings[Channel.x]
-        y_column = vis.encodings[Channel.y]
-        if vis.chart_type == ChartType.scatter:
-            x_value = predicate_raw[x_column]
-            y_value = predicate_raw[y_column]
-            x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
-            y_selection = NumericRangeSelection(ColumnRef(y_column, df_name), y_value[0], y_value[1])
+        if vis.shape == "circle":
+            x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
+            y_selection = NumericRangeSelection(ColumnRef(vis.y, df_name), selection[vis.y][0], selection[vis.y][1])
             return [x_selection, y_selection]
-        if vis.chart_type == ChartType.bar_categorical:
-            x_value = predicate_raw[x_column]
-            predicate = StringSetSelection(ColumnRef(x_column, df_name), x_value)
+        if vis.shape == "bar":
+            predicate = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
             return [predicate]
-        if vis.chart_type == ChartType.bar_linear:
-            x_value = predicate_raw[x_column]
-            x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
+        if vis.shape == "line":
+            x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
             return [x_selection]
-        if vis.chart_type == ChartType.line:
-            x_value = predicate_raw[x_column]
-            x_selection = NumericRangeSelection(ColumnRef(x_column, df_name), x_value[0], x_value[1])
-            return [x_selection]
-        raise InternalLogicalError("Not all chart_info handled")
+        raise InternalLogicalError(f"{vis.shape} not handled")
 
 
     def update_selection_shelf_selection_name(self, old_name: str, new_name: str):
@@ -308,12 +275,6 @@ class UiComm(object):
         return
 
 
-    def get_chart_type(self, df_name: DFName):
-        info = self.vis_spec[df_name]
-        if info:
-            return info.chart_type
-        return None
-
     def custom_message(self, message_type: str, message: str):
         """[internal] escape hatch for other message types
         
@@ -327,12 +288,15 @@ class UiComm(object):
         })
 
     def create_distribution_query(self, col_name: str, df_name: str) -> str:
+        '''
+        directly generating the queries out of convenience,
+           since lambda expressions are used...
+        '''
+
         df_info = self.get_df(DFName(df_name))
         if df_info is None:
             raise InternalLogicalError("Should not be getting distribution on unregistered dataframes and columns")
         df = df_info.df
-        # directly generating the queries out of convenience,
-        #   since lambda expressions are used...
         col_value = df.table.column(col_name)
         new_name = f"{col_name}_distribution"
         if (is_string_dtype(col_value)):

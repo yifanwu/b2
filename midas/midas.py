@@ -17,7 +17,7 @@ from typing import Dict, List
 
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo
 from .util.errors import InternalLogicalError, debug_log, type_check_with_warning
-from .vis_types import SelectionEvent
+from .vis_types import SelectionEvent, EncodingSpec
 from .state_types import DFName
 from .ui_comm import UiComm
 from midas.midas_algebra.dataframe import MidasDataFrame, DFInfo, JoinInfo, RuntimeFunctions, RelationalOp, VisualizedDFInfo
@@ -58,7 +58,7 @@ class Midas(object):
             raise UserError("must assign a name")
         self.assigned_name = assigned_name
         # TODO: the organization here is still a little ugly
-        ui_comm = UiComm(is_in_ipynb, assigned_name, self.get_df)
+        ui_comm = UiComm(is_in_ipynb, assigned_name, self.get_df, self.from_ops)
         self.ui_comm = ui_comm
         self.dfs = {}
         self.context = Context(self.dfs, self.from_ops)
@@ -72,6 +72,7 @@ class Midas(object):
         self.rt_funcs = RuntimeFunctions(
             self.add_df,
             self.show_df,
+            self.show_profiler,
             self.get_stream,
             self.context.apply_selection,
             self.add_join_info)
@@ -83,28 +84,28 @@ class Midas(object):
         self.dfs[mdf.df_name] = DFInfo(mdf)
 
 
-    # 
+    def show_profiler(self, mdf: MidasDataFrame):
+        self.ui_comm.create_profile(mdf)
 
-    def show_df(self, mdf: MidasDataFrame, chart_config):
+
+    def show_df(self, mdf: MidasDataFrame, spec: Optional[EncodingSpec] = None):
+        # we need to construct the encoding
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
-        # if it already exists
-        if mdf.df_name in self.dfs:
-            found_df = self.dfs[mdf.df_name]
-            if isinstance(found_df, VisualizedDFInfo):
-                found_df.update_df(mdf)
-                # also 
-                self.ui_comm.update_chart(mdf)
-                self.ui_comm.navigate_to_chart(mdf.df_name)
+        if spec is None:
+            # should have already existed! use existing
+            if mdf.df_name in self.dfs:
+                found_df = self.dfs[mdf.df_name]
+                if isinstance(found_df, VisualizedDFInfo):
+                    found_df.update_df(mdf)
+                    # also 
+                    self.ui_comm.update_chart(mdf)
+                    self.ui_comm.navigate_to_chart(mdf.df_name)
             else:
-                is_visualized = False
-                if chart_config.is_base_df:
-                    self.ui_comm.create_profile(mdf)
-                is_visualized = self.ui_comm.visualize(mdf)
-                if is_visualized:
-                    self.dfs[mdf.df_name] = VisualizedDFInfo(mdf)
-                # else, we don't do anything
-            return
+                raise UserError("Should supply encoding unless already specified before")
+        else:
+            self.ui_comm.visualize(mdf, spec)
+            self.dfs[mdf.df_name] = VisualizedDFInfo(mdf)
 
 
     def has_df(self, df_name: DFName):

@@ -1,3 +1,4 @@
+from midas.midas_algebra.dataframe import MidasDataFrame
 from datascience import Table
 import numpy as np
 from math import log10, pow
@@ -140,7 +141,7 @@ def sanitize_dataframe(df: Table):
     return df
 
 
-def dataframe_to_dict(df: Table, include_filter_label: FilterLabelOptions):
+def dataframe_to_dict(df: MidasDataFrame, include_filter_label: FilterLabelOptions):
     """[summary]
     
     Arguments:
@@ -152,7 +153,7 @@ def dataframe_to_dict(df: Table, include_filter_label: FilterLabelOptions):
     Returns:
         [type] -- [description]
     """
-    clean_df = sanitize_dataframe(df)
+    clean_df = sanitize_dataframe(df.table)
     def s(x):
         k = {}
         for i, v in enumerate(x):

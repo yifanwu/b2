@@ -61,15 +61,19 @@ class CategoricalDistribution(DfTransform):
 # basic stub for Vega typing
 VegaSpecType = Dict[str, Any]
 
+class EncodingSpec(NamedTuple):
+    shape: str # bar, circle, line
+    x: str
+    y: str
 
-class ChartInfo(NamedTuple):
-    """[summary]
+# class ChartInfo(NamedTuple):
+#     """[summary]
     
-    Arguments:
-        NamedTuple {[type]} -- [description]
-    """
-    chart_type: ChartType
-    # ASK Arvind: this seems to be redundant information to the vega spec?
-    encodings: Dict[Channel, str]
-    vega_spec: VegaSpecType
-    chart_title: str
+#     Arguments:
+#         NamedTuple {[type]} -- [description]
+#     """
+#     chart_type: ChartType
+#     # ASK Arvind: this seems to be redundant information to the vega spec?
+#     encodings: Dict[Channel, str]
+#     vega_spec: VegaSpecType
+#     chart_title: str

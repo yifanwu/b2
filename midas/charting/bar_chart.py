@@ -1,8 +1,8 @@
+from midas.vis_types import EncodingSpec
 from midas.constants import IS_OVERVIEW_FIELD_NAME
-# I think vega-lite is simple enough that we might just be able to not bother reusing code here
 
 # the seletion signalis "brush", which, for example, looks like `{"a":["A","C","E","G"]}`
-def gen_bar_chart_spec(x_field: str, y_field: str, df_name: str):
+def gen_bar_chart_spec(encoding: EncodingSpec, df_name: str):
     spec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": f"Midas Generated Visualization of dataframe {df_name}",
@@ -18,11 +18,11 @@ def gen_bar_chart_spec(x_field: str, y_field: str, df_name: str):
         "mark": "bar",
         "encoding": {
             "x": {
-                "field": x_field,
+                "field": encoding.x,
                 "type": "ordinal"
             },
             "y": {
-                "field": y_field,
+                "field": encoding.y,
                 "type": "quantitative",
                 "stack": None
             },

@@ -1,5 +1,6 @@
 import React from "react";
 import { ColumnItem } from "./ColumnItem";
+import { ProfileShelfLandingPage } from "./ProfileShelfLandingPage";
 
 interface ProfilerColumn {
   columnName: string;
@@ -34,6 +35,10 @@ export class ProfilerShelf extends React.Component<{}, ColumnShelfState> {
   }
 
   render() {
+    if (Object.keys(this.state.tables).length === 0) {
+      // this is initialization
+      ProfileShelfLandingPage
+    }
     const tableDivs = Object.keys(this.state.tables).map((tableName) => {
       const columns = this.state.tables[tableName].map((c, i) => <ColumnItem
         key={`column-${tableName}-${c.columnName}`}
