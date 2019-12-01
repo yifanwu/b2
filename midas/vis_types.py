@@ -61,11 +61,23 @@ class CategoricalDistribution(DfTransform):
 # basic stub for Vega typing
 VegaSpecType = Dict[str, Any]
 
-class EncodingSpec(NamedTuple):
-    shape: str # bar, circle, line
-    x: str
-    y: str
+class EncodingSpec(object):
+    def __init__(self, shape: str, x: str, y: str):
+        # bar, circle, line
+        self.shape = shape
+        self.x = x
+        self.y = y
 
+    def __eq__(self, other: 'EncodingSpec'):
+        if self.shape == other.shape and self.x == other.x and self.y == other.y:
+            return True
+        return False
+
+
+    def __ne__(self, other: 'EncodingSpec'):
+        return not self.__eq__(other)
+
+    
 # class ChartInfo(NamedTuple):
 #     """[summary]
     

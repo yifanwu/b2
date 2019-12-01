@@ -40,47 +40,6 @@ def snap_to_nice_number(n: float):
     zeroes = pow(10, int(log10(n)))
     return (int(n / zeroes) + 1) * zeroes
 
-# TODO(P1): since the bin sizes changes from update to update
-#           we want a more user friendly way to show some details
-# TODO(P2): the distribution is a little too coarse grained
-#           with data like this: s = np.random.normal(0, 0.1, 20)
-def get_numeric_distribution(table: Table, transform: NumericDistribution) -> Table:
-    # debug_log("processing numeric distribution")
-    type_check_with_warning(table, Table)
-    first_col = table.labels[0]
-    column = table.column(first_col)
-    unique_vals = np.unique(column)
-    current_max_bins = len(unique_vals)
-    if (current_max_bins < MAX_BINS):
-        # no binning needed
-        result = table.group(first_col)
-        return result
-    else:
-        if transform.bins is None:
-            min_bucket_count = round(current_max_bins/MAX_BINS)
-            d_max = unique_vals[-1]
-            d_min = unique_vals[0]
-            min_bucket_size = (d_max - d_min) / min_bucket_count
-            # print(MAX_BINS, current_max_bins, d_max, d_min)
-            bound = snap_to_nice_number(min_bucket_size)
-        #     print("bound size", bound)
-        #     d_nice_min = int(d_min/bound) * bound
-        #     bins = [d_nice_min]
-        #     cur = d_nice_min
-        #     while (cur < d_max):
-        #         cur += bound
-        #         bins.append(cur)
-        #     transform.bins = bins
-        # else:
-        #     debug_log("bins has been set already")
-
-        # count_col, name_col = np.histogram(column, transform.bins)
-        # result = Table().with_columns({
-        #     # note that we have -1 because the boundaries have one more
-        #     first_col: name_col[:-1],
-        #     COUNT_COL_NAME: count_col
-        # })
-        return result
 
 
 # TODO: we need to test this...

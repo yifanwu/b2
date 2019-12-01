@@ -49,7 +49,7 @@ class Midas(object):
     rt_funcs: RuntimeFunctions
     current_selection: Dict[DFName, SelectionEvent]
     assigned_name: str
-    dfs: Dict[DFName, DFInfo]
+    df_info_store: Dict[DFName, DFInfo]
 
     def __init__(self, config: MidasConfig=default_midas_config):
         # check the assigned name, if it is not 'm', then complain
@@ -58,11 +58,11 @@ class Midas(object):
             raise UserError("must assign a name")
         self.assigned_name = assigned_name
         # TODO: the organization here is still a little ugly
-        ui_comm = UiComm(is_in_ipynb, assigned_name, self.get_df, self.from_ops)
+        ui_comm = UiComm(is_in_ipynb, assigned_name, self.get_df_info, self.from_ops)
         self.ui_comm = ui_comm
-        self.dfs = {}
-        self.context = Context(self.dfs, self.from_ops)
-        self.event_loop = EventLoop(self.context, self.dfs, config)
+        self.df_info_store = {}
+        self.context = Context(self.df_info_store, self.from_ops)
+        self.event_loop = EventLoop(self.context, self.df_info_store, config)
         self.current_selection = {}
         if is_in_ipynb:
             ip = get_ipython()
@@ -72,49 +72,45 @@ class Midas(object):
         self.rt_funcs = RuntimeFunctions(
             self.add_df,
             self.show_df,
+            self.show_df_filtered,
             self.show_profiler,
             self.get_stream,
             self.context.apply_selection,
             self.add_join_info)
 
+
     def add_df(self, mdf: MidasDataFrame):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
-        debug_log(f"+ Addign df {mdf.df_name}")
-        self.dfs[mdf.df_name] = DFInfo(mdf)
+        self.df_info_store[mdf.df_name] = DFInfo(mdf)
 
 
     def show_profiler(self, mdf: MidasDataFrame):
         self.ui_comm.create_profile(mdf)
 
 
-    def show_df(self, mdf: MidasDataFrame, spec: Optional[EncodingSpec] = None):
-        # we need to construct the encoding
+    def show_df_filtered(self, mdf: MidasDataFrame, df_name: DFName):
+        # this should be called internally
+        if not self.has_df(df_name):
+            raise InternalLogicalError("cannot add filter to charts not created")
+        self.ui_comm.update_chart_filtered_value(mdf, df_name)
+
+
+    def show_df(self, mdf: MidasDataFrame, spec: EncodingSpec):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
-        if spec is None:
-            # should have already existed! use existing
-            if mdf.df_name in self.dfs:
-                found_df = self.dfs[mdf.df_name]
-                if isinstance(found_df, VisualizedDFInfo):
-                    found_df.update_df(mdf)
-                    # also 
-                    self.ui_comm.update_chart(mdf)
-                    self.ui_comm.navigate_to_chart(mdf.df_name)
-            else:
-                raise UserError("Should supply encoding unless already specified before")
-        else:
-            self.ui_comm.visualize(mdf, spec)
-            self.dfs[mdf.df_name] = VisualizedDFInfo(mdf)
+        # also change to df
+        self.df_info_store[mdf.df_name] = VisualizedDFInfo(mdf)
+        self.ui_comm.create_chart(mdf, spec)
 
 
     def has_df(self, df_name: DFName):
-        return df_name in self.dfs
+        return df_name in self.df_info_store
 
 
     def append_df_predicates(self, selection: SelectionEvent) -> DFInfo:
         df_name = selection.df_name
-        df_info = self.dfs.get(df_name)
+        df_info = self.df_info_store.get(df_name)
         # idx = len(df_info.predicates)
         if df_info and isinstance(df_info, VisualizedDFInfo):
             df_info.predicates.append(selection)
@@ -123,12 +119,18 @@ class Midas(object):
             raise InternalLogicalError(f"Df ({df_name}) should be defined and be visualized as a chart!")
 
 
+    def get_df_info(self, df_name: DFName):
+        return self.df_info_store.get(df_name)
+
+
     def get_df(self, df_name: DFName):
-        return self.dfs.get(df_name)
+        r = self.df_info_store.get(df_name)
+        if r:
+            return r.df
 
 
     def remove_df(self, df_name: DFName):
-        self.dfs.pop(df_name)
+        self.df_info_store.pop(df_name)
 
     def from_records(self, records):
         table = Table.from_records(records)
@@ -194,7 +196,7 @@ class Midas(object):
 
     # the re
     def get_df_info(self, df_name: DFName) -> Optional[DFInfo]:
-        return self.dfs.get(df_name)
+        return self.df_info_store.get(df_name)
 
 
     def get_df_vis_info(self, df_name: str):

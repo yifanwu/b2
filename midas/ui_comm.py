@@ -1,4 +1,5 @@
 from datetime import datetime
+from midas.midas_algebra.data_types import DFId
 from IPython import get_ipython 
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_any_dtype 
 from midas.midas_algebra.selection import SelectionValue
@@ -18,11 +19,12 @@ from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, C
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, snap_to_nice_number
-from midas.widget.showme import gen_spec, infer_encoding
+from midas.charting.showme import gen_spec, infer_encoding
 
 class UiComm(object):
     comm: Comm
     vis_spec: Dict[DFName, EncodingSpec]
+    id_by_df_name: Dict[DFName, DFId]
     is_in_ipynb: bool
     tmp_debug: str
     midas_instance_name: str
@@ -31,11 +33,89 @@ class UiComm(object):
     def __init__(self, is_in_ipynb: bool, midas_instance_name: str, get_df_fun: Callable[[DFName], Optional[DFInfo]], create_df_from_ops: Callable[[RelationalOp], MidasDataFrame]):
         self.next_id = 0
         self.vis_spec = {}
+        self.id_by_df_name = {}
         self.shelf_selections = {}
         self.is_in_ipynb = is_in_ipynb
+        self.midas_instance_name = midas_instance_name
         self.set_comm(midas_instance_name)
         self.get_df = get_df_fun
         self.create_df_from_ops = create_df_from_ops
+
+
+    def handle_msg(self, data_raw):
+        data = data_raw["content"]["data"]
+        debug_log(f"got message {data}")
+        if "command" in data:
+            command = data["command"]
+            if command == "refresh-comm":
+                self.send_debug_msg("Refreshing comm")
+                self.set_comm(self.midas_instance_name)
+                return
+            if command == "cell-ran":
+                if "code" in data:
+                    code = data["code"]
+                    self.process_code(code)
+                return
+            if command == "get_code_clipboard":
+                df_name = DFName(data["df_name"])
+                df = self.get_df(df_name)
+                if df:
+                    # TODO: get predicates working again
+                    code = df.df.get_code()
+                    copy(code)
+                    return code
+                # something went wrong, so let's tell comes...
+                self.send_user_error(f'no selection on {df_name} yet')
+            if command == "column-selected":
+                self.send_debug_msg("column-selected called")
+                column = data["column"]
+                df_name = DFName(data["df_name"])
+                self.tmp = f"{column}_{df_name}"
+                code = self.create_distribution_query(column, df_name)
+                self.create_cell_with_text(code)
+                # now we need to figure out what kind of transformation is needed
+                # if nothing, we just show the table
+            if command == "add_selection":
+                df_name = DFName(data["df_name"])
+                df_info = cast(VisualizedDFInfo, self.get_df(df_name))
+                predicates = df_info.predicates
+                if (len(predicates) > 0):
+                    predicate = predicates[-1]
+                    name = f"{predicate.df_name}_{len(predicates)}"
+
+                    self.shelf_selections[name] = (predicate, df_name)
+                    self.custom_message('add-selection', name)
+                else: 
+                    self.send_user_error(f'no selection on {df_name} yet')
+            else:
+                m = f"Command {command} not handled!"
+                self.send_debug_msg(m)
+                raise NotAllCaseHandledError(m)
+        else:
+            debug_log(f"Got message from JS Comm: {data}")
+
+    def process_code(self, code: str):
+        # self.send_debug_msg(f"process code called {code}")
+        assigned_dfs = self.get_dfs_from_code_str(code)
+        assigned_dfs_str = ",".join([cast(str, df.df_name) for df in assigned_dfs])
+        # self.send_debug_msg(f"Cell-ran received and processed {assigned_dfs_str}")
+        # we need to create the code
+        if len(assigned_dfs) == 0:
+            # do nothing
+            debug_log("no df to process")
+            return
+        code_lines = []
+        for df in assigned_dfs:
+            if df.is_base_df:
+                line = f"{df.df_name}.show_profile()"
+            else:
+                encoding = infer_encoding(df)
+                encoding_arg = f"shape='{encoding.shape}', x='{encoding.x}', y='{encoding.y}'"
+                line = f"{df.df_name}.show({encoding_arg})"
+            code_lines.append(line)
+        code = "\n".join(code_lines)
+        debug_log(f"processed code: {code}")
+        self.create_cell_with_text(code)
 
     def set_comm(self, midas_instance_name: str):
         if self.is_in_ipynb:
@@ -45,94 +125,9 @@ class UiComm(object):
                 "type": "midas_instance_name",
                 "value": midas_instance_name
             })
-
-            def handle_msg(data_raw):
-                self.tmp_debug = data_raw
-                data = data_raw["content"]["data"]
-                debug_log(f"got message {data}")
-                if "command" in data:
-                    command = data["command"]
-                    if command == "refresh-comm":
-                        self.send_debug_msg("Refreshing comm")
-                        self.set_comm(midas_instance_name)
-                        return
-                    if command == "cell-ran":
-                        if "code" in data:
-                            code = data["code"]
-                            assigned_dfs = self.get_dfs_from_code_str(code)
-                            # assigned_dfs_str = ",".join([cast(str, df.df_name) for df in assigned_dfs])
-                            # self.send_debug_msg(f"Cell-ran receive for {code}, with processed {assigned_dfs_str}")
-                            # we need to create the code
-                            code_lines = []
-                            for df in assigned_dfs:
-                                encoding = infer_encoding(df)
-                                encoding_arg = f"shape={encoding.shape}, x={encoding.x}, y={encoding.y}"
-                                code_lines.append(f"{df.df_name}.show({encoding_arg})")
-                            code = "\n".join(code_lines)
-                            self.create_cell_with_text(code)
-                        return
-                    if command == "get_code_clipboard":
-                        df_name = DFName(data["df_name"])
-                        df = self.get_df(df_name)
-                        if df:
-                            # TODO: get predicates working again
-                            code = df.df.get_code()
-                            copy(code)
-                            return code
-                        # something went wrong, so let's tell comes...
-                        self.send_user_error(f'no selection on {df_name} yet')
-                    if command == "column-selected":
-                        column = data["column"]
-                        df_name = DFName(data["df_name"])
-                        code = self.create_distribution_query(column, df_name)
-                        self.create_cell_with_text(code)
-                        # now we need to figure out what kind of transformation is needed
-                        # if nothing, we just show the table
-                    if command == "add_selection":
-                        df_name = DFName(data["df_name"])
-                        df_info = cast(VisualizedDFInfo, self.get_df(df_name))
-                        predicates = df_info.predicates
-                        if (len(predicates) > 0):
-                            predicate = predicates[-1]
-                            name = f"{predicate.df_name}_{len(predicates)}"
-
-                            self.shelf_selections[name] = (predicate, df_name)
-                            self.custom_message('add-selection', name)
-                        else: 
-                            self.send_user_error(f'no selection on {df_name} yet')
-                        # then need to trigger the method on midas...
-                    # if (command == "selection"):
-                    #     df_name = data["dfName"]
-                    #     value = data["value"]
-                    #     self.send_debug_msg(f"Data: {command} {df_name} {value}")
-                    #     # now we need to process the value
-                    #     predicate = self.get_predicate_info(df_name, value)
-                    #     date = datetime.now()
-                    #     selection_event = SelectionEvent(date, predicate, DFName(df_name))
-                    #     self.ui_add_selection(selection_event)
-                    else:
-                        m = f"Command {command} not handled!"
-                        self.send_debug_msg(m)
-                        raise NotAllCaseHandledError(m)
-                else:
-                    debug_log(f"Got message from JS Comm: {data}")
-
-            self.comm.on_msg(handle_msg)
+            self.comm.on_msg(self.handle_msg)
         else:
             self.comm = MockComm()
-    
-    # should be idempotent in case the code analysis has false positives
-    # def actual_visualize(self, df_name: str):
-    #     df = self.current_df_chain[DFName(df_name)]
-
-    def visualize(self, df: MidasDataFrame, encoding: Optional[EncodingSpec]):
-        if encoding is not None:
-
-            if (df.df_name in self.vis_spec):
-                self.update_chart(df)
-            else:
-                self.create_chart(df, encoding)
-            return True
 
     def create_profile(self, df: MidasDataFrame):
         debug_log(f"creating profile {df.df_name}")
@@ -153,16 +148,20 @@ class UiComm(object):
         debug_log(f"creating chart {mdf.df_name}")
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
-        
-        df = mdf.table
-        if (len(df.columns) > 2):
-            raise InternalLogicalError("create_chart should not be called")
-        
+        # first check if the encodings has changed
+        if mdf.df_name in self.vis_spec:
+            if self.vis_spec[mdf.df_name] == encoding and self.id_by_df_name[mdf.df_name] == mdf.id:
+                # no op
+                return
+
         self.vis_spec[mdf.df_name] = encoding
+        self.id_by_df_name[mdf.df_name] = mdf.id
+
         vega_lite = gen_spec(mdf.df_name, encoding)
-        records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
+        records = dataframe_to_dict(mdf, FilterLabelOptions.unfiltered)
         vega_lite["data"]["values"] = records 
         vega = json.dumps(vega_lite)
+
         message = {
             'type': 'chart_render',
             "dfName": mdf.df_name,
@@ -193,15 +192,14 @@ class UiComm(object):
         return df_assignments
     
 
-    def update_chart(self, df: MidasDataFrame):
-        if df.df_name is None:
-            raise InternalLogicalError("Missing df_name")
-        if df.df_name not in self.vis_spec:
+    def update_chart_filtered_value(self, df: MidasDataFrame, df_name: DFName):
+        # note that this is alwsays used for updating filtered information
+        if df_name not in self.vis_spec:
             raise InternalLogicalError("Cannot update since not done before")
         new_data = dataframe_to_dict(df, FilterLabelOptions.filtered)
         self.comm.send({
             "type": "chart_update_data",
-            "dfName": df.df_name,
+            "dfName": df_name,
             "newData": new_data
         })
         return
@@ -214,16 +212,16 @@ class UiComm(object):
             "value": message
         })
 
-
-    def create_cell_with_text(self, s, execute=True):
+    def create_cell_with_text(self, s):
+        self.send_debug_msg(f"create_cell_with_text called {s}")
         d = datetime.now()
-        annotated = f"# auto-created on {d}\n{s}"
-        get_ipython().set_next_input(annotated)
-        # then execute it
-        if execute:
-            self.comm.send({
-                "type": "execute_current_cell"
-            })
+        annotated = f"# [MIDAS] auto-created on {d}\n{s}"
+        # , execute=True
+        # if execute:
+        self.comm.send({
+            "type": "create_then_execute_cell",
+            "value": annotated
+        })
 
     def send_debug_msg(self, message: str):
         self.comm.send({
@@ -314,14 +312,18 @@ class UiComm(object):
                 code = f"{new_name} = {df.df_name}.group('{col_name}')"
                 return code
 
+            # TODO(: the distribution is a little too coarse grained
+            #           with data like this: s = np.random.normal(0, 0.1, 20)
+
             min_bucket_count = round(current_max_bins/MAX_BINS)
             d_max = unique_vals[-1]
             d_min = unique_vals[0]
             min_bucket_size = (d_max - d_min) / min_bucket_count
             # print(MAX_BINS, current_max_bins, d_max, d_min)
             bound = snap_to_nice_number(min_bucket_size)
+            bin_column_name = f"{col_name}_bin"
             binning_lambda = f"lambda x: int(x/{bound}) * {bound}"
-            bin_transform = f"{df.df_name}.append_column('{new_name}', table.apply({binning_lambda}, '{col_name}'))"
-            grouping_transform = "{new_name} = {df.df_name}.group('{col_name}')"
-            code = f"{binning_lambda}\n{bin_transform}\n{grouping_transform}"
+            bin_transform = f"{df.df_name}.append_column('{bin_column_name}', {df.df_name}.apply({binning_lambda}, '{col_name}'))"
+            grouping_transform = f"{new_name} = {df.df_name}.group('{bin_column_name}')"
+            code = f"{bin_transform}\n{grouping_transform}"
             return code

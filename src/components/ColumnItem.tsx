@@ -10,6 +10,7 @@ interface ColumnItemProps {
   columnName: string;
   columnType: string;
   onDelete: () => void;
+  onClick: () => void;
 }
 
 export class ColumnItem extends React.Component<ColumnItemProps, {}> {
@@ -20,23 +21,11 @@ export class ColumnItem extends React.Component<ColumnItemProps, {}> {
     };
   }
 
-  clicked() {
-    const comm = Jupyter.notebook.kernel.comm_manager.new_comm(MIDAS_CELL_COMM_NAME);
-    const payload = {
-      command: "column-selected",
-      column: this.props.columnName,
-      df_name: this.props.tableName,
-    };
-    console.log(`Clicked, and sending message with contents ${JSON.stringify(payload)}`);
-    comm.send(payload);
-  }
-
   render() {
     return (
       <div className="midas-shelf-selection-item">
         <div className="column-item-header">
-          <span className="selection-column-name" onClick={() => this.clicked()}>{this.props.columnName}</span>
-          {/* <button className="midas-header-button" onClick={() => this.props.onDelete()}>x</button> */}
+          <span className="selection-column-name" onClick={this.props.onClick}>{this.props.columnName}</span>
           <CloseButton onClick={this.props.onDelete} size={10}/>
         </div>
       </div>

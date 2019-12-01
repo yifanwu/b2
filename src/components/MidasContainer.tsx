@@ -4,9 +4,10 @@ import { TopLevelSpec } from "vega-lite";
 import { SortableContainer } from "react-sortable-hoc";
 
 import MidasElement from "./MidasElement";
-import Profiler from "./Profiler";
-import { hashCode, LogInternalError, LogSteps, get_df_id } from "../utils";
+import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
+import { LogInternalError, LogSteps, get_df_id } from "../utils";
 import { AlertType } from "../types";
+import { ALERT_ALIVE_TIME } from "../constants";
 
 // Mappings
 //  this stores the information connecting the cells to
@@ -48,8 +49,6 @@ interface ContainerState {
 interface ContainerProps {
   comm: any;
 }
-
-const ALERT_ALIVE_TIME = 10000;
 
 const MidasSortableContainer = SortableContainer(({children}: {children: any}) => {
   return <div>{children}</div>;
@@ -166,8 +165,8 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     });
     const self = this;
     window.setTimeout(() => {
-      console.log(`closing allert ${aId}`);
-      // just move the allert counter ahead
+      console.log(`closing alert ${aId}`);
+      // just move the alert counter ahead
       self.setState(p => {
         return { alertCounter: p.alertCounter + 1};
       });
@@ -201,12 +200,23 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     }
 
     this.setState(prevState => {
-      prevState.elements.push({
-        notebookCellId,
-        dfName,
-        vegaSpec,
-        changeStep: 1
-      });
+      // see if we need to delete the old one first
+      const idx = prevState.elements.findIndex((v) => v.dfName === dfName);
+      if (idx > 0) {
+        prevState.elements[idx] = {
+          notebookCellId,
+          dfName,
+          vegaSpec,
+          changeStep: 1
+        };
+      } else {
+        prevState.elements.push({
+          notebookCellId,
+          dfName,
+          vegaSpec,
+          changeStep: 1
+        });
+      }
       return prevState;
     });
   }
@@ -280,21 +290,17 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       const a = alerts[i];
       const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-debug";
       alertDivs.push(<div
-          className={`"midas-alert ${className}`}
+          className={`card midas-alert ${className}`}
           key={`alert-${a.aId}`}
         >
           {a.msg}
           <button className="notification-btn" onClick={close}>x</button>
       </div>);
     }
+    const content = (chartDivs.length > 0) ? <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>{chartDivs}</MidasSortableContainer> : <ChartsViewLandingPage/>;
     return (
       <div id="midas-floater-container">
-        <div className="midbar-shelf-header">
-          Midas Monitor
-        </div>
-        <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>
-        {chartDivs}
-        </MidasSortableContainer>
+        {content}
         {alertDivs}
       </div>
     );

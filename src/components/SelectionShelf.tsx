@@ -1,12 +1,18 @@
 import React from "react";
 import { SelectionItem } from "./SelectionItem";
+import { SelectionShelfLandingPage } from "./SelectionShelfLandingPage";
 
 interface SelectionShelfState {
   selectionItemTitles: string[];
 }
 
-export class SelectionShelf extends React.Component<{}, SelectionShelfState> {
-  constructor(props?: {}) {
+interface SelectionShelfProps {
+  comm: any;
+}
+
+
+export class SelectionShelf extends React.Component<SelectionShelfProps, SelectionShelfState> {
+  constructor(props: SelectionShelfProps) {
     super(props);
     this.state = {
       selectionItemTitles: [],
@@ -34,9 +40,9 @@ export class SelectionShelf extends React.Component<{}, SelectionShelfState> {
     const selectionDivs = this.state.selectionItemTitles.map(
       (selectionName, index) => <SelectionItem selectionName={selectionName}
             onDelete={() => this.deleteItem(index)} key={selectionName}/>);
+    const content = (selectionDivs.length > 0) ? selectionDivs : <SelectionShelfLandingPage/>;
     return <div id="selection-shelf">
-      <div className="midbar-shelf-header">selections</div>
-      {selectionDivs}
+      {content}
       </div>;
   }
 }

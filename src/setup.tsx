@@ -39,14 +39,13 @@ export function createMidasComponent(midas_instance_name: string, comm: any, is_
   LogSteps("createMidasComponent", midas_instance_name);
   const SIDEBAR_ID = "midas-sidebar-wrapper";
 
-  if ($(`#${SIDEBAR_ID}`).length) {
-  } else {
+  if ($(`#${SIDEBAR_ID}`).length === 0) {
     $(window).resize(function() {
       syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10);
     });
     const midasSideBarDiv = $(`<div id=\"${SIDEBAR_ID}\"/>`);
     $("#notebook").append(midasSideBarDiv);
-  } 
+  }
 
   let midasRef;
   ReactDOM.render(<MidasSidebar

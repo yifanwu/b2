@@ -63,8 +63,7 @@ class EventLoop(object):
                     if len(s) > 0:
                         # debug_log("applying the filtering logic")
                         new_df = df_info.original_df.apply_selection(s)
-                        new_df.df_name = a_df_name
-                        new_df.show()
+                        new_df.filter_chart(a_df_name)
 
         if items:
             for _, i in enumerate(items):

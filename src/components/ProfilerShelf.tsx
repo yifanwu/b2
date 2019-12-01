@@ -11,9 +11,15 @@ interface ColumnShelfState {
   tables: { [index: string]: ProfilerColumn[] };
 }
 
-export class ProfilerShelf extends React.Component<{}, ColumnShelfState> {
-  constructor(props?: {}) {
+interface ProfilerShelfProps {
+  comm: any;
+}
+
+export class ProfilerShelf extends React.Component<ProfilerShelfProps, ColumnShelfState> {
+  constructor(props: ProfilerShelfProps) {
     super(props);
+    this.columnClicked  = this.columnClicked.bind(this);
+
     this.state = {
       tables: {},
     };
@@ -27,6 +33,16 @@ export class ProfilerShelf extends React.Component<{}, ColumnShelfState> {
     });
   }
 
+  columnClicked(columnName: string, tableName: string) {
+    const payload = {
+      command: "column-selected",
+      column: columnName,
+      df_name: tableName,
+    };
+    console.log(`Clicked, and sending message with contents ${JSON.stringify(payload)}`);
+    this.props.comm.send(payload);
+  }
+
   hideItem(tableName: string, index: number) {
     this.setState(prevState => {
       prevState.tables[tableName].splice(index, 1);
@@ -35,16 +51,13 @@ export class ProfilerShelf extends React.Component<{}, ColumnShelfState> {
   }
 
   render() {
-    if (Object.keys(this.state.tables).length === 0) {
-      // this is initialization
-      ProfileShelfLandingPage
-    }
     const tableDivs = Object.keys(this.state.tables).map((tableName) => {
       const columns = this.state.tables[tableName].map((c, i) => <ColumnItem
         key={`column-${tableName}-${c.columnName}`}
         tableName={tableName}
         columnName={c.columnName}
         columnType={c.columnType}
+        onClick={() => this.columnClicked(c.columnName, tableName)}
         onDelete={() => this.hideItem(tableName, i)}
       />);
       return <div key={`table-${tableName}`}>
@@ -52,10 +65,11 @@ export class ProfilerShelf extends React.Component<{}, ColumnShelfState> {
         {columns}
       </div>;
     });
+    const content = (tableDivs.length > 0) ? tableDivs : <ProfileShelfLandingPage/>;
     return (
       <div id="profiler-shelf">
-      <div className="midbar-shelf-header">source tables</div>
-        {tableDivs}
+      {/* <div className="midbar-shelf-header">source tables</div> */}
+      {content}
       </div>
     );
   }
