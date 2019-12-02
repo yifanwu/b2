@@ -37,12 +37,13 @@ function syncWidth(parentSelector: string, childSelector: string, marginAdjust =
 
 export function createMidasComponent(midas_instance_name: string, comm: any, is_first_time: boolean = true): MidasSidebar {
   LogSteps("createMidasComponent", midas_instance_name);
+  const SIDEBAR_ID = "midas-sidebar-wrapper";
 
-  if (is_first_time) {
+  if ($(`#${SIDEBAR_ID}`).length === 0) {
     $(window).resize(function() {
       syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10);
     });
-    const midasSideBarDiv = $("<div id=\"midas-sidebar-wrapper\"/>");
+    const midasSideBarDiv = $(`<div id=\"${SIDEBAR_ID}\"/>`);
     $("#notebook").append(midasSideBarDiv);
   }
 

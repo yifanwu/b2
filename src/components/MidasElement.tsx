@@ -6,9 +6,11 @@ import {
   SortableHandle,
 } from "react-sortable-hoc";
 import { makeElementId } from "../config";
-import { Spec, View } from "vega";
+import { View } from "vega";
+// we are going to be rendering vega-lite now for its superior layout etc.
+import { TopLevelSpec } from "vega-lite";
 import vegaEmbed from "vega-embed";
-import { MIDAS_INSTANCE_NAME, SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, Y_DOMAIN_SIGNAL, DEBOUNCE_RATE, Y_SCALE, X_SCALE, X_DOMAIN_SIGNAL } from "../constants";
+import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE } from "../constants";
 import { LogDebug, LogInternalError, get_df_id } from "../utils";
 
 interface MidasElementProps {
@@ -18,7 +20,7 @@ interface MidasElementProps {
   removeChart: MouseEventHandler;
   dfName: string;
   title: string;
-  vegaSpec: Spec;
+  vegaSpec: TopLevelSpec;
   tick: (dfName: string) => void;
   comm: any; // unfortunately not typed
 }
@@ -28,15 +30,45 @@ interface MidasElementState {
   hidden: boolean;
   view: View;
   // both are initial domains that we are fixing
-  yDomain: any;
-  xDomain: any;
   generatedCells: any[];
+  // yDomain: any;
+  // xDomain: any;
 }
 
 const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
+function getDebouncedFunction(dfName: string, tick: (dfName: string) => void) {
+  const callback = (signalName: string, value: any) => {
+    // also need to call into python state...
+    let valueStr = JSON.stringify(value);
+    valueStr = (valueStr === "null") ? "None" : valueStr;
+
+    const c = Jupyter.notebook.insert_cell_above("code");
+    const date = new Date().toLocaleString("en-US");
+    const text = `# [MIDAS] You selected the following from ${dfName} at time ${date}\nm.add_selection_by_interaction("${dfName}", ${valueStr})`;
+    c.set_text(text);
+    c.execute();
+    LogDebug("Sending to comm the selection");
+    tick(dfName);
+  };
+
+  const wrapped = (name: any, value: any) => {
+    const n = new Date();
+    let l = (window as any).lastInvoked;
+    (window as any).lastInvoked = n;
+    if (l) {
+      if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
+        clearTimeout((window as any).lastInvokedTimer);
+      }
+      (window as any).lastInvokedTimer = setTimeout(() => callback(name, value), DEBOUNCE_RATE);
+    } else {
+      l = n;
+    }
+  };
+  return wrapped;
+}
 
 
 /**
@@ -52,9 +84,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       hidden: false,
       view: null,
       elementId,
-      yDomain: null,
-      xDomain: null,
       generatedCells: [],
+      // yDomain: null,
+      // xDomain: null
     };
   }
 
@@ -107,17 +139,17 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     vegaEmbed(`#${this.state.elementId}`, vegaSpec)
       .then((res: any) => {
         const view = res.view;
-        const xDomain = view.scale(X_SCALE).domain();
-        const yDomain = view.scale(Y_SCALE).domain();
+        // const xDomain = view.scale(X_SCALE).domain();
+        // const yDomain = view.scale(Y_SCALE).domain();
         this.setState({
           view,
-          xDomain,
-          yDomain
+          // xDomain,
+          // yDomain
         });
-        this.state.view.signal(Y_DOMAIN_SIGNAL, yDomain);
-        this.state.view.signal(X_DOMAIN_SIGNAL, xDomain);
+        // this.state.view.signal(Y_DOMAIN_SIGNAL, yDomain);
+        // this.state.view.signal(X_DOMAIN_SIGNAL, xDomain);
         LogDebug(`Registering signal for TICK, with signal ${SELECTION_SIGNAL}`);
-        res.view.addSignalListener(SELECTION_SIGNAL, this.getDebouncedFunction(dfName, this.props.comm, tick));
+        res.view.addSignalListener(SELECTION_SIGNAL, getDebouncedFunction(dfName, tick));
       })
       .catch((err: Error) => console.error(err));
   }
@@ -134,15 +166,12 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   componentWillReceiveProps(nextProps: MidasElementProps) {
     if (nextProps.changeStep > this.props.changeStep) {
-      const filter = new Function(
-        "datum",
-        "return (true)"
-      );
       const newValues = nextProps.newData;
+      // can do this in python too
       const changeSet = this.state.view
         .changeset()
-        .insert(newValues)
-        .remove(filter);
+        .remove((datum: any) => { datum.is_overview === 0; })
+        .insert(newValues);
 
       this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
     }
@@ -157,7 +186,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const cell = Jupyter.notebook.get_msg_cell(this.props.cellId);
     const index = Jupyter.notebook.find_cell_index(cell);
     Jupyter.notebook.select(index);
-    const cell_div = Jupyter.CodeCell.msg_cells[this.props.cellId]
+    const cell_div = Jupyter.CodeCell.msg_cells[this.props.cellId];
     if (cell_div) {
       cell_div.code_mirror.display.lineDiv.scrollIntoViewIfNeeded();
     }
@@ -188,9 +217,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 
   addSelectionButtonClicked() {
-    const execute = `m.js_add_selection_to_shelf('${this.props.title}')`;
-    console.log("clicked, and executing", execute);
-    IPython.notebook.kernel.execute(execute);
+    // const execute = `m.js_add_selection_to_shelf('${this.props.title}')`;
+    // console.log("clicked, and executing", execute);
+    // IPython.notebook.kernel.execute(execute);
+    // we want to send this to comm
+    this.props.comm.send({
+      "command": "get_code_clipboard",
+      "df_name": this.props.title
+    });
   }
 
   clearGeneratedCells() {
@@ -202,8 +236,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       elementId: prevState.elementId,
       hidden: prevState.hidden,
       view: prevState.view,
-      yDomain: prevState.yDomain,
-      xDomain: prevState.xDomain,
+      // yDomain: prevState.yDomain,
+      // xDomain: prevState.xDomain,
       generatedCells: Array<any>(),      
       }
       return newState;
@@ -214,16 +248,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
    * Renders this component.
    */
   render() {
-    const fixYScale = () => {
-      console.log("FIXING Y");
-        // access the current scale
-        // const y_scale = this.view.scale(Y_SCALE);
-        // we need a ts-ignore because the typing for view is not complete!
-        // @ts-ignore
-        const y_scale = this.state.view.scale(Y_SCALE);
-        // then set the current scale
-        this.state.view.signal(Y_DOMAIN_SIGNAL, y_scale.domain());
-    };
     return (
       <div className="midas-element" id={get_df_id(this.props.dfName)}>
         <div className="midas-header">
@@ -232,30 +256,22 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           <div className="midas-header-options"></div>
           <button
             className={"midas-header-button"}
-            onClick={() => fixYScale()}>
-            Fix Y scale
-          </button>
-          <button
-            className={"midas-header-button"}
             onClick={() => this.getPythonButtonClicked()}>
-            get code
+            code
           </button>
           <button
             className={"midas-header-button"}
             onClick={() => this.selectCell()}
-          >find original cell</button>
-          <button
-             className={"midas-header-button"}
-             onClick={() => this.addSelectionButtonClicked()}>
-             Add Selection
-          </button>
-
+          >cell</button>
           <button
           className={"midas-header-button"}
           onClick={() => this.clearGeneratedCells()}>
               Clear generated cells
           </button>
-
+          <button
+            className={"midas-header-button"}
+            onClick={() => this.addSelectionButtonClicked()}
+          >clip</button>
           <button
             className={"midas-header-button"}
             onClick={() => this.toggleHiddenStatus()}>
@@ -267,7 +283,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
             onClick={(e) => this.props.removeChart(e)}>
             x
           </button>
-
         </div>
         <div
           id={this.state.elementId}

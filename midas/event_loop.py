@@ -7,7 +7,6 @@ from datetime import datetime
 from midas.state_types import DFName
 from .event_types import TickSpec, TickItem
 from .config import MidasConfig
-from .state import State
 from .util.errors import logging, debug_log
 
 
@@ -26,12 +25,12 @@ class EventLoop(object):
     tick_log: List[TickSpec]
     send_debug_msg: Callable[[str], Any]
 
-    def __init__(self, context: Context, state: State, config: MidasConfig):
+    def __init__(self, context: Context, dfs_ref, config: MidasConfig):
         self.tick_funcs = {}
         self.current_tick = 0
         self.tick_log = []
         self.context = context
-        self.state = state
+        self.dfs_ref = dfs_ref
         self.config = config
         
 
@@ -55,18 +54,16 @@ class EventLoop(object):
         #   we would need to access all that is currently selected and update the charts
         if self.config.linked:
             # ELSE we would know that the invididual links would be greated
-            for a_df_name in self.state.dfs:
-                df_info = self.state.dfs[a_df_name]
+            # note that we need to put it into a list, because otherwise it's an interator 
+            #   and we are modifying state, for instance, when we do a join, a a new df_name might be inserted
+            for a_df_name in list(self.dfs_ref):
+                df_info = self.dfs_ref[a_df_name]
                 if isinstance(df_info, VisualizedDFInfo):
                     s = gather_current_selection(all_predicate, a_df_name)
                     if len(s) > 0:
                         # debug_log("applying the filtering logic")
                         new_df = df_info.original_df.apply_selection(s)
-                        new_df.df_name = a_df_name
-                        # debug_log("debug events")
-                        # print(new_df)
-                        self.state.add_df(new_df)
-                
+                        new_df.filter_chart(a_df_name)
 
         if items:
             for _, i in enumerate(items):

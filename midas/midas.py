@@ -1,9 +1,8 @@
 from __future__ import absolute_import
 from datetime import datetime
-from IPython import get_ipython  # type: ignore
-from typing import Optional, Union, List, Dict
+from IPython import get_ipython
+from typing import Optional, Union, List, Dict, cast
 from datascience import Table
-from pyperclip import copy
 
 try:
     from IPython.display import display  # type: ignore
@@ -13,20 +12,27 @@ except ImportError as err:
     logging = lambda x, y: None
 
 from .stream import MidasSelectionStream
+from datetime import datetime
+from typing import Dict, List
 
-from midas.midas_algebra.dataframe import MidasDataFrame, DFInfo, RuntimeFunctions
+from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo
+from .util.errors import InternalLogicalError, debug_log, type_check_with_warning
+from .vis_types import SelectionEvent, EncodingSpec
+from .state_types import DFName
+from .ui_comm import UiComm
+from midas.midas_algebra.dataframe import MidasDataFrame, DFInfo, JoinInfo, RuntimeFunctions, RelationalOp, VisualizedDFInfo
 from midas.midas_algebra.context import Context
 
 from midas.vis_types import SelectionEvent
 from midas.state_types import DFName
 from midas.event_types import TickItem
-from .state import State
+# from .state import State
 from .ui_comm import UiComm
 from .midas_magic import MidasMagic
 from .util.instructions import HELP_INSTRUCTION
 from .util.errors import UserError, logging, check_not_null
 from .util.utils import isnotebook, find_name
-from .config import default_midas_config, MIDAS_INSTANCE_NAME, MidasConfig
+from .config import default_midas_config, MidasConfig
 from .event_loop import EventLoop
 
 
@@ -39,22 +45,24 @@ class Midas(object):
     """
     magic: MidasMagic
     ui_comm: UiComm
-    state: State
     context: Context
     rt_funcs: RuntimeFunctions
     current_selection: Dict[DFName, SelectionEvent]
+    assigned_name: str
+    df_info_store: Dict[DFName, DFInfo]
 
     def __init__(self, config: MidasConfig=default_midas_config):
         # check the assigned name, if it is not 'm', then complain
         assigned_name = find_name(True)
         if assigned_name is None:
             raise UserError("must assign a name")
-        ui_comm = UiComm(is_in_ipynb, self.js_add_selection, assigned_name)
+        self.assigned_name = assigned_name
+        # TODO: the organization here is still a little ugly
+        ui_comm = UiComm(is_in_ipynb, assigned_name, self.get_df_info, self.from_ops)
         self.ui_comm = ui_comm
-        self.shelf_selections = {}
-        self.state = State(ui_comm)
-        self.context = Context(self.state.dfs)
-        self.event_loop = EventLoop(self.context, self.state, config)
+        self.df_info_store = {}
+        self.context = Context(self.df_info_store, self.from_ops)
+        self.event_loop = EventLoop(self.context, self.df_info_store, config)
         self.current_selection = {}
         if is_in_ipynb:
             ip = get_ipython()
@@ -62,12 +70,67 @@ class Midas(object):
             ip.register_magics(magics)
 
         self.rt_funcs = RuntimeFunctions(
-            self.state.add_df,
+            self.add_df,
+            self.show_df,
+            self.show_df_filtered,
+            self.show_profiler,
             self.get_stream,
-            self.ui_comm.navigate_to_chart,
-            # self._eval,
-            self.context.apply_selection)
+            self.context.apply_selection,
+            self.add_join_info)
 
+
+    def add_df(self, mdf: MidasDataFrame):
+        if mdf.df_name is None:
+            raise InternalLogicalError("df should have a name to be updated")
+        self.df_info_store[mdf.df_name] = DFInfo(mdf)
+
+
+    def show_profiler(self, mdf: MidasDataFrame):
+        self.ui_comm.create_profile(mdf)
+
+
+    def show_df_filtered(self, mdf: MidasDataFrame, df_name: DFName):
+        # this should be called internally
+        if not self.has_df(df_name):
+            raise InternalLogicalError("cannot add filter to charts not created")
+        self.ui_comm.update_chart_filtered_value(mdf, df_name)
+
+
+    def show_df(self, mdf: MidasDataFrame, spec: EncodingSpec):
+        if mdf.df_name is None:
+            raise InternalLogicalError("df should have a name to be updated")
+        # also change to df
+        self.df_info_store[mdf.df_name] = VisualizedDFInfo(mdf)
+        self.ui_comm.create_chart(mdf, spec)
+
+
+    def has_df(self, df_name: DFName):
+        return df_name in self.df_info_store
+
+
+    def append_df_predicates(self, selection: SelectionEvent) -> DFInfo:
+        df_name = selection.df_name
+        df_info = self.df_info_store.get(df_name)
+        # idx = len(df_info.predicates)
+        if df_info and isinstance(df_info, VisualizedDFInfo):
+            df_info.predicates.append(selection)
+            return df_info
+        else:
+            raise InternalLogicalError(f"Df ({df_name}) should be defined and be visualized as a chart!")
+
+
+    def get_df_info(self, df_name: DFName):
+        return self.df_info_store.get(df_name)
+
+
+    def get_df(self, df_name: DFName):
+        r = self.df_info_store.get(df_name)
+        if r:
+            return r.df
+
+
+    def remove_df(self, df_name: DFName):
+        self.df_info_store.pop(df_name)
 
     def from_records(self, records):
         table = Table.from_records(records)
@@ -80,6 +143,20 @@ class Midas(object):
         df_name = find_name()
         return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
+
+    def from_df(self, df):
+        # take a pandas df
+        table = Table.from_df(df)
+        df_name = find_name()
+        return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
+
+
+    def from_ops(self, ops: RelationalOp):
+        return MidasDataFrame(ops, self.rt_funcs)
+
+    # def bin(self, column: str, ranges):
+    #     # returns with new columsn `col_name_bin` and 
+    #     return 
 
     def with_columns(self, *labels_and_values, **formatter):
         table = Table().with_columns(*labels_and_values, **formatter)
@@ -104,28 +181,22 @@ class Midas(object):
             if (df_name is None):
                 # FIXME: might place this function somewher else so they get the mental model easier?
                 raise UserError("DF must be named to access selection")
-        df_info = self.get_df_info(df_name)
+        df_info = cast(VisualizedDFInfo, self.get_df_info(df_name))
         check_not_null(df_info)
+
         return MidasSelectionStream(df_name, df_info.predicates, self.bind)
 
 
-    # @Shloak add join info here
-    def add_join_info(self, join_info):
-        self.context.add_info()
-        
-
+    def add_join_info(self, join_info: JoinInfo):
+        self.context.add_join_info(join_info)
+            
 
     def refresh_comm(self):
-        self.ui_comm.set_comm()
-
-
-    def has_df(self, df_name_raw: str):
-        return self.state.has_df(DFName(df_name_raw))
-
+        self.ui_comm.set_comm(self.assigned_name)
 
     # the re
     def get_df_info(self, df_name: DFName) -> Optional[DFInfo]:
-        return self.state.dfs.get(df_name)
+        return self.df_info_store.get(df_name)
 
 
     def get_df_vis_info(self, df_name: str):
@@ -137,18 +208,6 @@ class Midas(object):
         print(HELP_INSTRUCTION)
 
 
-    def js_add_selection(self, selection: SelectionEvent):
-        # cell_to_create = f"# based on your interaction on df {selection.df_name}"
-        # self.create_cell_with_text(cell_to_create)
-        # self.ui_comm.execute_current_cell()
-        return
-
-
-    def update_current_selection(self, selection: SelectionEvent):
-        self.current_selection[selection.df_name] = selection
-        # if selection.df_name in self.current_selection:
-        return
-
     def add_selection_by_interaction(self, df_name_raw: str, value):
         df_name = DFName(df_name_raw)
         predicate = self.ui_comm.get_predicate_info(df_name, value)
@@ -158,20 +217,11 @@ class Midas(object):
 
 
     def add_selection(self, selection: SelectionEvent):
-        # note that the selection is str because 
         # logging("add_selection", df_name)
-        self.state.append_df_predicates(selection)
-        self.update_current_selection(selection)
+        self.append_df_predicates(selection)
+        self.current_selection[selection.df_name] = selection
         self.event_loop.tick(selection.df_name, selection, self.current_selection)
         return
-
-
-    def create_cell_with_text(self, s):
-        d = datetime.now()
-        annotated = f"# auto-created on {d}\n{s}"
-        get_ipython().set_next_input(annotated)
-        # then execute it
-        self.ui_comm.execute_current_cell()
 
 
     def bind(self, df_name: DFName, cb):
@@ -184,54 +234,12 @@ class Midas(object):
         raise NotImplementedError()
     
 
-    def js_update_selection_shelf_selection_name(self, old_name: str, new_name: str):
-      self.state.shelf_selections[new_name] = self.state.shelf_selections[old_name]
-      del self.state.shelf_selections[old_name]
-    
 
-    def js_remove_selection_from_shelf(self, df_name: str):
-      del self.shelf_selections[df_name]
-
-
-    def js_add_selection_to_shelf(self, df_name_raw: str):
-        df_name = DFName(df_name_raw)
-        if self.state.has_df(df_name):
-            predicates = self.state.dfs[df_name].predicates
-            if (len(predicates) > 0):
-                predicate = predicates[-1]
-                # @RYAN: need to deal with the fact that the predicates are of 
-                #        multiple possible types, below makes the assumption that it's 
-                #        twoDimSelection
-                name = f"{predicate.x_column}_{predicate.x[0]}_{predicate.x[-1]}" # type: ignore
-                if name in self.state.shelf_selections:
-                  new_name = name
-                  counter = 1
-                  while new_name in self.state.shelf_selections:
-                    new_name = name
-                    name += str(counter)
-                  name = new_name
-
-                self.state.shelf_selections[name] = (predicate, df_name)
-                self.ui_comm.custom_message('add-selection', name)
-        else: 
-            self.ui_comm.send_user_error(f'no selection on {df_name} yet')
-
-    def js_get_current_chart_code(self, df_name: str) -> Optional[str]:
-        # figure out how to derive the current df
-        # don't have a story yet for complicated things...
-        # decide on if we want to focus on complex code gen...
-        if self.state.has_df(df_name):
-            # TODO: get predicates working again
-            code = self.state.get_df(df_name).df.get_code()
-            print(code)
-            copy(code)
-            return code
-        # something went wrong, so let's tell comes...
-        self.midas_cell_comm.send({
-            'type': 'error',
-            'value': f'no selection on {df_name} yet'
-        })
-        return
+    # def js_get_current_chart_code(self, df_name_raw: str) -> Optional[str]:
+    #     # figure out how to derive the current df
+    #     # don't have a story yet for complicated things...
+    #     # decide on if we want to focus on complex code gen...
+    #     return
 
 
 __all__ = ['Midas']

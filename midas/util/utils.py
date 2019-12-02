@@ -53,7 +53,7 @@ def find_name(throw_error=False) -> Optional[str]:
         a = body.targets[0].id # type: ignore
         if throw_error and (a is None):
             raise InternalLogicalError("We did not get a name when expected!")
-        debug_log(f"found name {a}")
+        # debug_log(f"found name {a}")
         return a
     elif throw_error:
         raise UserError("We expect you to assing this compute to a variable")

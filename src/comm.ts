@@ -57,6 +57,15 @@ export function makeComm() {
           const ref = createMidasComponent(midas_instance_name, comm, true);
           const on_msg = makeOnMsg(ref);
           set_on_msg(on_msg);
+          // also start watching cell execution
+          Jupyter.notebook.events.on("finished_execute.CodeCell", function(evt: any, data: any) {
+            const code = data.cell.get_text();
+            comm.send({
+              command: "cell-ran",
+              code,
+            });
+            LogDebug(`FINISHED excuting cell with code: ${code}`);
+          });
         }
       });
 
@@ -98,7 +107,6 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
       }
       case "notification": {
         const errorLoad = load as NotificationCommLoad;
-        LogDebug(`sending error ${errorLoad.value}`);
         const alertType = AlertType[errorLoad.style];
         refToMidas.addAlert(errorLoad.value, alertType);
         return;
@@ -119,7 +127,7 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
       case "create_then_execute_cell": {
         // const cellId = msg.parent_header.msg_id;
         const cellLoad = load as BasicLoad;
-        const c = Jupyter.notebook.insert_cell_below("code");
+        const c = Jupyter.notebook.insert_cell_above("code");
         c.set_text(cellLoad.value);
         c.execute();
         return;
@@ -156,6 +164,8 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
         LogSteps("Chart update", updateLoad.dfName);
         console.log(updateLoad.newData);
         refToMidas.replaceData(updateLoad.dfName, updateLoad.newData);
+        // also navigate
+        refToMidas.navigate(updateLoad.dfName);
         return;
       }
     }

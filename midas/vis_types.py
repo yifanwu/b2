@@ -13,6 +13,13 @@ class ChartType(Enum):
     line = "line"
 
 
+# set to numerical values to save space.
+class FilterLabelOptions(Enum):
+    filtered=0
+    unfiltered=1
+    none=2
+
+
 class Channel(Enum):
     x = "x"
     y = "y"
@@ -54,17 +61,31 @@ class CategoricalDistribution(DfTransform):
 # basic stub for Vega typing
 VegaSpecType = Dict[str, Any]
 
+class EncodingSpec(object):
+    def __init__(self, shape: str, x: str, y: str):
+        # bar, circle, line
+        self.shape = shape
+        self.x = x
+        self.y = y
 
-class ChartInfo(NamedTuple):
-    """[summary]
+    def __eq__(self, other: 'EncodingSpec'):
+        if self.shape == other.shape and self.x == other.x and self.y == other.y:
+            return True
+        return False
+
+
+    def __ne__(self, other: 'EncodingSpec'):
+        return not self.__eq__(other)
+
     
-    Arguments:
-        NamedTuple {[type]} -- [description]
-    """
-    chart_type: ChartType
-    # ASK Arvind: this seems to be redundant information to the vega spec?
-    encodings: Dict[Channel, str]
-    vega_spec: VegaSpecType
-    chart_title: str
-    additional_transforms: Optional[DfTransform]
-
+# class ChartInfo(NamedTuple):
+#     """[summary]
+    
+#     Arguments:
+#         NamedTuple {[type]} -- [description]
+#     """
+#     chart_type: ChartType
+#     # ASK Arvind: this seems to be redundant information to the vega spec?
+#     encodings: Dict[Channel, str]
+#     vega_spec: VegaSpecType
+#     chart_title: str
