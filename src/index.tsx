@@ -29,6 +29,7 @@ export function load_ipython_extension() {
 
   Jupyter.notebook.events.on('kernel_connected.Kernel', function() {
     LogSteps("!!Kernel starting!!");
+    
   });
 
   makeComm();
