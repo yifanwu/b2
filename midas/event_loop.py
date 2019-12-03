@@ -16,6 +16,7 @@ def gather_current_selection(current_selection: Dict[DFName, SelectionEvent], df
     for a_df in current_selection:
         if a_df != df_name:
             predicates.append(current_selection[a_df])
+    debug_log(f"Current selections: {predicates}")
     return predicates
     
 
@@ -46,7 +47,7 @@ class EventLoop(object):
         # tell state to change
         self.current_tick += 1
         self.tick_log.append(TickSpec(self.current_tick, df_name, all_predicate, datetime.now()))
-        logging("tick", f"processing {df_name} for predicate{all_predicate}")
+        logging("tick", f"processing {df_name} for predicates {all_predicate}\n\n")
         # TODO check if predicate the same as before
         items = self.tick_funcs.get(df_name)
 

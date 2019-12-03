@@ -26,7 +26,6 @@ class UiComm(object):
     vis_spec: Dict[DFName, EncodingSpec]
     id_by_df_name: Dict[DFName, DFId]
     is_in_ipynb: bool
-    tmp_debug: str
     midas_instance_name: str
     create_df_from_ops:  Callable[[RelationalOp], MidasDataFrame]
 
@@ -40,10 +39,11 @@ class UiComm(object):
         self.set_comm(midas_instance_name)
         self.get_df = get_df_fun
         self.create_df_from_ops = create_df_from_ops
-
+        self.tmp_log = []
 
     def handle_msg(self, data_raw):
         data = data_raw["content"]["data"]
+        self.tmp_log.append(data)
         debug_log(f"got message {data}")
         if "command" in data:
             command = data["command"]
@@ -112,7 +112,6 @@ class UiComm(object):
                 line = f"{df.df_name}.show({encoding_arg})"
             code_lines.append(line)
         code = "\n".join(code_lines)
-        self.send_debug_msg(f"-- process code called {code}")
         self.create_cell_with_text(code)
 
     def set_comm(self, midas_instance_name: str):
@@ -150,6 +149,7 @@ class UiComm(object):
         if mdf.df_name in self.vis_spec:
             if self.vis_spec[mdf.df_name] == encoding and self.id_by_df_name[mdf.df_name] == mdf.id:
                 # no op
+                debug_log("no op, same stuff")
                 return
 
         self.vis_spec[mdf.df_name] = encoding
@@ -194,6 +194,13 @@ class UiComm(object):
         # note that this is alwsays used for updating filtered information
         if df_name not in self.vis_spec:
             raise InternalLogicalError("Cannot update since not done before")
+        if df.table is None:
+            self.comm.send({
+                "type": "chart_update_data",
+                "dfName": df_name,
+                "newData": []
+            })
+        print("!!! df.table", df.table)
         new_data = dataframe_to_dict(df, FilterLabelOptions.filtered)
         self.comm.send({
             "type": "chart_update_data",
@@ -235,7 +242,7 @@ class UiComm(object):
 
     def get_predicate_info(self, df_name: DFName, selection) -> List[SelectionValue]:
         debug_log(f"selection is {selection}")
-        if selection is None:
+        if selection is None or len(selection.keys()) == 0:
             return []
         vis = self.vis_spec[df_name]
         if vis.shape == "circle":

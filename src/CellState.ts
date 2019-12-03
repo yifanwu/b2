@@ -42,6 +42,7 @@ export default class CellState {
     // we should see if we have just executed something exactly the same
     // if so, delete??
     // also if we have just executed a selection, and another came back, don't do anything
+    LogDebug(`!!!!!!!!! execute ${text}`);
     const c = Jupyter.notebook.insert_cell_above("code");
     c.set_text(text);
     c.execute();

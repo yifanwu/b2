@@ -1,12 +1,19 @@
 import { IS_OVERVIEW_FIELD_NAME } from "../constants";
 import { TopLevelSpec } from "vega-lite";
 
+
 export interface EncodingSpec {
   shape: string;
   x: string;
   y: string;
 }
 
+const colorSpec = {
+  "field": IS_OVERVIEW_FIELD_NAME, "type": "nominal",
+  "scale": {"range": ["blue", "gray"]},
+  // @ts-ignore
+  "legend": null
+};
 
 function genSelection(brush_only_x: boolean) {
   const spec = {
@@ -54,12 +61,7 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
               // @ts-ignore
               "stack": null
           },
-          "color": {
-              "field": IS_OVERVIEW_FIELD_NAME, "type": "nominal",
-              "scale": {"range": ["gray", "blue"]},
-              // @ts-ignore
-              "legend": null
-          },
+          "color": colorSpec,
           "opacity": {"value": 0.7}
         }
       };
@@ -68,17 +70,13 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": `Midas for ${dfName}`,
         "data": { "values": data },
-        "selection": genSelection(true),
+        "selection": genSelection(false),
         "mark": "point",
         "encoding": {
           "x": {"field": encoding.x, "type": "quantitative"},
           "y": {"field": encoding.y, "type": "quantitative"},
-          "color": {
-              "field": IS_OVERVIEW_FIELD_NAME, "type": "nominal",
-              "scale": {"range": ["gray", "blue"]},
-              // @ts-ignore
-              "legend": null
-          }
+          "color": colorSpec,
+          "opacity": {"value": 0.7}
         }
       };
     case "line":
@@ -91,12 +89,7 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
             "x": {"field": encoding.x, "type": "temporal"},
             "y": {"field": encoding.y, "type": "quantitative"}
         },
-        "color": {
-            "field": IS_OVERVIEW_FIELD_NAME, "type": "nominal",
-            "scale": {"range": ["gray", "blue"]},
-            // @ts-ignore
-            "legend": null
-        },
+        "color": colorSpec,
         "opacity": {"value": 0.7}
       };
     default:

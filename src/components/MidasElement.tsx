@@ -164,19 +164,19 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     }
   }
 
-    // FIXME: figure out the type...
-    async replaceData(newValues: any) {
-      if (!this.state.view) {
-        LogInternalError(`Vega view should have already been defined by now!`);
-      }
-      // can do this in python too
-      const changeSet = this.state.view
-        .changeset()
-        .remove((datum: any) => {return datum.is_overview === 0; })
-        .insert(newValues);
-
-      this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
+  // FIXME: figure out the type...
+  async replaceData(newValues: any) {
+    if (!this.state.view) {
+      LogInternalError(`Vega view should have already been defined by now!`);
     }
+    // can do this in python too
+    const changeSet = this.state.view
+      .changeset()
+      .remove((datum: any) => {return datum.is_overview === 0; })
+      .insert(newValues);
+
+    this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
+  }
 
   addSelectionButtonClicked() {
     this.props.comm.send({
@@ -190,7 +190,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
    */
   render() {
     return (
-      <div className="midas-element" id={getDfId(this.props.dfName)}>
+      <div className="card midas-element" id={getDfId(this.props.dfName)}>
         <div className="midas-header">
           <DragHandle/>
           <span className="midas-title">{this.props.title}</span>
@@ -223,12 +223,12 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 }
 
-const SortableItem = SortableElement((props: MidasElementProps) => (
-  <div className="sortable">
-    <MidasElement {...props}/>
-  </div>
-));
+// const SortableItem = SortableElement((props: MidasElementProps) => (
+//   <div className="sortable">
+//     <MidasElement {...props}/>
+//   </div>
+// ), {withRef: true});
 
-export default SortableItem;
+// export default SortableItem;
 
-// export default MidasElement;
+export default MidasElement;

@@ -39,7 +39,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ColumnShe
       column: columnName,
       df_name: tableName,
     };
-    console.log(`Clicked, and sending message with contents ${JSON.stringify(payload)}`);
+    // console.log(`Clicked, and sending message with contents ${JSON.stringify(payload)}`);
     this.props.comm.send(payload);
   }
 

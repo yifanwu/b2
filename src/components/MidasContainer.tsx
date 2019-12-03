@@ -5,7 +5,7 @@ import { SortableContainer } from "react-sortable-hoc";
 
 import MidasElement from "./MidasElement";
 import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
-import { LogInternalError, LogSteps, getDfId } from "../utils";
+import { LogInternalError, LogSteps, getDfId, LogDebug } from "../utils";
 import { AlertType } from "../types";
 import { ALERT_ALIVE_TIME } from "../constants";
 import CellState from "../CellState";
@@ -171,8 +171,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     });
     const self = this;
     window.setTimeout(() => {
-      console.log(`closing alert ${aId}`);
-      // just move the alert counter ahead
       self.setState(p => {
         return { alertCounter: p.alertCounter + 1};
       });
@@ -192,20 +190,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
    * @param dfName the name of the data frame
    */
   addDataFrame(dfName: string, encoding: EncodingSpec, data: any[], notebookCellId: number) {
-    console.log(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`);
-    if (this.state.elements.filter(e => e.dfName === dfName).length > 0) {
-      // replace the vega definition, must maintain the element's original position
-      this.setState(prevState => {
-        const e = prevState.elements.filter(e => e.dfName === dfName)[0];
-        e.notebookCellId = notebookCellId;
-        e.encoding = encoding;
-        e.data = data;
-        e.changeStep = 1;
-        return prevState;
-      });
-      return;
-    }
-
     this.setState(prevState => {
       // see if we need to delete the old one first
       const idx = prevState.elements.findIndex((v) => v.dfName === dfName);
@@ -216,9 +200,11 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         data,
         changeStep: 1
       };
-      if (idx > 0) {
+      if (idx > -1) {
+        // here we are replacing the value
         prevState.elements[idx] = newElement;
       } else {
+        LogDebug(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`);
         prevState.elements.push(newElement);
       }
       return prevState;
@@ -230,21 +216,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
   }
 
   replaceData(dfName: string, data: any[]) {
-    // need to invoke the replaceData function of the child...
-    // replaceData
-    // this.refLookup[dfName].replaceData();
     this.refsCollection[dfName].replaceData(data);
-    // this.setState(prevState => {
-    //   for (let e of prevState.elements) {
-    //     if (e.dfName === dfName) {
-    //       e.newData = data;
-    //       e.changeStep = e.changeStep + 1;
-    //     }
-    //   }
-    //   return {
-    //     elements: prevState.elements
-    //   };
-    // });
   }
 
 
@@ -281,9 +253,9 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       notebookCellId, dfName, data, encoding, changeStep: chanageStep }, index) => {
       return <MidasElement
         ref={r => {this.refsCollection[dfName] = r; }}
-        index={index}
+        // index={index}
         cellId={notebookCellId}
-        key={dfName}
+        key={`${dfName}-${encoding.shape}-${encoding.x}-${encoding.y}`}
         dfName={dfName}
         cellState={this.props.cellState}
         comm={this.props.comm}
@@ -307,7 +279,8 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
           <button className="notification-btn" onClick={close}>x</button>
       </div>);
     }
-    const content = (chartDivs.length > 0) ? <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>{chartDivs}</MidasSortableContainer> : <ChartsViewLandingPage/>;
+    // const content = (chartDivs.length > 0) ? <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>{chartDivs}</MidasSortableContainer> : <ChartsViewLandingPage/>;
+    const content = (chartDivs.length > 0) ? chartDivs : <ChartsViewLandingPage/>;
     return (
       <div className="shelf" id="midas-floater-container">
         {content}

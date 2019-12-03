@@ -113,7 +113,6 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellState: CellState) {
     LogSteps("on_msg", JSON.stringify(msg));
     (window as any).tmp = msg;
     const load = msg.content.data as MidasCommLoad;
-    console.log(load.type);
     switch (load.type) {
       case "hide": {
         refToSidebar.hide();

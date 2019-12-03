@@ -93,7 +93,9 @@ class Midas(object):
         # this should be called internally
         if not self.has_df(df_name):
             raise InternalLogicalError("cannot add filter to charts not created")
+        debug_log(f"show_df_filtered called {df_name}")
         self.ui_comm.update_chart_filtered_value(mdf, df_name)
+        self.df_info_store[df_name].update_df(mdf)
 
 
     def show_df(self, mdf: MidasDataFrame, spec: EncodingSpec):

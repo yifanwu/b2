@@ -57,7 +57,8 @@ def sanitize_dataframe(df: Table):
     import numpy as np
 
     if df is None:
-        raise InternalLogicalError("Cannot sanitize empty df")
+        return None
+        # raise InternalLogicalError("Cannot sanitize empty df")
 
     df = df.copy()
 
@@ -113,6 +114,9 @@ def dataframe_to_dict(df: MidasDataFrame, include_filter_label: FilterLabelOptio
         [type] -- [description]
     """
     clean_df = sanitize_dataframe(df.table)
+    if clean_df is None:
+        return []
+
     def s(x):
         k = {}
         for i, v in enumerate(x):
