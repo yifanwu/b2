@@ -73,11 +73,12 @@ class EncodingSpec(object):
             return True
         return False
 
-
     def __ne__(self, other: 'EncodingSpec'):
         return not self.__eq__(other)
 
-    
+    def to_json(self):
+        return '{{"shape": "{0}", "x": "{1}", "y" : "{2}"}}'.format(self.shape, self.x, self.y)
+
 # class ChartInfo(NamedTuple):
 #     """[summary]
     

@@ -41,7 +41,7 @@ export class SelectionShelf extends React.Component<SelectionShelfProps, Selecti
       (selectionName, index) => <SelectionItem selectionName={selectionName}
             onDelete={() => this.deleteItem(index)} key={selectionName}/>);
     const content = (selectionDivs.length > 0) ? selectionDivs : <SelectionShelfLandingPage/>;
-    return <div id="selection-shelf">
+    return <div className="shelf" id="selection-shelf">
       {content}
       </div>;
   }

@@ -19,7 +19,7 @@ from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, C
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, snap_to_nice_number
-from midas.charting.showme import gen_spec, infer_encoding
+from midas.showme import infer_encoding
 
 class UiComm(object):
     comm: Comm
@@ -67,7 +67,7 @@ class UiComm(object):
                 # something went wrong, so let's tell comes...
                 self.send_user_error(f'no selection on {df_name} yet')
             if command == "column-selected":
-                self.send_debug_msg("column-selected called")
+                # self.send_debug_msg("column-selected called")
                 column = data["column"]
                 df_name = DFName(data["df_name"])
                 self.tmp = f"{column}_{df_name}"
@@ -89,16 +89,14 @@ class UiComm(object):
                     self.send_user_error(f'no selection on {df_name} yet')
             else:
                 m = f"Command {command} not handled!"
-                self.send_debug_msg(m)
+                # self.send_debug_msg(m)
                 raise NotAllCaseHandledError(m)
         else:
             debug_log(f"Got message from JS Comm: {data}")
 
     def process_code(self, code: str):
-        # self.send_debug_msg(f"process code called {code}")
         assigned_dfs = self.get_dfs_from_code_str(code)
         assigned_dfs_str = ",".join([cast(str, df.df_name) for df in assigned_dfs])
-        # self.send_debug_msg(f"Cell-ran received and processed {assigned_dfs_str}")
         # we need to create the code
         if len(assigned_dfs) == 0:
             # do nothing
@@ -114,7 +112,7 @@ class UiComm(object):
                 line = f"{df.df_name}.show({encoding_arg})"
             code_lines.append(line)
         code = "\n".join(code_lines)
-        debug_log(f"processed code: {code}")
+        self.send_debug_msg(f"-- process code called {code}")
         self.create_cell_with_text(code)
 
     def set_comm(self, midas_instance_name: str):
@@ -145,7 +143,7 @@ class UiComm(object):
 
 
     def create_chart(self, mdf: MidasDataFrame, encoding: EncodingSpec):
-        debug_log(f"creating chart {mdf.df_name}")
+        # debug_log(f"creating chart {mdf.df_name}")
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         # first check if the encodings has changed
@@ -157,15 +155,15 @@ class UiComm(object):
         self.vis_spec[mdf.df_name] = encoding
         self.id_by_df_name[mdf.df_name] = mdf.id
 
-        vega_lite = gen_spec(mdf.df_name, encoding)
+        # vega_lite = gen_spec(mdf.df_name, encoding)
         records = dataframe_to_dict(mdf, FilterLabelOptions.unfiltered)
-        vega_lite["data"]["values"] = records 
-        vega = json.dumps(vega_lite)
-
+        # TODO: check if we even need to do the dumping
+        data = json.dumps(records)
         message = {
             'type': 'chart_render',
             "dfName": mdf.df_name,
-            'vega': vega
+            'encoding': encoding.to_json(),
+            'data': data,
         }
         self.comm.send(message)
         return
@@ -213,11 +211,9 @@ class UiComm(object):
         })
 
     def create_cell_with_text(self, s):
-        self.send_debug_msg(f"create_cell_with_text called {s}")
-        d = datetime.now()
+        # self.send_debug_msg(f"create_cell_with_text called {s}")
+        d = datetime.now().replace(microsecond=0)
         annotated = f"# [MIDAS] auto-created on {d}\n{s}"
-        # , execute=True
-        # if execute:
         self.comm.send({
             "type": "create_then_execute_cell",
             "value": annotated

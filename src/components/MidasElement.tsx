@@ -11,17 +11,20 @@ import { View } from "vega";
 import { TopLevelSpec } from "vega-lite";
 import vegaEmbed from "vega-embed";
 import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE } from "../constants";
-import { LogDebug, LogInternalError, get_df_id } from "../utils";
+import { LogDebug, LogInternalError, getDfId } from "../utils";
+import CellState from "../CellState";
+import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
 
 interface MidasElementProps {
   changeStep: number;
-  newData?: any[];
   cellId: number;
   removeChart: MouseEventHandler;
   dfName: string;
   title: string;
-  vegaSpec: TopLevelSpec;
+  encoding: EncodingSpec;
   tick: (dfName: string) => void;
+  cellState: CellState;
+  data: any[];
   comm: any; // unfortunately not typed
 }
 
@@ -29,26 +32,20 @@ interface MidasElementState {
   elementId: string;
   hidden: boolean;
   view: View;
-  // both are initial domains that we are fixing
-  // yDomain: any;
-  // xDomain: any;
+  currentBrush: string;
 }
 
 const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
-function getDebouncedFunction(dfName: string, tick: (dfName: string) => void) {
+function getDebouncedFunction(dfName: string, tick: (dfName: string) => void, cellState: CellState, addSelection: (selection: string) => void) {
   const callback = (signalName: string, value: any) => {
     // also need to call into python state...
     let valueStr = JSON.stringify(value);
     valueStr = (valueStr === "null") ? "None" : valueStr;
-
-    const c = Jupyter.notebook.insert_cell_above("code");
-    const date = new Date().toLocaleString("en-US");
-    const text = `# [MIDAS] You selected the following from ${dfName} at time ${date}\nm.add_selection_by_interaction("${dfName}", ${valueStr})`;
-    c.set_text(text);
-    c.execute();
+    cellState.addSelectionToPython(dfName, valueStr);
+    addSelection(valueStr);
     LogDebug("Sending to comm the selection");
     tick(dfName);
   };
@@ -78,13 +75,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   constructor(props: any) {
     super(props);
     this.embed = this.embed.bind(this);
+    this.addBrush = this.addBrush.bind(this);
+
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
       hidden: false,
       view: null,
       elementId,
-      // yDomain: null,
-      // xDomain: null
+      currentBrush: null,
     };
   }
 
@@ -93,23 +91,45 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.embed();
   }
 
+  addBrush(selectionStr: string) {
+    if (selectionStr === this.state.currentBrush) {
+      LogDebug(`add brush called ${selectionStr}, NOOP`);
+      return;
+    }
+    const selection = JSON.parse(selectionStr);
+    // @ts-ignore
+    const scale = this.state.view.scale;
+    const signal = this.state.view.signal;
+    const encoding = this.props.encoding;
+    if (selection[encoding.x]) {
+      const x_pixel_min = scale("x")(selection[encoding.x][0]);
+      const l = selection[encoding.x].length;
+      const x_pixel_max = scale("x")(selection[encoding.x][l - 1]);
+      // and update the brush_x and brush_y
+      signal("brush_x", [x_pixel_min, x_pixel_max]);
+    }
+    if (selection[encoding.y]) {
+      const y_pixel_min = scale("y")(selection[encoding.y][0]);
+      const y_pixel_max = scale("y")(selection[encoding.y][1]);
+      // and update the brush_y and brush_y
+      signal("brush_y", [y_pixel_min, y_pixel_max]);
+    }
+    return;
+  }
+
 
   embed() {
-    const { dfName, vegaSpec, tick } = this.props;
+    const { dfName, encoding, data, tick, cellState } = this.props;
+    const vegaSpec = genVegaSpec(encoding, dfName, data);
+    const addSelect = (currentBrush: string) => { this.setState({currentBrush}); };
+    // @ts-ignore
     vegaEmbed(`#${this.state.elementId}`, vegaSpec)
       .then((res: any) => {
         const view = res.view;
-        // const xDomain = view.scale(X_SCALE).domain();
-        // const yDomain = view.scale(Y_SCALE).domain();
         this.setState({
           view,
-          // xDomain,
-          // yDomain
         });
-        // this.state.view.signal(Y_DOMAIN_SIGNAL, yDomain);
-        // this.state.view.signal(X_DOMAIN_SIGNAL, xDomain);
-        LogDebug(`Registering signal for TICK, with signal ${SELECTION_SIGNAL}`);
-        res.view.addSignalListener(SELECTION_SIGNAL, getDebouncedFunction(dfName, tick));
+        res.view.addSignalListener(SELECTION_SIGNAL, getDebouncedFunction(dfName, tick, cellState, addSelect));
       })
       .catch((err: Error) => console.error(err));
   }
@@ -124,18 +144,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 
 
-  componentWillReceiveProps(nextProps: MidasElementProps) {
-    if (nextProps.changeStep > this.props.changeStep) {
-      const newValues = nextProps.newData;
-      // can do this in python too
-      const changeSet = this.state.view
-        .changeset()
-        .remove((datum: any) => { datum.is_overview === 0; })
-        .insert(newValues);
-
-      this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
-    }
-  }
+  // componentWillReceiveProps(nextProps: MidasElementProps) {
+  //   if (nextProps.changeStep > this.props.changeStep) {
+  //     }
+  // }
 
   /**
    * Selects the cell in the notebook where the data frame was defined.
@@ -152,37 +164,23 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     }
   }
 
-  getPythonButtonClicked() {
-    const execute = `m.js_get_current_chart_code('${this.props.dfName}')`;
-    console.log("clicked, and executing", execute);
-    IPython.notebook.kernel.execute(execute);
-  }
+    // FIXME: figure out the type...
+    async replaceData(newValues: any) {
+      if (!this.state.view) {
+        LogInternalError(`Vega view should have already been defined by now!`);
+      }
+      // can do this in python too
+      const changeSet = this.state.view
+        .changeset()
+        .remove((datum: any) => {return datum.is_overview === 0; })
+        .insert(newValues);
 
-  // FIXME: figure out the type...
-  async replaceData(newValues: any) {
-    if (!this.state.view) {
-      LogInternalError(`Vega view should have already been defined by now!`);
+      this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
     }
-    const filter = new Function(
-      "datum",
-      "return (true))"
-    );
-    const changeSet = this.state.view
-      .changeset()
-      .insert(newValues)
-      .remove(filter);
-
-    await this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
-
-  }
 
   addSelectionButtonClicked() {
-    // const execute = `m.js_add_selection_to_shelf('${this.props.title}')`;
-    // console.log("clicked, and executing", execute);
-    // IPython.notebook.kernel.execute(execute);
-    // we want to send this to comm
     this.props.comm.send({
-      "command": "get_code_clipboard",
+      "command": "add_selection",
       "df_name": this.props.title
     });
   }
@@ -192,16 +190,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
    */
   render() {
     return (
-      <div className="midas-element" id={get_df_id(this.props.dfName)}>
+      <div className="midas-element" id={getDfId(this.props.dfName)}>
         <div className="midas-header">
           <DragHandle/>
           <span className="midas-title">{this.props.title}</span>
           <div className="midas-header-options"></div>
-          <button
-            className={"midas-header-button"}
-            onClick={() => this.getPythonButtonClicked()}>
-            code
-          </button>
           <button
             className={"midas-header-button"}
             onClick={() => this.selectCell()}

@@ -2,9 +2,11 @@ import React from "react";
 import MidasContainer from "./MidasContainer";
 import { SelectionShelf } from "./SelectionShelf";
 import { ProfilerShelf } from "./ProfilerShelf";
+import CellState from "../CellState";
 
 interface MidasSidebarProps {
   comm: any;
+  cellState: CellState;
 }
 
 interface MidasSidebarState {
@@ -82,6 +84,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
           { midbar }
           <MidasContainer
             comm={this.props.comm}
+            cellState={this.props.cellState}
             ref={this.setMidasContainerRef}/>
         </div>
       </div>

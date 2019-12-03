@@ -45,7 +45,7 @@ class EventLoop(object):
     def tick(self, df_name: DFName, current_predicate: SelectionEvent, all_predicate: Dict[DFName, SelectionEvent]):
         # tell state to change
         self.current_tick += 1
-        self.tick_log.append(TickSpec(self.current_tick, df_name, datetime.now()))
+        self.tick_log.append(TickSpec(self.current_tick, df_name, all_predicate, datetime.now()))
         logging("tick", f"processing {df_name} for predicate{all_predicate}")
         # TODO check if predicate the same as before
         items = self.tick_funcs.get(df_name)

@@ -35,6 +35,17 @@ export function hashCode(str: string) {
   return hash;
 }
 
-export function get_df_id(dfName: string) {
+export function getDfId(dfName: string) {
   return `df-${dfName}-chart`;
+}
+
+export function trimStr(s: string, len: number) {
+  // assume that len is greater than 4
+  // we are going to trim from the middle
+  const amountToTrim = s.length - len;
+  if (amountToTrim < 1) {
+    return s;
+  }
+  const amountToKeep = Math.floor(len / 2) - 2;
+  return s.slice(0, amountToKeep) + "..." + s.slice(s.length - amountToKeep, s.length);
 }

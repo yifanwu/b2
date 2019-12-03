@@ -4,14 +4,23 @@ import { LogSteps, LogDebug } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
+import CellState from "./CellState";
+import { EncodingSpec } from "./charts/vegaGen";
 
 type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
 
-type NotificationCommLoad = {
+type NotificationCommLoad  = {
   type: string;
   style: string;
   value: string;
+};
+
+type BrushCommLoad = {
+  type: string;
+  dfName: string;
+  // again, not sure what gets sent..
+  selection: any;
 };
 
 type UpdateCommLoad = {
@@ -29,10 +38,17 @@ type ProfilerComm = {
 type ChartRenderComm = {
   type: string;
   dfName: string;
-  vega: string;
+  data: string;
+  encoding: string;
 };
 
-type MidasCommLoad = CommandLoad | BasicLoad| NotificationCommLoad | ProfilerComm | ChartRenderComm  | UpdateCommLoad;
+type MidasCommLoad = CommandLoad
+                     | BasicLoad
+                     | NotificationCommLoad
+                     | ProfilerComm
+                     | ChartRenderComm
+                     | UpdateCommLoad
+                     | BrushCommLoad;
 
 /**
  * Makes the comm responsible for discovery of which visualization
@@ -54,8 +70,9 @@ export function makeComm() {
         const load = msg.content.data as BasicLoad;
         const midas_instance_name = load.value;
         if (load.type === "midas_instance_name") {
-          const ref = createMidasComponent(midas_instance_name, comm, true);
-          const on_msg = makeOnMsg(ref);
+          const cellState = new CellState();
+          const ref = createMidasComponent(midas_instance_name, comm, cellState, true);
+          const on_msg = makeOnMsg(ref, cellState);
           set_on_msg(on_msg);
           // also start watching cell execution
           Jupyter.notebook.events.on("finished_execute.CodeCell", function(evt: any, data: any) {
@@ -86,7 +103,7 @@ export function makeComm() {
 }
 
 
-function makeOnMsg(refToSidebar: MidasSidebar) {
+function makeOnMsg(refToSidebar: MidasSidebar, cellState: CellState) {
 
   let refToMidas = refToSidebar.getMidasContainerRef();
   let refToProfilerShelf = refToSidebar.getProfilerShelfRef();
@@ -94,6 +111,7 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
 
   return function on_msg(msg: any) {
     LogSteps("on_msg", JSON.stringify(msg));
+    (window as any).tmp = msg;
     const load = msg.content.data as MidasCommLoad;
     console.log(load.type);
     switch (load.type) {
@@ -114,6 +132,7 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
       case "add-selection": {
         const selectionLoad = load as BasicLoad;
         refToSelectionShelf.addSelectionItem(selectionLoad.value);
+        // now we expect there to be a selection thing
         break;
       }
       case "reactive": {
@@ -127,9 +146,8 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
       case "create_then_execute_cell": {
         // const cellId = msg.parent_header.msg_id;
         const cellLoad = load as BasicLoad;
-        const c = Jupyter.notebook.insert_cell_above("code");
-        c.set_text(cellLoad.value);
-        c.execute();
+        const text = cellLoad.value;
+        cellState.execute(text);
         return;
       }
       case "navigate_to_vis": {
@@ -151,12 +169,19 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
       case "profiler_update_data": {
         return;
       }
+      case "make_brush": {
+        const brushLoad = load as BrushCommLoad;
+        LogSteps("make_brush", brushLoad.dfName);
+        refToMidas.addBrush(brushLoad.dfName, brushLoad.selection);
+        cellState.addToIgnoreList(brushLoad.dfName, brushLoad.selection);
+      }
       case "chart_render": {
         const chartRenderLoad = load as ChartRenderComm;
         LogSteps("Chart", chartRenderLoad.dfName);
         const cellId = msg.parent_header.msg_id;
-        const spec = JSON.parse(chartRenderLoad.vega);
-        refToMidas.addDataFrame(chartRenderLoad.dfName, spec, cellId);
+        const encoding = JSON.parse(chartRenderLoad.encoding);
+        const data = JSON.parse(chartRenderLoad.data);
+        refToMidas.addDataFrame(chartRenderLoad.dfName, encoding, data, cellId);
         return;
       }
       case "chart_update_data": {

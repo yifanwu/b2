@@ -3,23 +3,8 @@ from datascience.tables import Table
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_any_dtype 
 
 from midas.midas_algebra.dataframe import MidasDataFrame
-from midas.charting.bar_chart import gen_bar_chart_spec
-from midas.charting.scatter_plot import gen_scatterplot_spec
-from midas.charting.line_chart import gen_linechart_spec
-
 from midas.util.errors import type_check_with_warning, InternalLogicalError
 from midas.vis_types import EncodingSpec
-
-def gen_spec(df_name: str, encoding: EncodingSpec):
-    if encoding.shape == "bar":
-        return gen_bar_chart_spec(encoding, df_name)
-    elif encoding.shape == "circle":
-        return gen_scatterplot_spec(encoding, df_name)
-    elif encoding.shape == "line":
-        return gen_linechart_spec(encoding, df_name)
-    else:
-        raise UserWarning(f"Shape {encoding.shape} not supported")
-
 
 def infer_encoding(mdf: MidasDataFrame) -> Optional[EncodingSpec]:
     """Implements basic show me like feature

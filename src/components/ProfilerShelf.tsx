@@ -60,14 +60,14 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ColumnShe
         onClick={() => this.columnClicked(c.columnName, tableName)}
         onDelete={() => this.hideItem(tableName, i)}
       />);
-      return <div key={`table-${tableName}`}>
+      return <div className="profiler-table" key={`table-${tableName}`}>
         <div className="profiler-table-name">{tableName}</div>
         {columns}
       </div>;
     });
     const content = (tableDivs.length > 0) ? tableDivs : <ProfileShelfLandingPage/>;
     return (
-      <div id="profiler-shelf">
+      <div className="shelf" id="profiler-shelf">
       {/* <div className="midbar-shelf-header">source tables</div> */}
       {content}
       </div>
