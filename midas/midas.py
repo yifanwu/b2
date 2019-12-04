@@ -229,8 +229,8 @@ class Midas(object):
     def tick(self, all_predicate: Optional[List[SelectionValue]]=None):
         # tell state to change
         # self.current_tick += 1
-        debug_log("all_predicate")
-        print(all_predicate)
+        # debug_log("all_predicate")
+        # print(all_predicate)
         if all_predicate is None:
             # reset every df's filter
             for a_df_name in list(self.df_info_store):
@@ -242,8 +242,9 @@ class Midas(object):
                     if isinstance(df_info, VisualizedDFInfo):
                         s = list(filter(lambda p: p.column.df_name != a_df_name, all_predicate))
                         if len(s) > 0:
-                            debug_log("applying the filtering logic")
+                            # debug_log("applying the filtering logic")
                             new_df = df_info.original_df.apply_selection(s)
+                            # print(new_df.table)
                             new_df.filter_chart(a_df_name)
 
 

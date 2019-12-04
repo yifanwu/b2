@@ -81,15 +81,15 @@ class UiComm(object):
                 # now we need to figure out what kind of transformation is needed
                 # if nothing, we just show the table
             if command == "add_current_selection":
-                value = data["value"]
+                value = json.loads(data["value"])
                 # parse it first!
-                self.send_debug_msg(f"got add_current_selection message {value}")
+                # self.send_debug_msg(f"got add_current_selection message {value}")
                 selections = self.get_predicate_info(value)
                 all_predicate = self.add_selection(selections)
                 # now turn this into JSON
                 predicates = ",".join(list(map(lambda v: v.to_str(), all_predicate)))
                 code = f"{self.midas_instance_name}.make_selections([{predicates}])"
-                self.send_debug_msg(f"creating code\n{code}")
+                # self.send_debug_msg(f"creating code\n{code}")
                 self.create_cell_with_text(code)
             else:
                 m = f"Command {command} not handled!"
@@ -232,7 +232,7 @@ class UiComm(object):
         # self.send_debug_msg(f"create_cell_with_text called {s}")
         d = datetime.now().replace(microsecond=0)
         annotated = f"# [MIDAS] auto-created on {d}\n{s}"
-        self.send_debug_msg(f"creating cell: {annotated}")
+        # self.send_debug_msg(f"creating cell: {annotated}")
         self.comm.send({
             "type": "create_then_execute_cell",
             "value": annotated
