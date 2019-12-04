@@ -10,7 +10,7 @@ export interface EncodingSpec {
 
 const colorSpec = {
   "field": IS_OVERVIEW_FIELD_NAME, "type": "nominal",
-  "scale": {"range": ["blue", "gray"]},
+  "scale": {"range": ["#003E6B", "#9FB3C8"], "domain": [false, true]},
   // @ts-ignore
   "legend": null
 };
@@ -62,7 +62,7 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
               "stack": null
           },
           "color": colorSpec,
-          "opacity": {"value": 0.7}
+          "opacity": {"value": 0.5}
         }
       };
     case "circle":
@@ -76,7 +76,7 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
           "x": {"field": encoding.x, "type": "quantitative"},
           "y": {"field": encoding.y, "type": "quantitative"},
           "color": colorSpec,
-          "opacity": {"value": 0.7}
+          "opacity": {"value": 0.5}
         }
       };
     case "line":
@@ -90,7 +90,7 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
             "y": {"field": encoding.y, "type": "quantitative"}
         },
         "color": colorSpec,
-        "opacity": {"value": 0.7}
+        "opacity": {"value": 0.5}
       };
     default:
       throw Error(`${encoding.shape} not handled`);

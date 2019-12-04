@@ -11,8 +11,8 @@ import { View } from "vega";
 import { TopLevelSpec } from "vega-lite";
 import vegaEmbed from "vega-embed";
 import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE } from "../constants";
-import { LogDebug, LogInternalError, getDfId } from "../utils";
-import CellState from "../CellState";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound } from "../utils";
+import CellManager from "../CellManager";
 import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
 
 interface MidasElementProps {
@@ -23,7 +23,7 @@ interface MidasElementProps {
   title: string;
   encoding: EncodingSpec;
   tick: (dfName: string) => void;
-  cellState: CellState;
+  cellState: CellManager;
   data: any[];
   comm: any; // unfortunately not typed
 }
@@ -39,32 +39,6 @@ const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;â
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
-function getDebouncedFunction(dfName: string, tick: (dfName: string) => void, cellState: CellState, addSelection: (selection: string) => void) {
-  const callback = (signalName: string, value: any) => {
-    // also need to call into python state...
-    let valueStr = JSON.stringify(value);
-    valueStr = (valueStr === "null") ? "None" : valueStr;
-    cellState.addSelectionToPython(dfName, valueStr);
-    addSelection(valueStr);
-    LogDebug("Sending to comm the selection");
-    tick(dfName);
-  };
-
-  const wrapped = (name: any, value: any) => {
-    const n = new Date();
-    let l = (window as any).lastInvoked;
-    (window as any).lastInvoked = n;
-    if (l) {
-      if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
-        clearTimeout((window as any).lastInvokedTimer);
-      }
-      (window as any).lastInvokedTimer = setTimeout(() => callback(name, value), DEBOUNCE_RATE);
-    } else {
-      l = n;
-    }
-  };
-  return wrapped;
-}
 
 
 /**
@@ -76,6 +50,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     super(props);
     this.embed = this.embed.bind(this);
     this.addBrush = this.addBrush.bind(this);
+    this.getDebouncedFunction = this.getDebouncedFunction.bind(this);
 
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
@@ -117,11 +92,64 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     return;
   }
 
+  roundIfPossible(selection: any) {
+    const encoding = this.props.encoding;
+    if (encoding.shape !== "bar") {
+
+      let rounedEncoding: any = {};
+      // {"horsepower: []"}
+      if (selection[encoding.x]) {
+        // if it's number
+        // get diff
+        const digits = getDigitsToRound(selection[encoding.x][1], selection[encoding.x][0]);
+        rounedEncoding[encoding.x] = selection[encoding.x].map((v: number) => Math.round(v * digits) / digits);
+      }
+      if (selection[encoding.y]) {
+        const digits = getDigitsToRound(selection[encoding.y][1], selection[encoding.y][0]);
+        rounedEncoding[encoding.y] = selection[encoding.y].map((v: number) => Math.round(v * digits) / digits);
+      }
+      return rounedEncoding;
+    } else {
+      return selection;
+    }
+  }
+
+  getDebouncedFunction(dfName: string) {
+    const callback = (signalName: string, value: any) => {
+      // also need to call into python state...
+      let processedValue = {};
+      processedValue[dfName] = this.roundIfPossible(value);
+      let valueStr = JSON.stringify(processedValue);
+      valueStr = (valueStr === "null") ? "None" : valueStr;
+      this.props.comm.send({
+        "command": "add_current_selection",
+        "value": valueStr
+      });
+      // this.props.cellState.addSelectionToPython(dfName, valueStr);
+      this.setState({currentBrush: valueStr});
+      LogDebug("Sending to comm the selection");
+      this.props.tick(dfName);
+    };
+
+    const wrapped = (name: any, value: any) => {
+      const n = new Date();
+      let l = (window as any).lastInvoked;
+      (window as any).lastInvoked = n;
+      if (l) {
+        if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
+          clearTimeout((window as any).lastInvokedTimer);
+        }
+        (window as any).lastInvokedTimer = setTimeout(() => callback(name, value), DEBOUNCE_RATE);
+      } else {
+        l = n;
+      }
+    };
+    return wrapped;
+  }
 
   embed() {
     const { dfName, encoding, data, tick, cellState } = this.props;
     const vegaSpec = genVegaSpec(encoding, dfName, data);
-    const addSelect = (currentBrush: string) => { this.setState({currentBrush}); };
     // @ts-ignore
     vegaEmbed(`#${this.state.elementId}`, vegaSpec)
       .then((res: any) => {
@@ -129,7 +157,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         this.setState({
           view,
         });
-        res.view.addSignalListener(SELECTION_SIGNAL, getDebouncedFunction(dfName, tick, cellState, addSelect));
+        (window as any)[`view_${dfName}`] = view;
+        const cb = this.getDebouncedFunction(dfName);
+        res.view.addSignalListener(SELECTION_SIGNAL, cb);
       })
       .catch((err: Error) => console.error(err));
   }
@@ -172,7 +202,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     // can do this in python too
     const changeSet = this.state.view
       .changeset()
-      .remove((datum: any) => {return datum.is_overview === 0; })
+      .remove((datum: any) => {return datum.is_overview === false; })
       .insert(newValues);
 
     this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();

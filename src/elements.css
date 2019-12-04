@@ -137,10 +137,9 @@
 }
 
 .editable-text-button {
-  font-family: monospace;
   margin-left: 5pt;
-  margin-right: 1pt;
-  border-radius: 50%;
+  padding: 5px;
+  border-radius: 5px;
 } 
 
 .midas-header-button {
@@ -150,6 +149,19 @@
   color: var(--blue-grey-300);
   border: 2px solid var(--blue-grey-300);
 }
+
+.reset-button {
+  margin: var(--size-1);
+  border-radius: var(--size-1);
+  background-color: var(--red-050);
+  color: var(--red-300);
+  border: 2px solid var(--red-050);
+}
+
+.reset-button :hover {
+  border: 2px solid var(--red-200);
+}
+
 
 .midas-header-button :hover {
   border: 2px solid var(--blue-grey-500);
@@ -213,7 +225,7 @@
 }
 
 #profiler-shelf {
-  height: 50%;
+  min-height: 200px;
   background-color: var(--yellow-vivid-100);
   /* overflow: scroll; */
 }
@@ -346,7 +358,29 @@
 }
 
 #midas-midbar {
-  width: var(--size-10);
+  width: var(--size-11);
   background-color: var(--red-100);
   box-sizing: border-box;
+  overflow-y: auto;
+}
+
+a.tip span {
+  display: none
+}
+
+a.tip:hover {
+  cursor: help;
+  position: relative
+}
+
+a.tip:hover span {
+    padding: 5px 20px 5px 5px;
+    display: block;
+    z-index: 100;
+    left: 0px;
+    margin: var(--size-2);
+    /* width: 250px; */
+    position: absolute;
+    top: 10px;
+    text-decoration: none
 }

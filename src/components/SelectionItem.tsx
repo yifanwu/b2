@@ -10,7 +10,8 @@ interface SelectionItemState {
 
 interface SelectionItemProps {
   selectionName: string;
-  onDelete: Function;
+  onDelete: () => void;
+  onClick: () => void;
 }
 
 export class SelectionItem extends React.Component<SelectionItemProps, SelectionItemState> {
@@ -32,21 +33,6 @@ export class SelectionItem extends React.Component<SelectionItemProps, Selection
     });
   }
 
-  deleteButtonClicked() {
-    const selName = this.state.selectionName;
-    const execute = `m.js_remove_selection_from_shelf('${selName}')`;
-    console.log("clicked, and executing", execute);
-    IPython.notebook.kernel.execute(execute);
-    this.props.onDelete();
- }
-
-  clicked() {
-    const comm = Jupyter.notebook.kernel.comm_manager.new_comm(MIDAS_CELL_COMM_NAME);
-    const payload = {type: "name", value: this.state.selectionName};
-    console.log(`Clicked, and sending message with contents ${JSON.stringify(payload)}`);
-    comm.send(payload);
-
-  }
 
   render() {
     return (
@@ -54,12 +40,11 @@ export class SelectionItem extends React.Component<SelectionItemProps, Selection
           <EditableText
             value={this.state.selectionName}
             onSave={(val) => this.onSave(val)}
-            onDeleteButtonClicked={() => this.deleteButtonClicked()}
-            onTextClicked={() => this.clicked()}
+            onDeleteButtonClicked={this.props.onDelete}
+            onTextClicked={this.props.onClick}
             onEditStart={() => Jupyter.keyboard_manager.disable()}
           />
       </div>
     );
   }
 }
-

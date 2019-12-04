@@ -4,7 +4,7 @@ import { LogSteps, LogDebug } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
-import CellState from "./CellState";
+import CellManager from "./CellManager";
 import { EncodingSpec } from "./charts/vegaGen";
 
 type CommandLoad = { type: string };
@@ -70,7 +70,7 @@ export function makeComm() {
         const load = msg.content.data as BasicLoad;
         const midas_instance_name = load.value;
         if (load.type === "midas_instance_name") {
-          const cellState = new CellState();
+          const cellState = new CellManager(midas_instance_name);
           const ref = createMidasComponent(midas_instance_name, comm, cellState, true);
           const on_msg = makeOnMsg(ref, cellState);
           set_on_msg(on_msg);
@@ -103,7 +103,7 @@ export function makeComm() {
 }
 
 
-function makeOnMsg(refToSidebar: MidasSidebar, cellState: CellState) {
+function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
 
   let refToMidas = refToSidebar.getMidasContainerRef();
   let refToProfilerShelf = refToSidebar.getProfilerShelfRef();
@@ -111,7 +111,6 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellState: CellState) {
 
   return function on_msg(msg: any) {
     LogSteps("on_msg", JSON.stringify(msg));
-    (window as any).tmp = msg;
     const load = msg.content.data as MidasCommLoad;
     switch (load.type) {
       case "hide": {
@@ -128,10 +127,9 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellState: CellState) {
         refToMidas.addAlert(errorLoad.value, alertType);
         return;
       }
-      case "add-selection": {
+      case "add_selection_to_shelf": {
         const selectionLoad = load as BasicLoad;
         refToSelectionShelf.addSelectionItem(selectionLoad.value);
-        // now we expect there to be a selection thing
         break;
       }
       case "reactive": {
@@ -146,7 +144,7 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellState: CellState) {
         // const cellId = msg.parent_header.msg_id;
         const cellLoad = load as BasicLoad;
         const text = cellLoad.value;
-        cellState.execute(text);
+        cellManager.execute(text);
         return;
       }
       case "navigate_to_vis": {
@@ -172,7 +170,7 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellState: CellState) {
         const brushLoad = load as BrushCommLoad;
         LogSteps("make_brush", brushLoad.dfName);
         refToMidas.addBrush(brushLoad.dfName, brushLoad.selection);
-        cellState.addToIgnoreList(brushLoad.dfName, brushLoad.selection);
+        cellManager.addToIgnoreList(brushLoad.selection);
       }
       case "chart_render": {
         const chartRenderLoad = load as ChartRenderComm;

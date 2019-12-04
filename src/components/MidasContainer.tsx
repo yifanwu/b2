@@ -8,7 +8,7 @@ import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
 import { LogInternalError, LogSteps, getDfId, LogDebug } from "../utils";
 import { AlertType } from "../types";
 import { ALERT_ALIVE_TIME } from "../constants";
-import CellState from "../CellState";
+import CellManager from "../CellManager";
 import { EncodingSpec } from "../charts/vegaGen";
 
 // Mappings
@@ -50,7 +50,7 @@ interface ContainerState {
 
 interface ContainerProps {
   comm: any;
-  cellState: CellState;
+  cellManager: CellManager;
 }
 
 const MidasSortableContainer = SortableContainer(({children}: {children: any}) => {
@@ -257,7 +257,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         cellId={notebookCellId}
         key={`${dfName}-${encoding.shape}-${encoding.x}-${encoding.y}`}
         dfName={dfName}
-        cellState={this.props.cellState}
+        cellState={this.props.cellManager}
         comm={this.props.comm}
         tick={this.tick}
         title={dfName}

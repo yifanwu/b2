@@ -1,4 +1,8 @@
 import * as React from "react";
+import { CloseButton } from "./CloseButton";
+import { trimStr } from "./../utils";
+import { SELECTION_TEXT_MAX_LEN } from "./../constants";
+
 interface EditableTextState {
   editing: boolean; // True if currently editing
   savedValue: string; // The value most recently saved
@@ -12,6 +16,7 @@ interface EditableTextProps {
   onDeleteButtonClicked: () => void;
   onEditStart: () => void;
 }
+
 export class EditableText extends React.Component<EditableTextProps, EditableTextState> {
   constructor(props: EditableTextProps) {
     super(props);
@@ -63,11 +68,15 @@ export class EditableText extends React.Component<EditableTextProps, EditableTex
         </div>
       );
     } else {
+      const shownName = trimStr(this.state.savedValue, SELECTION_TEXT_MAX_LEN);
+      const supportText = this.state.savedValue;
       return (
         <div className="editable-text-header">
-          <span className="editable-text-title" onClick={this.props.onTextClicked}> {this.state.savedValue} </span>
-          <button className="editable-text-button" onClick={() => this.startEditing()}>Edit</button>
-          <button className="editable-text-button" onClick={() => this.props.onDeleteButtonClicked()}>x</button>
+          <span className="editable-text-title" onClick={this.props.onTextClicked}>
+          <a className="tip">{shownName}<span>{supportText}</span></a>
+          </span>
+          <button className="editable-text-button" onClick={() => this.startEditing()}>✏️</button>
+          <CloseButton onClick={this.props.onDeleteButtonClicked} size={15}/>
         </div>
       );
     }

@@ -13,6 +13,7 @@ export const SELECTION_SIGNAL = "brush";
 export const IS_OVERVIEW_FIELD_NAME = "is_overview";
 export const ALERT_ALIVE_TIME = 100000;
 export const SHELF_TEXT_MAX_LEN = 12;
+export const SELECTION_TEXT_MAX_LEN = 10;
 
 // brecause we are using vega-lite these are not needed...
 // TODO: clean up once we confirm we do not need

@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 
 import { MidasSidebar } from "./components/MidasSidebar";
 import { LogSteps } from "./utils";
-import CellState from "./CellState";
+import CellManager from "./CellManager";
 
 /**
  * Makes the resizer that allows changing the width of the sidebar.
@@ -36,7 +36,7 @@ function syncWidth(parentSelector: string, childSelector: string, marginAdjust =
   $(childSelector).width(parentwidth - marginAdjust );
 }
 
-export function createMidasComponent(midas_instance_name: string, comm: any, cellState: CellState, is_first_time: boolean = true): MidasSidebar {
+export function createMidasComponent(midas_instance_name: string, comm: any, cellManager: CellManager, is_first_time: boolean = true): MidasSidebar {
   LogSteps("createMidasComponent", midas_instance_name);
   const SIDEBAR_ID = "midas-sidebar-wrapper";
 
@@ -52,7 +52,7 @@ export function createMidasComponent(midas_instance_name: string, comm: any, cel
   ReactDOM.render(<MidasSidebar
     ref={(comp) => midasRef = comp}
     comm={comm}
-    cellState={cellState}
+    cellManager={cellManager}
     />, document.getElementById("midas-sidebar-wrapper"));
 
   if (is_first_time) {

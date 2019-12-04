@@ -24,6 +24,16 @@ export function LogDebug(message: string) {
   console.log(`${FgMegenta}${message}${Reset}`);
 }
 
+
+export function getDigitsToRound(minVal: number, maxVal: number) {
+  const diff = maxVal - minVal;
+  const digits = Math.log(diff) / Math.log(10);
+  if (digits < 1) {
+    return Math.pow(10, Math.ceil(digits * -1) + 2);
+  }
+  return 1;
+}
+
 export function hashCode(str: string) {
   let hash = 0, i, chr;
   if (str.length === 0) return hash;
