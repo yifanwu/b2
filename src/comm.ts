@@ -14,6 +14,10 @@ type NotificationCommLoad = {
   value: string;
 };
 
+type HandShakeComm = {
+  type: string
+}
+
 type UpdateCommLoad = {
   type: string;
   dfName: string;
@@ -78,9 +82,9 @@ export function makeComm() {
         // this should be ran only once
         LogDebug("Refresh-comm called");
         // FIXME: commenting the below out because there are some infinite loops going on here...
-        // comm.send({
-        //   "command": "refresh-comm"
-        // });
+        comm.send({
+          "command": "refresh-comm"
+        });
       }
     });
 }

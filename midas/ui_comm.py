@@ -20,6 +20,15 @@ from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHa
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, snap_to_nice_number
 from midas.charting.showme import gen_spec, infer_encoding
+import functools
+
+def logged(f):
+        @functools.wraps(f)
+        def wrapper(self, *args, **kwargs):
+            ret = f(self, *args, **kwargs)
+            self.log(f, args, kwargs)
+            return ret
+        return wrapper
 
 class UiComm(object):
     comm: Comm
@@ -40,6 +49,15 @@ class UiComm(object):
         self.set_comm(midas_instance_name)
         self.get_df = get_df_fun
         self.create_df_from_ops = create_df_from_ops
+        self.logged_comms = [] # 
+        self.kek = ""
+
+    def log(self, function, args, kwargs):
+        self.logged_comms.append((function, args, kwargs))
+
+    def run_log(self):
+        for f, args, kwargs in self.logged_comms:
+          f(self, *args, *kwargs)
 
 
     def handle_msg(self, data_raw):
@@ -48,9 +66,13 @@ class UiComm(object):
         if "command" in data:
             command = data["command"]
             if command == "refresh-comm":
-                self.send_debug_msg("Refreshing comm")
-                self.set_comm(self.midas_instance_name)
-                return
+                self.kek += "asdf"
+                if not self.logged_comms:
+                  return
+                else:
+                  self.run_log()
+                # self.send_debug_msg("Refreshing comm")
+                # self.set_comm(self.midas_instance_name)
             if command == "cell-ran":
                 if "code" in data:
                     code = data["code"]
@@ -143,7 +165,7 @@ class UiComm(object):
         self.comm.send(message)
         return
 
-
+    @logged
     def create_chart(self, mdf: MidasDataFrame, encoding: EncodingSpec):
         debug_log(f"creating chart {mdf.df_name}")
         if mdf.df_name is None:
@@ -191,7 +213,7 @@ class UiComm(object):
                 debug_log(f"We cannot find {a} in current state")
         return df_assignments
     
-
+    @logged
     def update_chart_filtered_value(self, df: MidasDataFrame, df_name: DFName):
         # note that this is alwsays used for updating filtered information
         if df_name not in self.vis_spec:
@@ -212,6 +234,7 @@ class UiComm(object):
             "value": message
         })
 
+    @logged
     def create_cell_with_text(self, s):
         self.send_debug_msg(f"create_cell_with_text called {s}")
         d = datetime.now()

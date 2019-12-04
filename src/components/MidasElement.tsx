@@ -39,38 +39,6 @@ const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;â
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
-function getDebouncedFunction(dfName: string, tick: (dfName: string) => void) {
-  const callback = (signalName: string, value: any) => {
-    // also need to call into python state...
-    let valueStr = JSON.stringify(value);
-    valueStr = (valueStr === "null") ? "None" : valueStr;
-
-    const c = Jupyter.notebook.insert_cell_above("code");
-    const date = new Date().toLocaleString("en-US");
-    const text = `# [MIDAS] You selected the following from ${dfName} at time ${date}\nm.add_selection_by_interaction("${dfName}", ${valueStr})`;
-    c.set_text(text);
-    c.execute();
-    LogDebug("Sending to comm the selection");
-    tick(dfName);
-  };
-
-  const wrapped = (name: any, value: any) => {
-    const n = new Date();
-    let l = (window as any).lastInvoked;
-    (window as any).lastInvoked = n;
-    if (l) {
-      if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
-        clearTimeout((window as any).lastInvokedTimer);
-      }
-      (window as any).lastInvokedTimer = setTimeout(() => callback(name, value), DEBOUNCE_RATE);
-    } else {
-      l = n;
-    }
-  };
-  return wrapped;
-}
-
-
 /**
  * Contains the visualization as well as a header with actions to minimize,
  * delete, or find the corresponding cell of the visualization.
@@ -90,24 +58,27 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     };
   }
 
-   getDebouncedFunction(dfName: string, comm: any, tick: (dfName: string) => void) {
+   getDebouncedFunction(dfName: string, tick: (dfName: string) => void) {
     const callback = (signalName: string, value: any) => {
       // also need to call into python state...
       let valueStr = JSON.stringify(value);
       valueStr = (valueStr === "null") ? "None" : valueStr;
   
       const c = Jupyter.notebook.insert_cell_above("code");
+
+      this.setState(prevState => {
+        prevState.generatedCells.push(c);
+        return prevState; 
+      });
+
+
+ 
+
       const date = new Date().toLocaleString("en-US");
       const text = `# [MIDAS] You selected the following from ${dfName} at time ${date}\nm.add_selection_by_interaction("${dfName}", ${valueStr})`;
       c.set_text(text);
       c.execute();
       LogDebug("Sending to comm the selection");
-  
-      this.setState(prevState => {
-        prevState.generatedCells.push(c);
-        return prevState; 
-      });
-  
       tick(dfName);
     };
   
@@ -149,7 +120,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         // this.state.view.signal(Y_DOMAIN_SIGNAL, yDomain);
         // this.state.view.signal(X_DOMAIN_SIGNAL, xDomain);
         LogDebug(`Registering signal for TICK, with signal ${SELECTION_SIGNAL}`);
-        res.view.addSignalListener(SELECTION_SIGNAL, getDebouncedFunction(dfName, tick));
+        res.view.addSignalListener(SELECTION_SIGNAL, this.getDebouncedFunction(dfName, tick));
       })
       .catch((err: Error) => console.error(err));
   }
@@ -228,7 +199,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 
   clearGeneratedCells() {
+    console.log(`There are ${this.state.generatedCells.length} to clear`);
     this.state.generatedCells.forEach(c => {
+      console.log(`Deleting cell that exists at index ${Jupyter.notebook.find_cell_index(c)}`);
       Jupyter.notebook.delete_cell(Jupyter.notebook.find_cell_index(c))
     });
     this.setState(prevState => {
@@ -236,8 +209,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       elementId: prevState.elementId,
       hidden: prevState.hidden,
       view: prevState.view,
-      // yDomain: prevState.yDomain,
-      // xDomain: prevState.xDomain,
       generatedCells: Array<any>(),      
       }
       return newState;
