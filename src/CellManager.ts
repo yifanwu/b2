@@ -35,7 +35,7 @@ export default class CellManager {
       LogDebug("Ignored!");
     } else {
       const date = new Date().toLocaleString("en-US");
-      const text = `# [MIDAS] You selected the following from at time ${date}\n${this.midasInstanceName}.make_selection(${selectionValue})`;
+      const text = `# [MIDAS] You selected the following from at time ${date}\n${this.midasInstanceName}.make_selections(${selectionValue})`;
       this.execute(text);
     }
   }

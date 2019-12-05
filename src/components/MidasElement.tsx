@@ -173,12 +173,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     });
   }
 
-
-  // componentWillReceiveProps(nextProps: MidasElementProps) {
-  //   if (nextProps.changeStep > this.props.changeStep) {
-  //     }
-  // }
-
   /**
    * Selects the cell in the notebook where the data frame was defined.
    * Note that currently if the output was generated and then the page
@@ -208,13 +202,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
   }
 
-  addSelectionButtonClicked() {
-    this.props.comm.send({
-      "command": "add_selection",
-      "df_name": this.props.title
-    });
-  }
-
   /**
    * Renders this component.
    */
@@ -229,10 +216,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
             className={"midas-header-button"}
             onClick={() => this.selectCell()}
           >cell</button>
-          <button
-            className={"midas-header-button"}
-            onClick={() => this.addSelectionButtonClicked()}
-          >clip</button>
           <button
             className={"midas-header-button"}
             onClick={() => this.toggleHiddenStatus()}>

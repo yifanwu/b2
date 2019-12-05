@@ -68,15 +68,18 @@ export class EditableText extends React.Component<EditableTextProps, EditableTex
         </div>
       );
     } else {
-      const shownName = trimStr(this.state.savedValue, SELECTION_TEXT_MAX_LEN);
-      const supportText = this.state.savedValue;
+      const savedValue = this.state.savedValue;
+      const shownName = trimStr(savedValue, SELECTION_TEXT_MAX_LEN);
+      const textDiv = (shownName.length < this.state.savedValue.length)
+        ? <a className="tip">{shownName}<span>{savedValue}</span></a>
+        : <span>{savedValue}</span>;
       return (
         <div className="editable-text-header">
           <span className="editable-text-title" onClick={this.props.onTextClicked}>
-          <a className="tip">{shownName}<span>{supportText}</span></a>
+            {textDiv}
           </span>
-          <button className="editable-text-button" onClick={() => this.startEditing()}>✏️</button>
-          <CloseButton onClick={this.props.onDeleteButtonClicked} size={15}/>
+          <a onClick={() => this.startEditing()}>✏️</a>
+          <CloseButton onClick={this.props.onDeleteButtonClicked} size={10}/>
         </div>
       );
     }

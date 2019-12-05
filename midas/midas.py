@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 from datetime import datetime
-from midas.midas_algebra.selection import SelectionValue
+from midas.midas_algebra.selection import SelectionValue, SelectionType
 from IPython import get_ipython
-from typing import Optional, Union, List, Dict, cast, Any
+from typing import Optional, Union, List, Dict, cast, Any, Iterator
 from datascience import Table
 
 try:
@@ -221,7 +221,8 @@ class Midas(object):
         selection_event = SelectionEvent(date, selection, DFName(df_name))
         self.append_df_predicates(selection_event)
         new_selection = list(filter(lambda v: v.column.df_name != df_name, self.current_selection))
-        new_selection.extend(selection)
+        none_empty = list(filter(lambda s: s.selection_type != SelectionType.empty , selection))
+        new_selection.extend(none_empty)
         self.current_selection = new_selection
         return self.current_selection
 
@@ -233,22 +234,26 @@ class Midas(object):
         # print(all_predicate)
         if all_predicate is None:
             # reset every df's filter
-            for a_df_name in list(self.df_info_store):
-                self.show_df_filtered(None, a_df_name)
+            for df_info in self.get_visualized_df_info():
+                self.show_df_filtered(None, df_info.df_name)
         else:
             if self.config.linked:
-                for a_df_name in list(self.df_info_store):
-                    df_info = self.df_info_store[a_df_name]
-                    if isinstance(df_info, VisualizedDFInfo):
-                        s = list(filter(lambda p: p.column.df_name != a_df_name, all_predicate))
-                        if len(s) > 0:
-                            # debug_log("applying the filtering logic")
-                            new_df = df_info.original_df.apply_selection(s)
-                            # print(new_df.table)
-                            new_df.filter_chart(a_df_name)
+                for df_info in self.get_visualized_df_info():
+                    s = list(filter(lambda p: p.column.df_name != df_info.df_name, all_predicate))
+                    if len(s) > 0:
+                        new_df = df_info.original_df.apply_selection(s)
+                        # debug_log(f"Filtering df {a_df_name}")
+                        new_df.filter_chart(df_info.df_name)
 
 
-    def make_selections(self, current_selections_array: List[Dict]):
+    def get_visualized_df_info(self) -> Iterator[VisualizedDFInfo]:
+        for df_name in list(self.df_info_store):
+            df_info = self.df_info_store[df_name]
+            if isinstance(df_info, VisualizedDFInfo):
+                yield df_info
+        
+
+    def make_selections(self, current_selections_array: Optional[List[Dict]]=None):
         if current_selections_array is None:
             # this is a reset!
             self.current_selection = []

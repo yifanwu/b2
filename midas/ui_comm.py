@@ -15,7 +15,7 @@ from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS
 from midas.state_types import DFName
 
 from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, VisualizedDFInfo, DFInfo
-from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef
+from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, snap_to_nice_number
@@ -87,8 +87,11 @@ class UiComm(object):
                 selections = self.get_predicate_info(value)
                 all_predicate = self.add_selection(selections)
                 # now turn this into JSON
-                predicates = ",".join(list(map(lambda v: v.to_str(), all_predicate)))
-                code = f"{self.midas_instance_name}.make_selections([{predicates}])"
+                param_str = ""
+                if len(all_predicate) > 0:
+                    predicates = ",".join(list(map(lambda v: v.to_str(), all_predicate)))
+                    param_str = f"[{predicates}]"
+                code = f"{self.midas_instance_name}.make_selections({param_str})"
                 # self.send_debug_msg(f"creating code\n{code}")
                 self.create_cell_with_text(code)
             else:
@@ -106,17 +109,19 @@ class UiComm(object):
             # do nothing
             debug_log("no df to process")
             return
-        code_lines = []
+        # code_lines = []
         for df in assigned_dfs:
             if df.is_base_df:
-                line = f"{df.df_name}.show_profile()"
+                # line = f"{df.df_name}.show_profile()"
+                # just execute it! since there is no configuration
+                df.show_profile()
             else:
                 encoding = infer_encoding(df)
                 encoding_arg = f"shape='{encoding.shape}', x='{encoding.x}', y='{encoding.y}'"
                 line = f"{df.df_name}.show({encoding_arg})"
-            code_lines.append(line)
-        code = "\n".join(code_lines)
-        self.create_cell_with_text(code)
+                self.create_cell_with_text(line)
+        #     code_lines.append(line)
+        # code = "\n".join(code_lines)
 
     def set_comm(self, midas_instance_name: str):
         if self.is_in_ipynb:
@@ -198,7 +203,7 @@ class UiComm(object):
     def update_chart_filtered_value(self, df: Optional[MidasDataFrame], df_name: DFName):
         # note that this is alwsays used for updating filtered information
         if df_name not in self.vis_spec:
-            raise InternalLogicalError("Cannot update since not done before")
+            raise InternalLogicalError(f"Cannot update df: {df_name}, since it was not visualized before")
         if df is None or df.table is None:
             self.comm.send({
                 "type": "chart_update_data",
@@ -259,19 +264,34 @@ class UiComm(object):
         result = []
         for df_name in selections:
             selection = selections[df_name]
+            # check if it's null, if it is, it's empty selection!
             vis = self.vis_spec[df_name]
-            if vis.shape == "circle":
-                x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
-                y_selection = NumericRangeSelection(ColumnRef(vis.y, df_name), selection[vis.y][0], selection[vis.y][1])
-                result.extend([x_selection, y_selection])
-            elif vis.shape == "bar":
-                predicate = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
-                result.extend([predicate])
-            elif vis.shape == "line":
-                x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
-                result.extend([x_selection])
+            x = ColumnRef(vis.x, df_name)
+            if not selection:
+                if vis.shape == "circle":
+                    y = ColumnRef(vis.y, df_name)
+                    result.extend([
+                        EmptySelection(x),
+                        EmptySelection(y)
+                    ])
+                else:
+                    result.extend([
+                        EmptySelection(x)
+                    ])
             else:
-                raise InternalLogicalError(f"{vis.shape} not handled")
+                if vis.shape == "circle":
+                    y = ColumnRef(vis.y, df_name)
+                    x_selection = NumericRangeSelection(x, selection[vis.x][0], selection[vis.x][1])
+                    y_selection = NumericRangeSelection(y, selection[vis.y][0], selection[vis.y][1])
+                    result.extend([x_selection, y_selection])
+                elif vis.shape == "bar":
+                    predicate = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
+                    result.extend([predicate])
+                elif vis.shape == "line":
+                    x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
+                    result.extend([x_selection])
+                else:
+                    raise InternalLogicalError(f"{vis.shape} not handled")
         return result
 
     def update_selection_shelf_selection_name(self, old_name: str, new_name: str):

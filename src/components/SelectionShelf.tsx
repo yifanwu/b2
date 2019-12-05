@@ -10,6 +10,7 @@ interface SelectionShelfProps {
 
 interface SelectionShelfState {
   selectionItem: {title: string, value: string}[];
+  resetDisabled: boolean;
 }
 
 export class SelectionShelf extends React.Component<SelectionShelfProps, SelectionShelfState> {
@@ -19,16 +20,21 @@ export class SelectionShelf extends React.Component<SelectionShelfProps, Selecti
 
     this.state = {
       selectionItem: [],
+      resetDisabled: true
     };
   }
 
   addSelectionItem(selection: string) {
+    // also if selection is empty string, ""
+    //   then we disable the reset-button, otherwise enable it
     this.setState(prevState => {
       prevState.selectionItem.push({
-        title: `selection_${prevState.selectionItem.length}`,
+        title: `snapNo${prevState.selectionItem.length + 1}`,
         value: selection
       });
-      return prevState;
+      const selectionItem = prevState.selectionItem;
+      const resetDisabled = (selection === "") ? true : false;
+      return { selectionItem, resetDisabled };
     });
   }
 
@@ -60,12 +66,12 @@ export class SelectionShelf extends React.Component<SelectionShelfProps, Selecti
         onClick={() => this.setCurrentSelections(index)}
         key={selection.title}
       />);
-    const content = (selectionDivs.length > 0) ? selectionDivs : <SelectionShelfLandingPage/>;
-    const buttons = <>
-    <button className="reset-button" onClick={this.resetAllSelection}>reset</button>
-    </>;
+    const selectedContent = <div>
+      <button className="reset-button" disabled={this.state.resetDisabled} onClick={this.resetAllSelection}>reset</button>
+      {selectionDivs}
+    </div>;
+    const content = (selectionDivs.length > 0) ? selectedContent : <SelectionShelfLandingPage/>;
     return <div className="shelf" id="selection-shelf">
-      {buttons}
       {content}
       </div>;
   }
