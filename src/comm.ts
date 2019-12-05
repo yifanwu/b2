@@ -10,6 +10,12 @@ import { EncodingSpec } from "./charts/vegaGen";
 type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
 
+type ExecuteLoad = {
+  type: string;
+  funName: string;
+  params: string;
+};
+
 type NotificationCommLoad  = {
   type: string;
   style: string;
@@ -44,6 +50,7 @@ type ChartRenderComm = {
 
 type MidasCommLoad = CommandLoad
                      | BasicLoad
+                     | ExecuteLoad
                      | NotificationCommLoad
                      | ProfilerComm
                      | ChartRenderComm
@@ -110,7 +117,7 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
   let refToSelectionShelf = refToSidebar.getSelectionShelfRef();
 
   return function on_msg(msg: any) {
-    LogSteps("on_msg", JSON.stringify(msg));
+    // LogSteps("on_msg", JSON.stringify(msg));
     const load = msg.content.data as MidasCommLoad;
     switch (load.type) {
       case "hide": {
@@ -139,7 +146,11 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         refToMidas.addAlert(`Success adding cell to ${reactiveLoad.value}`, AlertType.Confirmation);
         return;
       }
-      // this is slightly awkward
+      case "execute_fun": {
+        const executeLoad = load as ExecuteLoad;
+        cellManager.executeFunction(executeLoad.funName, executeLoad.params);
+        return;
+      }
       case "create_then_execute_cell": {
         // const cellId = msg.parent_header.msg_id;
         const cellLoad = load as BasicLoad;
@@ -183,7 +194,7 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
       }
       case "chart_update_data": {
         const updateLoad = load as UpdateCommLoad;
-        LogSteps("Chart update", updateLoad.dfName);
+        // LogSteps("Chart update", updateLoad.dfName);
         console.log(updateLoad.newData);
         refToMidas.replaceData(updateLoad.dfName, updateLoad.newData);
         // also navigate

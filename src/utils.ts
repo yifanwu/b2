@@ -16,6 +16,31 @@ export function LogInternalError(message: string): null {
   return null;
 }
 
+
+export function executeCellId(cellId: string) {
+  const idx = Jupyter.notebook.find_cell_index(cellId);
+  if (idx < 0) throw LogInternalError(`Was not able to find cell ${cellId}`);
+  Jupyter.notebook.select(idx);
+  const cell = Jupyter.notebook.get_cell(idx);
+  if (!cell) throw LogInternalError(`Was not able to find cell ${cellId}`);
+  cell.code_mirror.display.lineDiv.scrollIntoView();
+  cell.execute();
+}
+
+export function navigateToNotebookCell(cellId: string) {
+  // note that this the the cell msg!
+  LogDebug(`navigate to cell called for ${cellId}`);
+  const cell = Jupyter.notebook.get_msg_cell(cellId);
+  const index = Jupyter.notebook.find_cell_index(cell);
+  if (!index) throw LogInternalError(`Was not able to find cell ${cellId}`);
+  Jupyter.notebook.select(index);
+  cell.code_mirror.display.lineDiv.scrollIntoView();
+  // const cell_div = Jupyter.CodeCell.msg_cells[cellId];
+  // if (cell_div) {
+  //   cell_div
+  // }
+}
+
 export function LogSteps(func: string, message?: string) {
   console.log(`${FgGreen}[${func}] ${message}${Reset}`);
 }

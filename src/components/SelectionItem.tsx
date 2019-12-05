@@ -2,17 +2,19 @@
 
 import React from "react";
 import { EditableText } from "./EditableText";
-import { MIDAS_CELL_COMM_NAME } from "../constants";
+
+
+interface SelectionItemProps {
+  isActive: boolean;
+  selectionName: string;
+  onDelete: () => void;
+  onClick: () => void;
+}
 
 interface SelectionItemState {
   selectionName: string;
 }
 
-interface SelectionItemProps {
-  selectionName: string;
-  onDelete: () => void;
-  onClick: () => void;
-}
 
 export class SelectionItem extends React.Component<SelectionItemProps, SelectionItemState> {
   constructor(props: SelectionItemProps) {
@@ -36,8 +38,9 @@ export class SelectionItem extends React.Component<SelectionItemProps, Selection
 
   render() {
     return (
-      <div className="midas-shelf-selection-item">
+      <div className={`midas-shelf-selection-item`}>
           <EditableText
+            isActive={this.props.isActive}
             value={this.state.selectionName}
             onSave={(val) => this.onSave(val)}
             onDeleteButtonClicked={this.props.onDelete}

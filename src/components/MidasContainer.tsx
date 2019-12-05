@@ -21,7 +21,7 @@ interface MappingMetaData {
 // TODO: we need to re
 interface ContainerElementState {
   dfName: string;
-  notebookCellId: number;
+  notebookCellId: string;
   encoding: EncodingSpec;
   data: any[];
   changeStep: number;
@@ -189,7 +189,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
    * @param id the id of the data frame
    * @param dfName the name of the data frame
    */
-  addDataFrame(dfName: string, encoding: EncodingSpec, data: any[], notebookCellId: number) {
+  addDataFrame(dfName: string, encoding: EncodingSpec, data: any[], notebookCellId: string) {
     this.setState(prevState => {
       // see if we need to delete the old one first
       const idx = prevState.elements.findIndex((v) => v.dfName === dfName);

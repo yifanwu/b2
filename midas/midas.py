@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from datetime import datetime
-from midas.midas_algebra.selection import SelectionValue, SelectionType
+from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType
 from IPython import get_ipython
 from typing import Optional, Union, List, Dict, cast, Any, Iterator
 from datascience import Table
@@ -102,9 +102,20 @@ class Midas(object):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         # also change to df
-        self.df_info_store[mdf.df_name] = VisualizedDFInfo(mdf)
+        df_name = mdf.df_name
+        # if this visualization has existed, we must remove the existing interactions
+        # the equivalent of updating the selection with empty
+        if self.has_df_chart(mdf.df_name):
+            self.add_selection([EmptySelection(ColumnRef(spec.x, df_name))])
+        self.df_info_store[df_name] = VisualizedDFInfo(mdf)
         self.ui_comm.create_chart(mdf, spec)
+        # now we need to see if we need to apply selection,
+        if len(self.current_selection) > 0:
+            new_df = mdf.apply_selection(self.current_selection)
+            new_df.filter_chart(df_name)
 
+    def has_df_chart(self, df_name: DFName):
+        return df_name in self.df_info_store and isinstance(self.df_info_store[df_name], VisualizedDFInfo)
 
     def has_df(self, df_name: DFName):
         return df_name in self.df_info_store

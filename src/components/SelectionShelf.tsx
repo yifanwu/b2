@@ -11,6 +11,7 @@ interface SelectionShelfProps {
 interface SelectionShelfState {
   selectionItem: {title: string, value: string}[];
   resetDisabled: boolean;
+  currentActiveSelection: number;
 }
 
 export class SelectionShelf extends React.Component<SelectionShelfProps, SelectionShelfState> {
@@ -20,21 +21,29 @@ export class SelectionShelf extends React.Component<SelectionShelfProps, Selecti
 
     this.state = {
       selectionItem: [],
+      currentActiveSelection: 0,
       resetDisabled: true
     };
   }
 
   addSelectionItem(selection: string) {
-    // also if selection is empty string, ""
-    //   then we disable the reset-button, otherwise enable it
     this.setState(prevState => {
-      prevState.selectionItem.push({
-        title: `snapNo${prevState.selectionItem.length + 1}`,
-        value: selection
-      });
       const selectionItem = prevState.selectionItem;
       const resetDisabled = (selection === "") ? true : false;
-      return { selectionItem, resetDisabled };
+      const idx = prevState.selectionItem.findIndex(s => s.value === selection);
+      if (idx > -1) {
+        const currentActiveSelection = idx;
+        return { selectionItem , resetDisabled, currentActiveSelection };
+      }
+      else {
+        const l = prevState.selectionItem.length;
+        prevState.selectionItem.push({
+          title: `snapNo${l + 1}`,
+          value: selection
+        });
+        const currentActiveSelection = l;
+        return { selectionItem, resetDisabled, currentActiveSelection };
+      }
     });
   }
 
@@ -50,17 +59,17 @@ export class SelectionShelf extends React.Component<SelectionShelfProps, Selecti
 
 
   setCurrentSelections(index: number) {
-    // here we add to the cell state directly
-    this.props.cellManager.makeSelection(this.state.selectionItem[index].value);
+    this.props.cellManager.makeSelectionFromCharts(this.state.selectionItem[index].value);
   }
 
   resetAllSelection() {
-    this.props.cellManager.makeSelection("");
+    this.props.cellManager.makeSelectionFromCharts("");
   }
 
   render() {
     const selectionDivs = this.state.selectionItem.map(
       (selection, index) => <SelectionItem
+        isActive={index === this.state.currentActiveSelection}
         selectionName={selection.title}
         onDelete={() => this.deleteItem(index)}
         onClick={() => this.setCurrentSelections(index)}

@@ -7,6 +7,7 @@ export const MIDAS_CELL_COMM_NAME = "midas-cell-comm";
 //   maybe consider changing this to a JSON file for better synchronization
 
 // weird name because we are using vega-lite generated code
+export const MIDAS_SELECTION_FUN = "make_selections";
 export const DEFAULT_DATA_SOURCE = "source_0";
 export const COUNT_COL_NAME = "count";
 export const SELECTION_SIGNAL = "brush";

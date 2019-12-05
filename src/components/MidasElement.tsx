@@ -11,13 +11,13 @@ import { View } from "vega";
 import { TopLevelSpec } from "vega-lite";
 import vegaEmbed from "vega-embed";
 import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE } from "../constants";
-import { LogDebug, LogInternalError, getDfId, getDigitsToRound } from "../utils";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell } from "../utils";
 import CellManager from "../CellManager";
 import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
 
 interface MidasElementProps {
   changeStep: number;
-  cellId: number;
+  cellId: string;
   removeChart: MouseEventHandler;
   dfName: string;
   title: string;
@@ -179,13 +179,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
    * is refreshed, this may not work.
    */
   selectCell() {
-    const cell = Jupyter.notebook.get_msg_cell(this.props.cellId);
-    const index = Jupyter.notebook.find_cell_index(cell);
-    Jupyter.notebook.select(index);
-    const cell_div = Jupyter.CodeCell.msg_cells[this.props.cellId];
-    if (cell_div) {
-      cell_div.code_mirror.display.lineDiv.scrollIntoViewIfNeeded();
-    }
+    navigateToNotebookCell(this.props.cellId);
   }
 
   // FIXME: figure out the type...

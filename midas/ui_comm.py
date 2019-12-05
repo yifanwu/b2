@@ -77,7 +77,7 @@ class UiComm(object):
                 df_name = DFName(data["df_name"])
                 self.tmp = f"{column}_{df_name}"
                 code = self.create_distribution_query(column, df_name)
-                self.create_cell_with_text(code)
+                self.create_then_execute_cell(code)
                 # now we need to figure out what kind of transformation is needed
                 # if nothing, we just show the table
             if command == "add_current_selection":
@@ -91,9 +91,8 @@ class UiComm(object):
                 if len(all_predicate) > 0:
                     predicates = ",".join(list(map(lambda v: v.to_str(), all_predicate)))
                     param_str = f"[{predicates}]"
-                code = f"{self.midas_instance_name}.make_selections({param_str})"
                 # self.send_debug_msg(f"creating code\n{code}")
-                self.create_cell_with_text(code)
+                self.execute_fun("make_selections", param_str)
             else:
                 m = f"Command {command} not handled!"
                 # self.send_debug_msg(m)
@@ -119,7 +118,7 @@ class UiComm(object):
                 encoding = infer_encoding(df)
                 encoding_arg = f"shape='{encoding.shape}', x='{encoding.x}', y='{encoding.y}'"
                 line = f"{df.df_name}.show({encoding_arg})"
-                self.create_cell_with_text(line)
+                self.create_then_execute_cell(line)
         #     code_lines.append(line)
         # code = "\n".join(code_lines)
 
@@ -233,14 +232,19 @@ class UiComm(object):
             "value": json.dumps(selections)
         })
         
-    def create_cell_with_text(self, s):
+    def create_then_execute_cell(self, s):
         # self.send_debug_msg(f"create_cell_with_text called {s}")
-        d = datetime.now().replace(microsecond=0)
-        annotated = f"# [MIDAS] auto-created on {d}\n{s}"
         # self.send_debug_msg(f"creating cell: {annotated}")
         self.comm.send({
             "type": "create_then_execute_cell",
-            "value": annotated
+            "value": s
+        })
+
+    def execute_fun(self, fun: str, params: str):
+        self.comm.send({
+            "type": "execute_fun",
+            "funName": fun,
+            "params": params,
         })
 
     def send_debug_msg(self, message: str):

@@ -3,19 +3,21 @@ import { CloseButton } from "./CloseButton";
 import { trimStr } from "./../utils";
 import { SELECTION_TEXT_MAX_LEN } from "./../constants";
 
-interface EditableTextState {
-  editing: boolean; // True if currently editing
-  savedValue: string; // The value most recently saved
-  temporaryValue: string; // The current value being typed in
-}
-
 interface EditableTextProps {
+  isActive: boolean;
   value: string;
   onSave: (newValue: string) => void;
   onTextClicked: (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
   onDeleteButtonClicked: () => void;
   onEditStart: () => void;
 }
+
+interface EditableTextState {
+  editing: boolean; // True if currently editing
+  savedValue: string; // The value most recently saved
+  temporaryValue: string; // The current value being typed in
+}
+
 
 export class EditableText extends React.Component<EditableTextProps, EditableTextState> {
   constructor(props: EditableTextProps) {
@@ -68,17 +70,19 @@ export class EditableText extends React.Component<EditableTextProps, EditableTex
         </div>
       );
     } else {
+
+      const additionalClass = this.props.isActive ? "active-selection-item" : "";
       const savedValue = this.state.savedValue;
       const shownName = trimStr(savedValue, SELECTION_TEXT_MAX_LEN);
       const textDiv = (shownName.length < this.state.savedValue.length)
         ? <a className="tip">{shownName}<span>{savedValue}</span></a>
         : <span>{savedValue}</span>;
       return (
-        <div className="editable-text-header">
+        <div className={`shelf-item editable-text-header ${additionalClass}`}>
           <span className="editable-text-title" onClick={this.props.onTextClicked}>
             {textDiv}
           </span>
-          <a onClick={() => this.startEditing()}>✏️</a>
+          <a onClick={() => this.startEditing()}> ✏️</a>
           <CloseButton onClick={this.props.onDeleteButtonClicked} size={10}/>
         </div>
       );
