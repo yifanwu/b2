@@ -105,6 +105,39 @@
   padding-right: 20px;
 }
 
+/* begin selection related */
+
+#selection-shelf {
+  height: 50%;
+  background-color: var(--blue-100);
+  text-align: center;
+}
+
+.editable-text-header {
+  background-color: var(--blue-050);
+  border: 2px solid var(--blue-050);
+}
+
+.active-selection-item {
+  border: 2px solid var(--blue-500);
+}
+
+.reset-button {
+  margin-top: var(--size-1);
+  border-radius: var(--size-1);
+  background-color: var(--red-050);
+  color: var(--red-300);
+  text-align: left;
+  border: 2px solid var(--red-050);
+  margin-bottom: var(--size-2);
+}
+
+.reset-button :hover {
+  border: 2px solid var(--red-200);
+}
+
+/* end selection related */
+
 #notebook {
   padding-left: 10pt;
   padding-right: 0pt;
@@ -151,19 +184,6 @@
   border: 2px solid var(--blue-grey-300);
 }
 
-.reset-button {
-  margin-top: var(--size-1);
-  border-radius: var(--size-1);
-  background-color: var(--red-050);
-  color: var(--red-300);
-  text-align: left;
-  border: 2px solid var(--red-050);
-  margin-bottom: var(--size-2);
-}
-
-.reset-button :hover {
-  border: 2px solid var(--red-200);
-}
 
 
 .midas-header-button :hover {
@@ -206,15 +226,6 @@
   border: 2px solid var(--yellow-vivid-400);
 }
 
-.editable-text-header {
-  background-color: var(--red-050);
-  border: 2px solid var(--red-050);
-}
-
-.active-selection-item {
-  border: 2px solid var(--red-500);
-
-}
 
 .column-item-header {
   background-color: var(--yellow-vivid-050);
@@ -246,11 +257,6 @@
   /* overflow: scroll; */
 }
 
-#selection-shelf {
-  height: 50%;
-  background-color: var(--red-100);
-  text-align: center;
-}
 
 .code {
   font-family: 'Courier New', Courier, monospace;
@@ -376,14 +382,11 @@
 
 #midas-midbar {
   width: var(--size-11);
-  background-color: var(--red-100);
+  background-color: var(--blue-100);
   box-sizing: border-box;
   overflow-y: auto;
 }
 
-.active-selection-item {
-
-}
 
 a.tip span {
   display: none

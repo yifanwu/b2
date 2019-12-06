@@ -81,6 +81,6 @@ export function trimStr(s: string, len: number) {
   if (amountToTrim < 1) {
     return s;
   }
-  const amountToKeep = Math.floor(len / 2) - 2;
+  const amountToKeep = Math.floor(len / 2) - 1;
   return s.slice(0, amountToKeep) + "..." + s.slice(s.length - amountToKeep, s.length);
 }

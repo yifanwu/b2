@@ -4,13 +4,19 @@ import { LogSteps, LogDebug } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
-import CellManager from "./CellManager";
+import CellManager, { FunKind }  from "./CellManager";
 import { EncodingSpec } from "./charts/vegaGen";
 
 type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
 
-type ExecuteLoad = {
+type ExecuteCodeLoad = {
+  type: string;
+  funKind: FunKind;
+  code: string;
+};
+
+type ExecuteFunCallLoad = {
   type: string;
   funName: string;
   params: string;
@@ -50,7 +56,8 @@ type ChartRenderComm = {
 
 type MidasCommLoad = CommandLoad
                      | BasicLoad
-                     | ExecuteLoad
+                     | ExecuteFunCallLoad
+                     | ExecuteCodeLoad
                      | NotificationCommLoad
                      | ProfilerComm
                      | ChartRenderComm
@@ -88,7 +95,7 @@ export function makeComm() {
               command: "cell-ran",
               code,
             });
-            LogDebug(`FINISHED excuting cell with code: ${code}`);
+            // LogDebug(`FINISHED excuting cell with code: ${code}`);
           });
         }
       });
@@ -147,15 +154,14 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         return;
       }
       case "execute_fun": {
-        const executeLoad = load as ExecuteLoad;
+        const executeLoad = load as ExecuteFunCallLoad;
         cellManager.executeFunction(executeLoad.funName, executeLoad.params);
         return;
       }
       case "create_then_execute_cell": {
         // const cellId = msg.parent_header.msg_id;
-        const cellLoad = load as BasicLoad;
-        const text = cellLoad.value;
-        cellManager.execute(text);
+        const cellLoad = load as ExecuteCodeLoad;
+        cellManager.create_cell_and_execute(cellLoad.code, cellLoad.funKind);
         return;
       }
       case "navigate_to_vis": {

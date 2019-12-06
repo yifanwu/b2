@@ -127,7 +127,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       });
       // this.props.cellState.addSelectionToPython(dfName, valueStr);
       this.setState({currentBrush: valueStr});
-      LogDebug("Sending to comm the selection");
+      // LogDebug("Sending to comm the selection");
       this.props.tick(dfName);
     };
 

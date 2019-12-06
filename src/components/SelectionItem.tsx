@@ -26,13 +26,14 @@ export class SelectionItem extends React.Component<SelectionItemProps, Selection
 
   onSave(val: string) {
     Jupyter.keyboard_manager.enable();
-    const prevName = this.state.selectionName;
-    // TODO: somehow use prevstate for this? But can't seem to access in callback...
-    this.setState({selectionName: val}, () => {
-      const execute = `m.js_update_selection_shelf_selection_name('${prevName}', '${val}')`;
-      console.log("clicked, and executing", execute);
-      IPython.notebook.kernel.execute(execute);
-    });
+    // do nothing else
+    // const prevName = this.state.selectionName;
+    // // TODO: somehow use prevstate for this? But can't seem to access in callback...
+    // this.setState({selectionName: val}, () => {
+    //   const execute = `m.js_update_selection_shelf_selection_name('${prevName}', '${val}')`;
+    //   console.log("clicked, and executing", execute);
+    //   IPython.notebook.kernel.execute(execute);
+    // });
   }
 
 

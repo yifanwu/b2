@@ -77,7 +77,7 @@ class UiComm(object):
                 df_name = DFName(data["df_name"])
                 self.tmp = f"{column}_{df_name}"
                 code = self.create_distribution_query(column, df_name)
-                self.create_then_execute_cell(code)
+                self.create_then_execute_cell(code, "query")
                 # now we need to figure out what kind of transformation is needed
                 # if nothing, we just show the table
             if command == "add_current_selection":
@@ -118,7 +118,7 @@ class UiComm(object):
                 encoding = infer_encoding(df)
                 encoding_arg = f"shape='{encoding.shape}', x='{encoding.x}', y='{encoding.y}'"
                 line = f"{df.df_name}.show({encoding_arg})"
-                self.create_then_execute_cell(line)
+                self.create_then_execute_cell(line, "chart")
         #     code_lines.append(line)
         # code = "\n".join(code_lines)
 
@@ -232,12 +232,13 @@ class UiComm(object):
             "value": json.dumps(selections)
         })
         
-    def create_then_execute_cell(self, s):
+    def create_then_execute_cell(self, s, funKind):
         # self.send_debug_msg(f"create_cell_with_text called {s}")
         # self.send_debug_msg(f"creating cell: {annotated}")
         self.comm.send({
             "type": "create_then_execute_cell",
-            "value": s
+            "funKind": funKind,
+            "code": s
         })
 
     def execute_fun(self, fun: str, params: str):
