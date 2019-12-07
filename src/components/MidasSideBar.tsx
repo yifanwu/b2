@@ -5,8 +5,9 @@ import { ProfilerShelf } from "./ProfilerShelf";
 import CellManager from "../CellManager";
 
 interface MidasSidebarProps {
-  comm: any;
-  cellManager: CellManager;
+  columnSelectMsg: (col: string, table: string) => void;
+  addCurrentSelectionMsg: (valueStr: string) => void;
+  makeSelectionFromShelf: (selection: string) => void;
 }
 
 interface MidasSidebarState {
@@ -69,12 +70,11 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
       <div id="midas-midbar">
         <ProfilerShelf
           ref={this.setProfilerShelfRef}
-          comm={this.props.comm}
+          columnSelectMsg={this.props.columnSelectMsg}
         />
         <SelectionShelf
           ref={this.setSelectionShelfRef}
-          comm={this.props.comm}
-          cellManager={this.props.cellManager}
+          makeSelectionFromShelf={this.props.makeSelectionFromShelf}
         />
     </div>);
     const displayStyle = this.state.isShown ? "block" : "none";
@@ -84,8 +84,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
         <div className="midas-inside">
           { midbar }
           <MidasContainer
-            comm={this.props.comm}
-            cellManager={this.props.cellManager}
+            addCurrentSelectionMsg={this.props.addCurrentSelectionMsg}
             ref={this.setMidasContainerRef}/>
         </div>
       </div>

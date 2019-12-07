@@ -36,8 +36,12 @@ function syncWidth(parentSelector: string, childSelector: string, marginAdjust =
   $(childSelector).width(parentwidth - marginAdjust );
 }
 
-export function createMidasComponent(midas_instance_name: string, comm: any, cellManager: CellManager, is_first_time: boolean = true): MidasSidebar {
-  LogSteps("createMidasComponent", midas_instance_name);
+export function createMidasComponent(
+  columnSelectMsg: (col: string, table: string) => void,
+  addCurrentSelectionMsg: (valueStr: string) => void,
+  makeSelectionFromShelf: (selection: string) => void,
+  ): MidasSidebar {
+  // LogSteps("createMidasComponent", midas_instance_name);
   const SIDEBAR_ID = "midas-sidebar-wrapper";
 
   if ($(`#${SIDEBAR_ID}`).length === 0) {
@@ -50,12 +54,14 @@ export function createMidasComponent(midas_instance_name: string, comm: any, cel
 
   let midasRef;
   ReactDOM.render(<MidasSidebar
-    ref={(comp) => midasRef = comp}
-    comm={comm}
-    cellManager={cellManager}
+      ref={(comp) => midasRef = comp}
+      columnSelectMsg={columnSelectMsg}
+      addCurrentSelectionMsg={addCurrentSelectionMsg}
+      makeSelectionFromShelf={makeSelectionFromShelf}
     />, document.getElementById("midas-sidebar-wrapper"));
 
-  if (is_first_time) {
+  // note that this must happen after
+  if ($(`#midas-resizer`).length === 0) {
     makeResizer((delta) => {
       let oldWidth = $("#midas-sidebar-wrapper").width();
       $("#midas-sidebar-wrapper").width(oldWidth + delta);

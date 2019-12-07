@@ -10,7 +10,7 @@ import { View } from "vega";
 // we are going to be rendering vega-lite now for its superior layout etc.
 import { TopLevelSpec } from "vega-lite";
 import vegaEmbed from "vega-embed";
-import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE } from "../constants";
+import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX } from "../constants";
 import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell } from "../utils";
 import CellManager from "../CellManager";
 import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
@@ -23,9 +23,8 @@ interface MidasElementProps {
   title: string;
   encoding: EncodingSpec;
   tick: (dfName: string) => void;
-  cellState: CellManager;
   data: any[];
-  comm: any; // unfortunately not typed
+  addCurrentSelectionMsg: (value: string) => void;
 }
 
 interface MidasElementState {
@@ -39,8 +38,6 @@ const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;â
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
-
-
 /**
  * Contains the visualization as well as a header with actions to minimize,
  * delete, or find the corresponding cell of the visualization.
@@ -49,7 +46,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   constructor(props: any) {
     super(props);
     this.embed = this.embed.bind(this);
-    this.addBrush = this.addBrush.bind(this);
+    this.drawBrush = this.drawBrush.bind(this);
     this.getDebouncedFunction = this.getDebouncedFunction.bind(this);
 
     const elementId = makeElementId(this.props.dfName, false);
@@ -66,21 +63,25 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.embed();
   }
 
-  addBrush(selectionStr: string) {
-    if (selectionStr === this.state.currentBrush) {
-      LogDebug(`add brush called ${selectionStr}, NOOP`);
+  drawBrush(selection: any) { // will be a dictionary...
+    if (JSON.stringify(selection) === this.state.currentBrush) {
+      LogDebug(`add brush called ${selection}, NOOP`);
+      // this step is very important in preventing the cells from forming a loop
       return;
     }
-    const selection = JSON.parse(selectionStr);
-    // @ts-ignore
-    const scale = this.state.view.scale;
-    const signal = this.state.view.signal;
+    // const selection = JSON.parse(selectionStr);
+    // @ts-ignore because the vega view API is not fully TS typed.
+    const scale = this.state.view.scale.bind(this.state.view);
+    const signal = this.state.view.signal.bind(this.state.view);
     const encoding = this.props.encoding;
     if (selection[encoding.x]) {
       const x_pixel_min = scale("x")(selection[encoding.x][0]);
       const l = selection[encoding.x].length;
-      const x_pixel_max = scale("x")(selection[encoding.x][l - 1]);
+      const x_pixel_max = (l > 1)
+        ? scale("x")(selection[encoding.x][l - 1])
+        : x_pixel_min + MIN_BRUSH_PX;
       // and update the brush_x and brush_y
+      LogDebug(`updated brush x: ${x_pixel_min}, ${x_pixel_max}`);
       signal("brush_x", [x_pixel_min, x_pixel_max]);
     }
     if (selection[encoding.y]) {
@@ -121,13 +122,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       processedValue[dfName] = this.roundIfPossible(value);
       let valueStr = JSON.stringify(processedValue);
       valueStr = (valueStr === "null") ? "None" : valueStr;
-      this.props.comm.send({
-        "command": "add_current_selection",
-        "value": valueStr
-      });
-      // this.props.cellState.addSelectionToPython(dfName, valueStr);
+      this.props.addCurrentSelectionMsg(valueStr);
       this.setState({currentBrush: valueStr});
-      // LogDebug("Sending to comm the selection");
+      LogDebug(`Chart causing selection ${valueStr}`);
       this.props.tick(dfName);
     };
 
@@ -148,7 +145,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 
   embed() {
-    const { dfName, encoding, data, tick, cellState } = this.props;
+    const { dfName, encoding, data } = this.props;
     const vegaSpec = genVegaSpec(encoding, dfName, data);
     // @ts-ignore
     vegaEmbed(`#${this.state.elementId}`, vegaSpec)

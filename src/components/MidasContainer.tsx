@@ -8,7 +8,6 @@ import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
 import { LogInternalError, LogSteps, getDfId, LogDebug } from "../utils";
 import { AlertType } from "../types";
 import { ALERT_ALIVE_TIME } from "../constants";
-import CellManager from "../CellManager";
 import { EncodingSpec } from "../charts/vegaGen";
 
 // Mappings
@@ -33,6 +32,10 @@ interface AlertItem {
   aId: number;
 }
 
+interface ContainerProps {
+  addCurrentSelectionMsg: (valueStr: string) => void;
+}
+
 interface ContainerState {
   notebookMetaData: MappingMetaData[];
   // TODO: refact the name `elements` --- we now have different visual elements
@@ -48,10 +51,6 @@ interface ContainerState {
   alertCounter: number;
 }
 
-interface ContainerProps {
-  comm: any;
-  cellManager: CellManager;
-}
 
 const MidasSortableContainer = SortableContainer(({children}: {children: any}) => {
   return <div>{children}</div>;
@@ -69,6 +68,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     this.tick = this.tick.bind(this);
     this.captureCell = this.captureCell.bind(this);
     this.addAlert = this.addAlert.bind(this);
+    this.drawBrush = this.drawBrush.bind(this);
 
     this.state = {
       alertCounter: 0,
@@ -93,6 +93,25 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     return this.state.idToCell[name];
   }
 
+  drawBrush(selectionArrayStr: string) {
+    const selectionArray = JSON.parse(selectionArrayStr);
+    if (selectionArray === "") {
+      for (let e of this.state.elements) {
+        this.refsCollection[e.dfName].drawBrush("");
+      }
+      return;
+    }
+
+    const dfNames = selectionArray.map((s: any) => Object.keys(s)[0]) as string[];
+    console.log("current state of elements is", this.state.elements);
+    for (let e of this.state.elements) {
+      const idx = dfNames.findIndex((v) => v === e.dfName);
+      if (idx > -1) {
+        const selectionItem = selectionArray[idx][e.dfName];
+        this.refsCollection[e.dfName].drawBrush(selectionItem);
+      }
+    }
+  }
 
   setMidasPythonInstanceName(midasPythonInstanceName: string) {
     this.setState({ midasPythonInstanceName });
@@ -253,12 +272,10 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       notebookCellId, dfName, data, encoding, changeStep: chanageStep }, index) => {
       return <MidasElement
         ref={r => {this.refsCollection[dfName] = r; }}
-        // index={index}
+        addCurrentSelectionMsg={this.props.addCurrentSelectionMsg}
         cellId={notebookCellId}
         key={`${dfName}-${encoding.shape}-${encoding.x}-${encoding.y}`}
         dfName={dfName}
-        cellState={this.props.cellManager}
-        comm={this.props.comm}
         tick={this.tick}
         title={dfName}
         encoding={encoding}

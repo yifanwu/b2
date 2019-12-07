@@ -269,6 +269,7 @@ class Midas(object):
             # this is a reset!
             self.current_selection = []
             self.tick()
+            self.ui_comm.add_selection_to_shelf("")
         else:
             # Dict[DFName, SelectionValue]
             current_selections = []

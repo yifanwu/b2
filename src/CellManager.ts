@@ -24,43 +24,31 @@ interface SingleCell {
   metadata?: CellMetaData;
 }
 
-// TODO: we can also keep track of how the IDs have been moved around
-
 export default class CellManager {
+
+  /**
+   * there is a mini state machine w.r.t how the brushes are fired on the boolean value of shouldDrawBrush
+   * true ---> (itx) false
+   * false ---> (drawBrush) true
+   */
+
   currentStep: number;
   cellsCreated: SingleCell[];
-  currentSelectionIgnoreList: {selectionValue: string, timeCalled: Date}[];
   midasInstanceName: string;
 
   constructor(midasInstanceName: string) {
     this.currentStep = 0;
     this.cellsCreated = [];
-    this.currentSelectionIgnoreList = [];
     this.midasInstanceName = midasInstanceName;
   }
 
-  addToIgnoreList(selectionValue: string) {
-    const timeCalled = new Date();
-    this.currentSelectionIgnoreList.push({
-      selectionValue,
-      timeCalled
-    });
-  }
 
-  makeSelectionFromCharts(selectionValue: string) {
-    // note that this is called from the JS side (Vega)!
-    const idx = this.currentSelectionIgnoreList.findIndex(v => (v.selectionValue === selectionValue));
-    if (idx > -1) {
-      // ignore, also remove from ignore list
-      delete this.currentSelectionIgnoreList[idx];
-      LogDebug("Ignored due to python triggered brushing!");
-      return;
-    }
-    // otherwise
+  makeSelection(selectionValue: string) {
     this.executeFunction(MIDAS_SELECTION_FUN, selectionValue);
   }
 
   executeFunction(funName: string, params: string) {
+
     if (funName === MIDAS_SELECTION_FUN) {
       // check if it has been made before
       const idxBefore = this.cellsCreated.findIndex(v => (v.metadata) && (v.metadata.funName === MIDAS_SELECTION_FUN) && (v.metadata.params === params));
@@ -79,6 +67,7 @@ export default class CellManager {
         LogDebug("executing from cells created earlier");
         return;
       }
+      // we also need to add the brush
     }
     const text = `${this.midasInstanceName}.${funName}(${params})`;
     this.create_cell_and_execute(text, "interaction", {funName, params });

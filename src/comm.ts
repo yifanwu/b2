@@ -72,6 +72,8 @@ type MidasCommLoad = CommandLoad
 export function makeComm() {
   LogSteps("makeComm");
   // refToSidebar: MidasSidebar
+
+
   Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
       LogDebug(`makeComm first message: ${JSON.stringify(msg)}`);
@@ -82,11 +84,29 @@ export function makeComm() {
       comm.on_msg((msg: any) => {
         // the first time
         const load = msg.content.data as BasicLoad;
-        const midas_instance_name = load.value;
+        const midasInstanceName = load.value;
         if (load.type === "midas_instance_name") {
-          const cellState = new CellManager(midas_instance_name);
-          const ref = createMidasComponent(midas_instance_name, comm, cellState, true);
-          const on_msg = makeOnMsg(ref, cellState);
+
+          const columnSelectMsg = (column: string, tableName: string) => {
+            const payload = {
+              command: "column-selected",
+              column,
+              df_name: tableName,
+            };
+            // console.log(`Clicked, and sending message with contents ${JSON.stringify(payload)}`);
+            comm.send(payload);
+          };
+          const addCurrentSelectionMsg = (valueStr: string) => {
+            comm.send({
+              "command": "add_current_selection",
+              "value": valueStr
+            });
+          };
+          const cellManager = new CellManager(midasInstanceName);
+          const makeSelection = cellManager.makeSelection.bind(cellManager);
+          const ref = createMidasComponent(columnSelectMsg, addCurrentSelectionMsg, makeSelection);
+          // cellManager.setDrawBrush(ref.getMidasContainerRef().drawBrush);
+          const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);
           // also start watching cell execution
           Jupyter.notebook.events.on("finished_execute.CodeCell", function(evt: any, data: any) {
@@ -142,8 +162,10 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         return;
       }
       case "add_selection_to_shelf": {
+        // we also need to draw the brushes here as well
         const selectionLoad = load as BasicLoad;
         refToSelectionShelf.addSelectionItem(selectionLoad.value);
+        refToMidas.drawBrush(selectionLoad.value);
         break;
       }
       case "reactive": {
@@ -182,12 +204,6 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
       }
       case "profiler_update_data": {
         return;
-      }
-      case "make_brush": {
-        const brushLoad = load as BrushCommLoad;
-        LogSteps("make_brush", brushLoad.dfName);
-        refToMidas.addBrush(brushLoad.dfName, brushLoad.selection);
-        cellManager.addToIgnoreList(brushLoad.selection);
       }
       case "chart_render": {
         const chartRenderLoad = load as ChartRenderComm;

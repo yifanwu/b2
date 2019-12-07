@@ -4,8 +4,7 @@ import { SelectionShelfLandingPage } from "./SelectionShelfLandingPage";
 import CellManager from "../CellManager";
 
 interface SelectionShelfProps {
-  comm: any;
-  cellManager: CellManager;
+  makeSelectionFromShelf: (selection: string) => void;
 }
 
 interface SelectionShelfState {
@@ -59,11 +58,11 @@ export class SelectionShelf extends React.Component<SelectionShelfProps, Selecti
 
 
   setCurrentSelections(index: number) {
-    this.props.cellManager.makeSelectionFromCharts(this.state.selectionItem[index].value);
+    this.props.makeSelectionFromShelf(this.state.selectionItem[index].value);
   }
 
   resetAllSelection() {
-    this.props.cellManager.makeSelectionFromCharts("");
+    this.props.makeSelectionFromShelf("");
   }
 
   render() {
