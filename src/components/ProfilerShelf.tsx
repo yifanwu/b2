@@ -12,7 +12,7 @@ interface ColumnShelfState {
 }
 
 interface ProfilerShelfProps {
-  comm: any;
+  columnSelectMsg: (columnName: string, tableName: string) => void;
 }
 
 export class ProfilerShelf extends React.Component<ProfilerShelfProps, ColumnShelfState> {
@@ -34,13 +34,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ColumnShe
   }
 
   columnClicked(columnName: string, tableName: string) {
-    const payload = {
-      command: "column-selected",
-      column: columnName,
-      df_name: tableName,
-    };
-    console.log(`Clicked, and sending message with contents ${JSON.stringify(payload)}`);
-    this.props.comm.send(payload);
+    this.props.columnSelectMsg(columnName, tableName);
   }
 
   hideItem(tableName: string, index: number) {
@@ -60,14 +54,14 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ColumnShe
         onClick={() => this.columnClicked(c.columnName, tableName)}
         onDelete={() => this.hideItem(tableName, i)}
       />);
-      return <div key={`table-${tableName}`}>
+      return <div className="profiler-table" key={`table-${tableName}`}>
         <div className="profiler-table-name">{tableName}</div>
         {columns}
       </div>;
     });
     const content = (tableDivs.length > 0) ? tableDivs : <ProfileShelfLandingPage/>;
     return (
-      <div id="profiler-shelf">
+      <div className="shelf" id="profiler-shelf">
       {/* <div className="midbar-shelf-header">source tables</div> */}
       {content}
       </div>

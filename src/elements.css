@@ -59,8 +59,28 @@
   --red-900: #610404;
   
   /* font sizes system */
+  --font-1: 12px;
+  --font-2: 16px;
+  --font-3: 20px;
+  --font-4: 24px;
+  --font-5: 30px;
 
   /* div widths system */
+  --size-1: 4px;
+  --size-2: 8px;
+  --size-3: 12px;
+  --size-4: 16px;
+  --size-5: 24px;
+  --size-6: 32px;
+  --size-7: 48px;
+  --size-8: 64px;
+  --size-9: 96px;
+  --size-10: 128px;
+  --size-11: 192px;
+  --size-12: 256px;
+  --size-13: 384px;
+  --size-14: 512px;
+  --size-15: 768px;
 }
 
 #notebook {
@@ -85,6 +105,39 @@
   padding-right: 20px;
 }
 
+/* begin selection related */
+
+#selection-shelf {
+  height: 50%;
+  background-color: var(--blue-100);
+  text-align: center;
+}
+
+.editable-text-header {
+  background-color: var(--blue-050);
+  border: 2px solid var(--blue-050);
+}
+
+.active-selection-item {
+  border: 2px solid var(--blue-500);
+}
+
+.reset-button {
+  margin-top: var(--size-1);
+  border-radius: var(--size-1);
+  background-color: var(--red-050);
+  color: var(--red-300);
+  text-align: left;
+  border: 2px solid var(--red-050);
+  margin-bottom: var(--size-2);
+}
+
+.reset-button :hover {
+  border: 2px solid var(--red-200);
+}
+
+/* end selection related */
+
 #notebook {
   padding-left: 10pt;
   padding-right: 0pt;
@@ -101,9 +154,7 @@
 
 .midas-element {
   margin-bottom: 10pt;
-  width: 200pt;
-  /* the height being specified limits the folding */
-  /* height: 250pt; */
+  background: white;
 }
 
 #midas-floater-wrapper.closed {
@@ -111,6 +162,7 @@
   width: auto;
   transition: width;
 }
+
 #midas-floater-wrapper .header {
   font-size: 16px;
   font-weight: bold;
@@ -118,19 +170,26 @@
 }
 
 .editable-text-button {
-  font-family: monospace;
   margin-left: 5pt;
-  margin-right: 1pt;
-  border-radius: 50%;
+  padding: 5px;
+  background-color: var(--red-100);
+  border-radius: 5px;
 } 
 
 .midas-header-button {
-  margin: 5px;
-  border-radius: 20%;
-  background-color: white;
-  color: black;
-  border: 2px solid var(--blue-grey-400);
+  margin: var(--size-1);
+  border-radius: var(--size-1);
+  background-color: var(--blue-grey-100);
+  color: var(--blue-grey-300);
+  border: 2px solid var(--blue-grey-300);
 }
+
+
+
+.midas-header-button :hover {
+  border: 2px solid var(--blue-grey-500);
+}
+
 
 .midas-header-options {
   margin-left: auto;
@@ -141,7 +200,7 @@
   width: 100%;
   display: flex;
   align-items: center;
-  background-color:#F7F7F7;
+  background-color: var(--blue-grey-050);
 }
 
 .editable-text-title, .selection-column-name {
@@ -150,52 +209,54 @@
   flex-grow: 1;
 }
 
+.shelf-item {
+  /* width: 100%; */
+  height: 20px;
+  padding: 2.5pt;
+  margin: 2.5pt;
+  display: flex;
+  box-shadow: 0 3px 2px -2px var(--blue-grey-500);
+  cursor: pointer;
+  border-radius: 5px;
+  align-items: center;
+}
+
 .column-item-header:hover {
   /* transform: scale(1.2); */
   border: 2px solid var(--yellow-vivid-400);
 }
 
-.editable-text-header, .column-item-header {
-  width: 100%;
-  /* hard code... */
-  height: 20px;
-  padding: 2.5pt;
-  margin: 2.5pt;
-  display: flex;
-  align-items: center;
-  background-color:#F7F7F7;
-  box-shadow: 0 3px 2px -2px var(--blue-grey-500);
-  cursor: pointer;
-  border-radius: 5px;
+
+.column-item-header {
+  background-color: var(--yellow-vivid-050);
+  border: 2px solid var(--yellow-vivid-050);
 }
 
-.midbar-shelf-header {
-  font-size: 1.4em;
-  margin: 5px;
-}
-
-.midas-shelf-selection-item {
+/* .midas-shelf-selection-item {
   width: 100%;
-  margin: 1pt;
   display: flex;
   align-items: center;
+} */
+
+.profiler-table {
+  margin: var(--size-1);
+  padding: var(--size-1);
+  background-color: var(--yellow-vivid-400);
+  border-radius: var(--size-1);
 }
 
 .profiler-table-name {
-  font-size: 1em;
-  font-weight: 500;
+  font-size: var(--font-3);
+  font-weight: 800;
+  color: var(--yellow-vivid-900);
 }
 
 #profiler-shelf {
-  height: 50%;
+  min-height: 200px;
   background-color: var(--yellow-vivid-100);
-  overflow: scroll;
+  /* overflow: scroll; */
 }
 
-#selection-shelf {
-  height: 50%;
-  background-color: var(--red-100);
-}
 
 .code {
   font-family: 'Courier New', Courier, monospace;
@@ -203,11 +264,17 @@
 
 .card {
   text-align: left;
-  margin: 10px;
-  padding: 10px;
+  margin: var(--size-2);
+  padding: var(--size-2);
   border: 1px solid var(--cyan-100);
-  box-shadow: 0 3px 2px -2px gainsboro;
-  border-radius: 10px;
+  box-shadow: 0 3px 2px -2px var(--blue-grey-100);
+  border-radius: var(--size-2);
+  min-width: fit-content;
+  max-width: fit-content;
+}
+
+.shelf {
+  padding: var(--size-1);
 }
 
 .landing-card {
@@ -217,11 +284,10 @@
 
 .midas-title {
   align-self: left;
-  margin: 5pt;
 }
 
 .sortable {
-  display: inline-flex;
+  /* display: inline-flex; */
 }
 
 .chart-btns {
@@ -287,12 +353,12 @@
 }
 
 #midas-sidebar-wrapper {
-  width: 800px;
+  width: var(--size-15);
   box-sizing: border-box;
   font-family: 'Source Sans Pro', sans-serif;
-  margin-left: 20px;
-  margin-right: 20px;
-  box-shadow: 0 0 5px var(--blue-grey-100);
+  margin-left: var(--size-4);
+  margin-right: var(--size-4);
+  box-shadow: 0 0 var(--size-1) var(--blue-grey-100);
 }
 
 .midas-inside {
@@ -309,13 +375,36 @@
   position: fixed;
   z-index: 120;
   height: 100%;
-  width: 10px;
+  width: var(--size-2);
   background-color: rgba(0, 0, 255, 0);
   cursor: col-resize;
 }
 
 #midas-midbar {
-  width: 100px;
-  background-color: var(--red-100);
+  width: var(--size-11);
+  background-color: var(--blue-100);
   box-sizing: border-box;
+  overflow-y: auto;
+}
+
+
+a.tip span {
+  display: none
+}
+
+a.tip:hover {
+  position: relative
+}
+
+a.tip:hover span {
+    padding: 5px 20px 5px 5px;
+    display: block;
+    z-index: 100;
+    left: 0px;
+    margin: var(--size-2);
+    background-color: var(--blue-grey-050);
+    /* width: 250px; */
+    position: absolute;
+    top: 10px;
+    text-decoration: none
 }

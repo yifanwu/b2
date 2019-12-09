@@ -10,19 +10,21 @@ import { View } from "vega";
 // we are going to be rendering vega-lite now for its superior layout etc.
 import { TopLevelSpec } from "vega-lite";
 import vegaEmbed from "vega-embed";
-import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE } from "../constants";
-import { LogDebug, LogInternalError, get_df_id } from "../utils";
+import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX } from "../constants";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell } from "../utils";
+import CellManager from "../CellManager";
+import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
 
 interface MidasElementProps {
   changeStep: number;
-  newData?: any[];
-  cellId: number;
+  cellId: string;
   removeChart: MouseEventHandler;
   dfName: string;
   title: string;
-  vegaSpec: TopLevelSpec;
+  encoding: EncodingSpec;
   tick: (dfName: string) => void;
-  comm: any; // unfortunately not typed
+  data: any[];
+  addCurrentSelectionMsg: (value: string) => void;
 }
 
 interface MidasElementState {
@@ -33,6 +35,7 @@ interface MidasElementState {
   generatedCells: any[];
   // yDomain: any;
   // xDomain: any;
+  currentBrush: string;
 }
 
 const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
@@ -47,6 +50,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   constructor(props: any) {
     super(props);
     this.embed = this.embed.bind(this);
+    this.drawBrush = this.drawBrush.bind(this);
+    this.getDebouncedFunction = this.getDebouncedFunction.bind(this);
+
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
       hidden: false,
@@ -55,10 +61,70 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       generatedCells: [],
       // yDomain: null,
       // xDomain: null
+      currentBrush: null,
     };
   }
 
-   getDebouncedFunction(dfName: string, tick: (dfName: string) => void) {
+
+
+
+  componentDidMount() {
+    // FIXME: maybe do not need to run everytime???
+    this.embed();
+  }
+
+  drawBrush(selection: any) { // will be a dictionary...
+    if (JSON.stringify(selection) === this.state.currentBrush) {
+      LogDebug(`add brush called ${selection}, NOOP`);
+      // this step is very important in preventing the cells from forming a loop
+      return;
+    }
+    // const selection = JSON.parse(selectionStr);
+    // @ts-ignore because the vega view API is not fully TS typed.
+    const scale = this.state.view.scale.bind(this.state.view);
+    const signal = this.state.view.signal.bind(this.state.view);
+    const encoding = this.props.encoding;
+    if (selection[encoding.x]) {
+      const x_pixel_min = scale("x")(selection[encoding.x][0]);
+      const l = selection[encoding.x].length;
+      const x_pixel_max = (l > 1)
+        ? scale("x")(selection[encoding.x][l - 1])
+        : x_pixel_min + MIN_BRUSH_PX;
+      // and update the brush_x and brush_y
+      LogDebug(`updated brush x: ${x_pixel_min}, ${x_pixel_max}`);
+      signal("brush_x", [x_pixel_min, x_pixel_max]);
+    }
+    if (selection[encoding.y]) {
+      const y_pixel_min = scale("y")(selection[encoding.y][0]);
+      const y_pixel_max = scale("y")(selection[encoding.y][1]);
+      // and update the brush_y and brush_y
+      signal("brush_y", [y_pixel_min, y_pixel_max]);
+    }
+    return;
+  }
+
+  roundIfPossible(selection: any) {
+    const encoding = this.props.encoding;
+    if (encoding.shape !== "bar") {
+
+      let rounedEncoding: any = {};
+      // {"horsepower: []"}
+      if (selection[encoding.x]) {
+        // if it's number
+        // get diff
+        const digits = getDigitsToRound(selection[encoding.x][1], selection[encoding.x][0]);
+        rounedEncoding[encoding.x] = selection[encoding.x].map((v: number) => Math.round(v * digits) / digits);
+      }
+      if (selection[encoding.y]) {
+        const digits = getDigitsToRound(selection[encoding.y][1], selection[encoding.y][0]);
+        rounedEncoding[encoding.y] = selection[encoding.y].map((v: number) => Math.round(v * digits) / digits);
+      }
+      return rounedEncoding;
+    } else {
+      return selection;
+    }
+  }
+   oldGetDebouncedFunction(dfName: string, tick: (dfName: string) => void) {
     const callback = (signalName: string, value: any) => {
       // also need to call into python state...
       let valueStr = JSON.stringify(value);
@@ -70,9 +136,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         prevState.generatedCells.push(c);
         return prevState; 
       });
-
-
- 
 
       const date = new Date().toLocaleString("en-US");
       const text = `# [MIDAS] You selected the following from ${dfName} at time ${date}\nm.add_selection_by_interaction("${dfName}", ${valueStr})`;
@@ -97,30 +160,48 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     };
     return wrapped;
   }
+  getDebouncedFunction(dfName: string) {
+    const callback = (signalName: string, value: any) => {
+      // also need to call into python state...
+      let processedValue = {};
+      processedValue[dfName] = this.roundIfPossible(value);
+      let valueStr = JSON.stringify(processedValue);
+      valueStr = (valueStr === "null") ? "None" : valueStr;
+      this.props.addCurrentSelectionMsg(valueStr);
+      this.setState({currentBrush: valueStr});
+      LogDebug(`Chart causing selection ${valueStr}`);
+      this.props.tick(dfName);
+    };
 
-
-  componentDidMount() {
-    // FIXME: maybe do not need to run everytime???
-    this.embed();
+    const wrapped = (name: any, value: any) => {
+      const n = new Date();
+      let l = (window as any).lastInvoked;
+      (window as any).lastInvoked = n;
+      if (l) {
+        if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
+          clearTimeout((window as any).lastInvokedTimer);
+        }
+        (window as any).lastInvokedTimer = setTimeout(() => callback(name, value), DEBOUNCE_RATE);
+      } else {
+        l = n;
+      }
+    };
+    return wrapped;
   }
 
-
   embed() {
-    const { dfName, vegaSpec, tick } = this.props;
+    const { dfName, encoding, data } = this.props;
+    const vegaSpec = genVegaSpec(encoding, dfName, data);
+    // @ts-ignore
     vegaEmbed(`#${this.state.elementId}`, vegaSpec)
       .then((res: any) => {
         const view = res.view;
-        // const xDomain = view.scale(X_SCALE).domain();
-        // const yDomain = view.scale(Y_SCALE).domain();
         this.setState({
           view,
-          // xDomain,
-          // yDomain
         });
-        // this.state.view.signal(Y_DOMAIN_SIGNAL, yDomain);
-        // this.state.view.signal(X_DOMAIN_SIGNAL, xDomain);
-        LogDebug(`Registering signal for TICK, with signal ${SELECTION_SIGNAL}`);
-        res.view.addSignalListener(SELECTION_SIGNAL, this.getDebouncedFunction(dfName, tick));
+        (window as any)[`view_${dfName}`] = view;
+        const cb = this.getDebouncedFunction(dfName);
+        res.view.addSignalListener(SELECTION_SIGNAL, cb);
       })
       .catch((err: Error) => console.error(err));
   }
@@ -134,39 +215,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     });
   }
 
-
-  componentWillReceiveProps(nextProps: MidasElementProps) {
-    if (nextProps.changeStep > this.props.changeStep) {
-      const newValues = nextProps.newData;
-      // can do this in python too
-      const changeSet = this.state.view
-        .changeset()
-        .remove((datum: any) => { datum.is_overview === 0; })
-        .insert(newValues);
-
-      this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
-    }
-  }
-
   /**
    * Selects the cell in the notebook where the data frame was defined.
    * Note that currently if the output was generated and then the page
    * is refreshed, this may not work.
    */
   selectCell() {
-    const cell = Jupyter.notebook.get_msg_cell(this.props.cellId);
-    const index = Jupyter.notebook.find_cell_index(cell);
-    Jupyter.notebook.select(index);
-    const cell_div = Jupyter.CodeCell.msg_cells[this.props.cellId];
-    if (cell_div) {
-      cell_div.code_mirror.display.lineDiv.scrollIntoViewIfNeeded();
-    }
-  }
-
-  getPythonButtonClicked() {
-    const execute = `m.js_get_current_chart_code('${this.props.dfName}')`;
-    console.log("clicked, and executing", execute);
-    IPython.notebook.kernel.execute(execute);
+    navigateToNotebookCell(this.props.cellId);
   }
 
   // FIXME: figure out the type...
@@ -174,28 +229,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     if (!this.state.view) {
       LogInternalError(`Vega view should have already been defined by now!`);
     }
-    const filter = new Function(
-      "datum",
-      "return (true))"
-    );
+    // can do this in python too
     const changeSet = this.state.view
       .changeset()
-      .insert(newValues)
-      .remove(filter);
+      .remove((datum: any) => {return datum.is_overview === false; })
+      .insert(newValues);
 
-    await this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
-
-  }
-
-  addSelectionButtonClicked() {
-    // const execute = `m.js_add_selection_to_shelf('${this.props.title}')`;
-    // console.log("clicked, and executing", execute);
-    // IPython.notebook.kernel.execute(execute);
-    // we want to send this to comm
-    this.props.comm.send({
-      "command": "get_code_clipboard",
-      "df_name": this.props.title
-    });
+    this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
   }
 
   clearGeneratedCells() {
@@ -220,16 +260,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
    */
   render() {
     return (
-      <div className="midas-element" id={get_df_id(this.props.dfName)}>
+      <div className="card midas-element" id={getDfId(this.props.dfName)}>
         <div className="midas-header">
           <DragHandle/>
           <span className="midas-title">{this.props.title}</span>
           <div className="midas-header-options"></div>
-          <button
-            className={"midas-header-button"}
-            onClick={() => this.getPythonButtonClicked()}>
-            code
-          </button>
           <button
             className={"midas-header-button"}
             onClick={() => this.selectCell()}
@@ -239,10 +274,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           onClick={() => this.clearGeneratedCells()}>
               Clear generated cells
           </button>
-          <button
-            className={"midas-header-button"}
-            onClick={() => this.addSelectionButtonClicked()}
-          >clip</button>
           <button
             className={"midas-header-button"}
             onClick={() => this.toggleHiddenStatus()}>
@@ -264,12 +295,12 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 }
 
-const SortableItem = SortableElement((props: MidasElementProps) => (
-  <div className="sortable">
-    <MidasElement {...props}/>
-  </div>
-));
+// const SortableItem = SortableElement((props: MidasElementProps) => (
+//   <div className="sortable">
+//     <MidasElement {...props}/>
+//   </div>
+// ), {withRef: true});
 
-export default SortableItem;
+// export default SortableItem;
 
-// export default MidasElement;
+export default MidasElement;

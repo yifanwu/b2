@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 
 import { MidasSidebar } from "./components/MidasSidebar";
 import { LogSteps } from "./utils";
+import CellManager from "./CellManager";
 
 function removeResizer() {
     $("#midas-resizer").remove()
@@ -45,8 +46,12 @@ export function tearDownMidasComponent() {
   $("#midas-sidebar-wrapper").remove()
 }
 
-export function createMidasComponent(midas_instance_name: string, comm: any, is_first_time: boolean = true): MidasSidebar {
-  LogSteps("createMidasComponent", midas_instance_name);
+export function createMidasComponent(
+  columnSelectMsg: (col: string, table: string) => void,
+  addCurrentSelectionMsg: (valueStr: string) => void,
+  makeSelectionFromShelf: (selection: string) => void,
+  ): MidasSidebar {
+  // LogSteps("createMidasComponent", midas_instance_name);
   const SIDEBAR_ID = "midas-sidebar-wrapper";
 
   if ($(`#${SIDEBAR_ID}`).length === 0) {
@@ -59,11 +64,14 @@ export function createMidasComponent(midas_instance_name: string, comm: any, is_
 
   let midasRef;
   ReactDOM.render(<MidasSidebar
-    ref={(comp) => midasRef = comp}
-    comm={comm}
+      ref={(comp) => midasRef = comp}
+      columnSelectMsg={columnSelectMsg}
+      addCurrentSelectionMsg={addCurrentSelectionMsg}
+      makeSelectionFromShelf={makeSelectionFromShelf}
     />, document.getElementById("midas-sidebar-wrapper"));
 
-  if (is_first_time) {
+  // note that this must happen after
+  if ($(`#midas-resizer`).length === 0) {
     makeResizer((delta) => {
       let oldWidth = $("#midas-sidebar-wrapper").width();
       $("#midas-sidebar-wrapper").width(oldWidth + delta);

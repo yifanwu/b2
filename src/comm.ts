@@ -4,19 +4,36 @@ import { LogSteps, LogDebug } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
+import CellManager, { FunKind }  from "./CellManager";
+import { EncodingSpec } from "./charts/vegaGen";
 
 type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
 
-type NotificationCommLoad = {
+type ExecuteCodeLoad = {
+  type: string;
+  funKind: FunKind;
+  code: string;
+};
+
+type ExecuteFunCallLoad = {
+  type: string;
+  funName: string;
+  params: string;
+};
+
+type NotificationCommLoad  = {
   type: string;
   style: string;
   value: string;
 };
 
-type HandShakeComm = {
-  type: string
-}
+type BrushCommLoad = {
+  type: string;
+  dfName: string;
+  // again, not sure what gets sent..
+  selection: any;
+};
 
 type UpdateCommLoad = {
   type: string;
@@ -33,10 +50,19 @@ type ProfilerComm = {
 type ChartRenderComm = {
   type: string;
   dfName: string;
-  vega: string;
+  data: string;
+  encoding: string;
 };
 
-type MidasCommLoad = CommandLoad | BasicLoad| NotificationCommLoad | ProfilerComm | ChartRenderComm  | UpdateCommLoad;
+type MidasCommLoad = CommandLoad
+                     | BasicLoad
+                     | ExecuteFunCallLoad
+                     | ExecuteCodeLoad
+                     | NotificationCommLoad
+                     | ProfilerComm
+                     | ChartRenderComm
+                     | UpdateCommLoad
+                     | BrushCommLoad;
 
 export function openRecoveryComm() {
   const comm = Jupyter.notebook.kernel.comm_manager.new_comm(MIDAS_RECOVERY_COMM_NAME)
@@ -52,6 +78,8 @@ export function openRecoveryComm() {
 export function makeComm() {
   LogSteps("makeComm");
   // refToSidebar: MidasSidebar
+
+
   Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
       LogDebug(`makeComm first message: ${JSON.stringify(msg)}`);
@@ -62,10 +90,29 @@ export function makeComm() {
       comm.on_msg((msg: any) => {
         // the first time
         const load = msg.content.data as BasicLoad;
-        const midas_instance_name = load.value;
+        const midasInstanceName = load.value;
         if (load.type === "midas_instance_name") {
-          const ref = createMidasComponent(midas_instance_name, comm, true);
-          const on_msg = makeOnMsg(ref);
+
+          const columnSelectMsg = (column: string, tableName: string) => {
+            const payload = {
+              command: "column-selected",
+              column,
+              df_name: tableName,
+            };
+            // console.log(`Clicked, and sending message with contents ${JSON.stringify(payload)}`);
+            comm.send(payload);
+          };
+          const addCurrentSelectionMsg = (valueStr: string) => {
+            comm.send({
+              "command": "add_current_selection",
+              "value": valueStr
+            });
+          };
+          const cellManager = new CellManager(midasInstanceName);
+          const makeSelection = cellManager.makeSelection.bind(cellManager);
+          const ref = createMidasComponent(columnSelectMsg, addCurrentSelectionMsg, makeSelection);
+          // cellManager.setDrawBrush(ref.getMidasContainerRef().drawBrush);
+          const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);
           // also start watching cell execution
           Jupyter.notebook.events.on("finished_execute.CodeCell", function(evt: any, data: any) {
@@ -74,7 +121,7 @@ export function makeComm() {
               command: "cell-ran",
               code,
             });
-            LogDebug(`FINISHED excuting cell with code: ${code}`);
+            // LogDebug(`FINISHED excuting cell with code: ${code}`);
           });
         }
       });
@@ -96,16 +143,15 @@ export function makeComm() {
 }
 
 
-function makeOnMsg(refToSidebar: MidasSidebar) {
+function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
 
   let refToMidas = refToSidebar.getMidasContainerRef();
   let refToProfilerShelf = refToSidebar.getProfilerShelfRef();
   let refToSelectionShelf = refToSidebar.getSelectionShelfRef();
 
   return function on_msg(msg: any) {
-    LogSteps("on_msg", JSON.stringify(msg));
+    // LogSteps("on_msg", JSON.stringify(msg));
     const load = msg.content.data as MidasCommLoad;
-    console.log(load.type);
     switch (load.type) {
       case "hide": {
         refToSidebar.hide();
@@ -121,9 +167,11 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
         refToMidas.addAlert(errorLoad.value, alertType);
         return;
       }
-      case "add-selection": {
+      case "add_selection_to_shelf": {
+        // we also need to draw the brushes here as well
         const selectionLoad = load as BasicLoad;
         refToSelectionShelf.addSelectionItem(selectionLoad.value);
+        refToMidas.drawBrush(selectionLoad.value);
         break;
       }
       case "reactive": {
@@ -133,13 +181,15 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
         refToMidas.addAlert(`Success adding cell to ${reactiveLoad.value}`, AlertType.Confirmation);
         return;
       }
-      // this is slightly awkward
+      case "execute_fun": {
+        const executeLoad = load as ExecuteFunCallLoad;
+        cellManager.executeFunction(executeLoad.funName, executeLoad.params);
+        return;
+      }
       case "create_then_execute_cell": {
         // const cellId = msg.parent_header.msg_id;
-        const cellLoad = load as BasicLoad;
-        const c = Jupyter.notebook.insert_cell_above("code");
-        c.set_text(cellLoad.value);
-        c.execute();
+        const cellLoad = load as ExecuteCodeLoad;
+        cellManager.create_cell_and_execute(cellLoad.code, cellLoad.funKind);
         return;
       }
       case "navigate_to_vis": {
@@ -165,13 +215,14 @@ function makeOnMsg(refToSidebar: MidasSidebar) {
         const chartRenderLoad = load as ChartRenderComm;
         LogSteps("Chart", chartRenderLoad.dfName);
         const cellId = msg.parent_header.msg_id;
-        const spec = JSON.parse(chartRenderLoad.vega);
-        refToMidas.addDataFrame(chartRenderLoad.dfName, spec, cellId);
+        const encoding = JSON.parse(chartRenderLoad.encoding);
+        const data = JSON.parse(chartRenderLoad.data);
+        refToMidas.addDataFrame(chartRenderLoad.dfName, encoding, data, cellId);
         return;
       }
       case "chart_update_data": {
         const updateLoad = load as UpdateCommLoad;
-        LogSteps("Chart update", updateLoad.dfName);
+        // LogSteps("Chart update", updateLoad.dfName);
         console.log(updateLoad.newData);
         refToMidas.replaceData(updateLoad.dfName, updateLoad.newData);
         // also navigate

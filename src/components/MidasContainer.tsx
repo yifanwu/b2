@@ -5,9 +5,10 @@ import { SortableContainer } from "react-sortable-hoc";
 
 import MidasElement from "./MidasElement";
 import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
-import { LogInternalError, LogSteps, get_df_id } from "../utils";
+import { LogInternalError, LogSteps, getDfId, LogDebug } from "../utils";
 import { AlertType } from "../types";
 import { ALERT_ALIVE_TIME } from "../constants";
+import { EncodingSpec } from "../charts/vegaGen";
 
 // Mappings
 //  this stores the information connecting the cells to
@@ -19,9 +20,9 @@ interface MappingMetaData {
 // TODO: we need to re
 interface ContainerElementState {
   dfName: string;
-  notebookCellId: number;
-  vegaSpec: TopLevelSpec;
-  newData?: any[];
+  notebookCellId: string;
+  encoding: EncodingSpec;
+  data: any[];
   changeStep: number;
 }
 
@@ -29,6 +30,10 @@ interface AlertItem {
   msg: string;
   alertType: AlertType;
   aId: number;
+}
+
+interface ContainerProps {
+  addCurrentSelectionMsg: (valueStr: string) => void;
 }
 
 interface ContainerState {
@@ -46,9 +51,6 @@ interface ContainerState {
   alertCounter: number;
 }
 
-interface ContainerProps {
-  comm: any;
-}
 
 const MidasSortableContainer = SortableContainer(({children}: {children: any}) => {
   return <div>{children}</div>;
@@ -58,11 +60,15 @@ const MidasSortableContainer = SortableContainer(({children}: {children: any}) =
  * Container for the MidasElements that hold the visualization.
  */
 export default class MidasContainer extends React.Component<ContainerProps, ContainerState> {
+
+  refsCollection = {};
+
   constructor(props?: ContainerProps) {
     super(props);
     this.tick = this.tick.bind(this);
     this.captureCell = this.captureCell.bind(this);
     this.addAlert = this.addAlert.bind(this);
+    this.drawBrush = this.drawBrush.bind(this);
 
     this.state = {
       alertCounter: 0,
@@ -87,6 +93,25 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     return this.state.idToCell[name];
   }
 
+  drawBrush(selectionArrayStr: string) {
+    const selectionArray = JSON.parse(selectionArrayStr);
+    if (selectionArray === "") {
+      for (let e of this.state.elements) {
+        this.refsCollection[e.dfName].drawBrush("");
+      }
+      return;
+    }
+
+    const dfNames = selectionArray.map((s: any) => Object.keys(s)[0]) as string[];
+    console.log("current state of elements is", this.state.elements);
+    for (let e of this.state.elements) {
+      const idx = dfNames.findIndex((v) => v === e.dfName);
+      if (idx > -1) {
+        const selectionItem = selectionArray[idx][e.dfName];
+        this.refsCollection[e.dfName].drawBrush(selectionItem);
+      }
+    }
+  }
 
   setMidasPythonInstanceName(midasPythonInstanceName: string) {
     this.setState({ midasPythonInstanceName });
@@ -147,7 +172,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
   navigate(dfName: string) {
     // TODO @yifan/@ryan
-    const elmnt = document.getElementById(get_df_id(dfName));
+    const elmnt = document.getElementById(getDfId(dfName));
     elmnt.scrollIntoView();
   }
 
@@ -165,8 +190,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     });
     const self = this;
     window.setTimeout(() => {
-      console.log(`closing alert ${aId}`);
-      // just move the alert counter ahead
       self.setState(p => {
         return { alertCounter: p.alertCounter + 1};
       });
@@ -185,58 +208,34 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
    * @param id the id of the data frame
    * @param dfName the name of the data frame
    */
-  addDataFrame(dfName: string, vegaSpec: TopLevelSpec, notebookCellId: number) {
-    console.log(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`);
-    if (this.state.elements.filter(e => e.dfName === dfName).length > 0) {
-      // replace the vega definition, must maintain the element's original position
-      this.setState(prevState => {
-        const e = prevState.elements.filter(e => e.dfName === dfName)[0];
-        e.notebookCellId = notebookCellId;
-        e.vegaSpec = vegaSpec;
-        e.changeStep = 1;
-        return prevState;
-      });
-      return;
-    }
-
+  addDataFrame(dfName: string, encoding: EncodingSpec, data: any[], notebookCellId: string) {
     this.setState(prevState => {
       // see if we need to delete the old one first
       const idx = prevState.elements.findIndex((v) => v.dfName === dfName);
-      if (idx > 0) {
-        prevState.elements[idx] = {
-          notebookCellId,
-          dfName,
-          vegaSpec,
-          changeStep: 1
-        };
+      const newElement = {
+        notebookCellId,
+        dfName,
+        encoding,
+        data,
+        changeStep: 1
+      };
+      if (idx > -1) {
+        // here we are replacing the value
+        prevState.elements[idx] = newElement;
       } else {
-        prevState.elements.push({
-          notebookCellId,
-          dfName,
-          vegaSpec,
-          changeStep: 1
-        });
+        LogDebug(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`);
+        prevState.elements.push(newElement);
       }
       return prevState;
     });
   }
 
+  addBrush(dfName: string, selection: any) {
+    this.refsCollection[dfName].addBrush(selection);
+  }
 
   replaceData(dfName: string, data: any[]) {
-    // need to invoke the replaceData function of the child...
-    // replaceData
-    // this.refLookup[dfName].replaceData();
-    this.setState(prevState => {
-      for (let e of prevState.elements) {
-        if (e.dfName === dfName) {
-          e.newData = data;
-          e.changeStep = e.changeStep + 1;
-        }
-      }
-      return {
-        elements: prevState.elements
-      };
-    });
+    this.refsCollection[dfName].replaceData(data);
   }
 
 
@@ -275,18 +274,18 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
   render() {
     const { elements, alerts, alertCounter } = this.state;
     const chartDivs = elements.map(({
-      notebookCellId, dfName, vegaSpec, changeStep: chanageStep, newData }, index) => {
+      notebookCellId, dfName, data, encoding, changeStep: chanageStep }, index) => {
       return <MidasElement
-        index={index}
+        ref={r => {this.refsCollection[dfName] = r; }}
+        addCurrentSelectionMsg={this.props.addCurrentSelectionMsg}
         cellId={notebookCellId}
-        key={dfName}
+        key={`${dfName}-${encoding.shape}-${encoding.x}-${encoding.y}`}
         dfName={dfName}
-        comm={this.props.comm}
         tick={this.tick}
         title={dfName}
-        vegaSpec={vegaSpec}
+        encoding={encoding}
+        data={data}
         changeStep={chanageStep}
-        newData={newData}
         removeChart={() => this.removeDataFrame(dfName)}
       />;
     });
@@ -302,9 +301,10 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
           <button className="notification-btn" onClick={close}>x</button>
       </div>);
     }
-    const content = (chartDivs.length > 0) ? <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>{chartDivs}</MidasSortableContainer> : <ChartsViewLandingPage/>;
+    // const content = (chartDivs.length > 0) ? <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>{chartDivs}</MidasSortableContainer> : <ChartsViewLandingPage/>;
+    const content = (chartDivs.length > 0) ? chartDivs : <ChartsViewLandingPage/>;
     return (
-      <div id="midas-floater-container">
+      <div className="shelf" id="midas-floater-container">
         {content}
         {alertDivs}
       </div>

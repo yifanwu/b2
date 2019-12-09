@@ -6,7 +6,7 @@ from midas.midas_algebra.selection import SelectionValue
 from ipykernel.comm import Comm # type: ignore
 import numpy as np
 # from json import loads
-from typing import Dict, Callable, Optional, List, cast, Tuple
+from typing import Dict, Callable, Optional, List, cast, Tuple, Any
 import json
 from pyperclip import copy
 import ast
@@ -15,13 +15,14 @@ from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS, MIDAS_RECOVERY_COMM_NAME
 from midas.state_types import DFName
 
 from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, VisualizedDFInfo, DFInfo
-from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef
+from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, snap_to_nice_number
 from midas.charting.showme import gen_spec, infer_encoding
 import functools
 import inspect
+from midas.showme import infer_encoding
 
 def logged(remove_on_chart_removal: bool):
     def wrapper_factory(f):
@@ -30,7 +31,11 @@ def logged(remove_on_chart_removal: bool):
             ret = f(self, *args, **kwargs)
             params = inspect.signature(f).parameters
 
-            if remove_on_chart_removal and "df" in params:
+            if remove_on_chart_removal and "df_name" in params:
+                index = list(inspect.signature(f).parameters).index("df_name") - 1
+                df_to_remove = args[index]
+                assert isinstance(df_to_remove, str)
+            elif remove_on_chart_removal and "df" in params:
                 index = list(inspect.signature(f).parameters).index("df") - 1
                 df_to_remove = args[index].df_name
                 assert isinstance(df_to_remove, str)
@@ -47,11 +52,13 @@ class UiComm(object):
     vis_spec: Dict[DFName, EncodingSpec]
     id_by_df_name: Dict[DFName, DFId]
     is_in_ipynb: bool
-    tmp_debug: str
     midas_instance_name: str
     create_df_from_ops:  Callable[[RelationalOp], MidasDataFrame]
 
-    def __init__(self, is_in_ipynb: bool, midas_instance_name: str, get_df_fun: Callable[[DFName], Optional[DFInfo]], create_df_from_ops: Callable[[RelationalOp], MidasDataFrame]):
+    def __init__(self, is_in_ipynb: bool, midas_instance_name: str,
+      get_df_fun: Callable[[DFName], Optional[DFInfo]],
+      create_df_from_ops: Callable[[RelationalOp], MidasDataFrame],
+      add_selection: Callable[[List[SelectionValue]], List[SelectionValue]]):
         self.next_id = 0
         self.vis_spec = {}
         self.id_by_df_name = {}
@@ -63,6 +70,8 @@ class UiComm(object):
         self.get_df = get_df_fun
         self.create_df_from_ops = create_df_from_ops
         self.logged_comms = [] # 
+        self.add_selection = add_selection
+        self.tmp_log = []
 
     def log(self, function, args, kwargs, associated_df_name):
         self.logged_comms.append((function, args, kwargs, associated_df_name))
@@ -78,6 +87,7 @@ class UiComm(object):
 
     def handle_msg(self, data_raw):
         data = data_raw["content"]["data"]
+        self.tmp_log.append(data)
         debug_log(f"got message {data}")
         if "command" in data:
             command = data["command"]
@@ -103,59 +113,61 @@ class UiComm(object):
                     return code
                 # something went wrong, so let's tell comes...
                 self.send_user_error(f'no selection on {df_name} yet')
+            
             elif command == "column-selected":
-                self.send_debug_msg("column-selected called")
+                # self.send_debug_msg("column-selected called")
                 column = data["column"]
                 df_name = DFName(data["df_name"])
                 self.tmp = f"{column}_{df_name}"
                 code = self.create_distribution_query(column, df_name)
-                self.create_cell_with_text(code)
+                self.create_then_execute_cell(code, "query")
                 # now we need to figure out what kind of transformation is needed
                 # if nothing, we just show the table
-            elif command == "add_selection":
-                df_name = DFName(data["df_name"])
-                df_info = cast(VisualizedDFInfo, self.get_df(df_name))
-                predicates = df_info.predicates
-                if (len(predicates) > 0):
-                    predicate = predicates[-1]
-                    name = f"{predicate.df_name}_{len(predicates)}"
-
-                    self.shelf_selections[name] = (predicate, df_name)
-                    self.custom_message('add-selection', name)
-                else: 
-                    self.send_user_error(f'no selection on {df_name} yet')
             elif command == "remove_dataframe":
                 del self.vis_spec[data["df_name"]]
                 self.remove_df_from_log(data["df_name"])
+
+            elif command == "add_current_selection":
+                value = json.loads(data["value"])
+                # parse it first!
+                # self.send_debug_msg(f"got add_current_selection message {value}")
+                selections = self.get_predicate_info(value)
+                all_predicate = self.add_selection(selections)
+                # now turn this into JSON
+                param_str = ""
+                if len(all_predicate) > 0:
+                    predicates = ",".join(list(map(lambda v: v.to_str(), all_predicate)))
+                    param_str = f"[{predicates}]"
+                # self.send_debug_msg(f"creating code\n{code}")
+                self.execute_fun("make_selections", param_str)
             else:
                 m = f"Command {command} not handled!"
-                self.send_debug_msg(m)
+                # self.send_debug_msg(m)
                 raise NotAllCaseHandledError(m)
         else:
             debug_log(f"Got message from JS Comm: {data}")
 
     def process_code(self, code: str):
-        # self.send_debug_msg(f"process code called {code}")
         assigned_dfs = self.get_dfs_from_code_str(code)
-        assigned_dfs_str = ",".join([cast(str, df.df_name) for df in assigned_dfs])
-        # self.send_debug_msg(f"Cell-ran received and processed {assigned_dfs_str}")
+        # assigned_dfs_str = ",".join([cast(str, df.df_name) for df in assigned_dfs])
         # we need to create the code
         if len(assigned_dfs) == 0:
             # do nothing
             debug_log("no df to process")
             return
-        code_lines = []
+        # code_lines = []
         for df in assigned_dfs:
             if df.is_base_df:
-                line = f"{df.df_name}.show_profile()"
+                # line = f"{df.df_name}.show_profile()"
+                # just execute it! since there is no configuration
+                df.show_profile()
             else:
                 encoding = infer_encoding(df)
                 encoding_arg = f"shape='{encoding.shape}', x='{encoding.x}', y='{encoding.y}'"
                 line = f"{df.df_name}.show({encoding_arg})"
-            code_lines.append(line)
-        code = "\n".join(code_lines)
-        debug_log(f"processed code: {code}")
-        self.create_cell_with_text(code)
+                self.create_then_execute_cell(line, "chart")
+        #     code_lines.append(line)
+        # code = "\n".join(code_lines)
 
     def set_comm(self, midas_instance_name: str):
         if self.is_in_ipynb:
@@ -169,7 +181,6 @@ class UiComm(object):
         else:
             self.comm = MockComm()
 
-   
 
     def register_recovery_comm(self, midas_instance_name: str):
         def target_func(comm, open_msg):
@@ -195,7 +206,7 @@ class UiComm(object):
 
     @logged(remove_on_chart_removal=False)
     def create_profile(self, df: MidasDataFrame):
-        debug_log(f"creating profile {df.df_name}")
+        # debug_log(f"creating profile {df.df_name}")
         if df.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         columns = [{"columnName": c.name, "columnType": c.c_type.value} for c in df.columns]
@@ -210,27 +221,28 @@ class UiComm(object):
 
     @logged(remove_on_chart_removal=True)
     def create_chart(self, df: MidasDataFrame, encoding: EncodingSpec):
-        debug_log(f"creating chart {df.df_name}")
+        # debug_log(f"creating chart {mdf.df_name}")
         if df.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         # first check if the encodings has changed
         if df.df_name in self.vis_spec:
             if self.vis_spec[df.df_name] == encoding and self.id_by_df_name[df.df_name] == df.id:
                 # no op
+                debug_log("no op, same stuff")
                 return
 
         self.vis_spec[df.df_name] = encoding
         self.id_by_df_name[df.df_name] = df.id
 
-        vega_lite = gen_spec(df.df_name, encoding)
+        # vega_lite = gen_spec(mdf.df_name, encoding)
         records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
-        vega_lite["data"]["values"] = records 
-        vega = json.dumps(vega_lite)
-
+        # TODO: check if we even need to do the dumping
+        data = json.dumps(records)
         message = {
             'type': 'chart_render',
             "dfName": df.df_name,
-            'vega': vega
+            'encoding': encoding.to_json(),
+            'data': data,
         }
         self.comm.send(message)
         return
@@ -256,17 +268,25 @@ class UiComm(object):
                 debug_log(f"We cannot find {a} in current state")
         return df_assignments
     
+
     @logged(remove_on_chart_removal=True)
-    def update_chart_filtered_value(self, df: MidasDataFrame, df_name: DFName):
+    def update_chart_filtered_value(self, df: Optional[MidasDataFrame], df_name: DFName):
         # note that this is alwsays used for updating filtered information
         if df_name not in self.vis_spec:
-            raise InternalLogicalError("Cannot update since not done before")
-        new_data = dataframe_to_dict(df, FilterLabelOptions.filtered)
-        self.comm.send({
-            "type": "chart_update_data",
-            "dfName": df_name,
-            "newData": new_data
-        })
+            raise InternalLogicalError(f"Cannot update df: {df_name}, since it was not visualized before")
+        if df is None or df.table is None:
+            self.comm.send({
+                "type": "chart_update_data",
+                "dfName": df_name,
+                "newData": []
+            })
+        else:
+            new_data = dataframe_to_dict(df, FilterLabelOptions.filtered)
+            self.comm.send({
+                "type": "chart_update_data",
+                "dfName": df_name,
+                "newData": new_data
+            })
         return
 
 
@@ -277,15 +297,26 @@ class UiComm(object):
             "value": message
         })
 
-    def create_cell_with_text(self, s):
-        self.send_debug_msg(f"create_cell_with_text called {s}")
-        d = datetime.now()
-        annotated = f"# [MIDAS] auto-created on {d}\n{s}"
-        # , execute=True
-        # if execute:
+    def add_selection_to_shelf(self, selections):
+        self.comm.send({
+            "type": "add_selection_to_shelf",
+            "value": json.dumps(selections)
+        })
+        
+    def create_then_execute_cell(self, s, funKind):
+        # self.send_debug_msg(f"create_cell_with_text called {s}")
+        # self.send_debug_msg(f"creating cell: {annotated}")
         self.comm.send({
             "type": "create_then_execute_cell",
-            "value": annotated
+            "funKind": funKind,
+            "code": s
+        })
+
+    def execute_fun(self, fun: str, params: str):
+        self.comm.send({
+            "type": "execute_fun",
+            "funName": fun,
+            "params": params,
         })
 
     def send_debug_msg(self, message: str):
@@ -302,23 +333,42 @@ class UiComm(object):
         })
         
 
-    def get_predicate_info(self, df_name: DFName, selection) -> List[SelectionValue]:
-        debug_log(f"selection is {selection}")
-        if selection is None:
+    def get_predicate_info(self, selections: Dict) -> List[SelectionValue]:
+        # debug_log(f"selection is {selection}")
+        if selections is None or len(selections.keys()) == 0:
             return []
-        vis = self.vis_spec[df_name]
-        if vis.shape == "circle":
-            x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
-            y_selection = NumericRangeSelection(ColumnRef(vis.y, df_name), selection[vis.y][0], selection[vis.y][1])
-            return [x_selection, y_selection]
-        if vis.shape == "bar":
-            predicate = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
-            return [predicate]
-        if vis.shape == "line":
-            x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
-            return [x_selection]
-        raise InternalLogicalError(f"{vis.shape} not handled")
-
+        result = []
+        for df_name in selections:
+            selection = selections[df_name]
+            # check if it's null, if it is, it's empty selection!
+            vis = self.vis_spec[df_name]
+            x = ColumnRef(vis.x, df_name)
+            if not selection:
+                if vis.shape == "circle":
+                    y = ColumnRef(vis.y, df_name)
+                    result.extend([
+                        EmptySelection(x),
+                        EmptySelection(y)
+                    ])
+                else:
+                    result.extend([
+                        EmptySelection(x)
+                    ])
+            else:
+                if vis.shape == "circle":
+                    y = ColumnRef(vis.y, df_name)
+                    x_selection = NumericRangeSelection(x, selection[vis.x][0], selection[vis.x][1])
+                    y_selection = NumericRangeSelection(y, selection[vis.y][0], selection[vis.y][1])
+                    result.extend([x_selection, y_selection])
+                elif vis.shape == "bar":
+                    predicate = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
+                    result.extend([predicate])
+                elif vis.shape == "line":
+                    x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
+                    result.extend([x_selection])
+                else:
+                    raise InternalLogicalError(f"{vis.shape} not handled")
+        return result
 
     @logged(remove_on_chart_removal=False)
     def update_selection_shelf_selection_name(self, old_name: str, new_name: str):

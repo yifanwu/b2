@@ -15,8 +15,8 @@ class ChartType(Enum):
 
 # set to numerical values to save space.
 class FilterLabelOptions(Enum):
-    filtered=0
-    unfiltered=1
+    filtered=False
+    unfiltered=True
     none=2
 
 
@@ -32,8 +32,10 @@ class SelectionEvent(object):
         self.predicate = predicate
         self.df_name = df_name
         self.id = get_random_string(5)
+
     def __repr__(self):
         return f"df: {self.df_name}\n  predicates: {self.predicate}"
+
 
 
 class DfTransformType(Enum):
@@ -71,14 +73,15 @@ class EncodingSpec(object):
     def __eq__(self, other: 'EncodingSpec'):
         return self.shape == other.shape and self.x == other.x and self.y == other.y
 
-
     def __ne__(self, other: 'EncodingSpec'):
         return not self.__eq__(other)
     
     def __repr__(self):
         return f"EncodingSpec({self.shape!r}, {self.x!r}, {self.y!r})"
 
-    
+    def to_json(self):
+        return '{{"shape": "{0}", "x": "{1}", "y" : "{2}"}}'.format(self.shape, self.x, self.y)
+
 # class ChartInfo(NamedTuple):
 #     """[summary]
     
