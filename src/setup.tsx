@@ -4,6 +4,10 @@ import ReactDOM from "react-dom";
 import { MidasSidebar } from "./components/MidasSidebar";
 import { LogSteps } from "./utils";
 
+function removeResizer() {
+    $("#midas-resizer").remove()
+}
+
 /**
  * Makes the resizer that allows changing the width of the sidebar.
  * @param divToResize the div representing the sidebar.
@@ -33,6 +37,12 @@ function makeResizer(onChange: (delta: number) => void) {
 function syncWidth(parentSelector: string, childSelector: string, marginAdjust = 0) {
   let parentwidth = $(parentSelector).width();
   $(childSelector).width(parentwidth - marginAdjust );
+}
+
+export function tearDownMidasComponent() {
+  removeResizer();
+  ReactDOM.unmountComponentAtNode(document.getElementById("midas-sidebar-wrapper"));
+  $("#midas-sidebar-wrapper").remove()
 }
 
 export function createMidasComponent(midas_instance_name: string, comm: any, is_first_time: boolean = true): MidasSidebar {

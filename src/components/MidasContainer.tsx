@@ -245,6 +245,11 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
    * @param key the id of the data frame
    */
   removeDataFrame(dfName: string) {
+    this.props.comm.send({
+      "command": "remove_dataframe",
+      "df_name": dfName,
+    })
+
     this.setState(prevState => {
       return {
         elements: prevState.elements.filter(e => (e.dfName !== dfName))

@@ -1,5 +1,5 @@
 /// <reference path="./external/Jupyter.d.ts" />
-import { MIDAS_CELL_COMM_NAME } from "./constants";
+import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME } from "./constants";
 import { LogSteps, LogDebug } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType } from "./types";
@@ -37,6 +37,12 @@ type ChartRenderComm = {
 };
 
 type MidasCommLoad = CommandLoad | BasicLoad| NotificationCommLoad | ProfilerComm | ChartRenderComm  | UpdateCommLoad;
+
+export function openRecoveryComm() {
+  const comm = Jupyter.notebook.kernel.comm_manager.new_comm(MIDAS_RECOVERY_COMM_NAME)
+  LogDebug("Sending recovery message...")
+  comm.send({})
+}
 
 /**
  * Makes the comm responsible for discovery of which visualization
@@ -77,15 +83,15 @@ export function makeComm() {
         LogSteps(`CommClose`, msg);
       });
 
-      if ((window.performance) && (performance.navigation.type === 1)) {
-        // Page is reloaded, use comm to make python side reconnect to the comm
-        // this should be ran only once
-        LogDebug("Refresh-comm called");
-        // FIXME: commenting the below out because there are some infinite loops going on here...
-        comm.send({
-          "command": "refresh-comm"
-        });
-      }
+      // if ((window.performance) && (performance.navigation.type === 1)) {
+      //   // Page is reloaded, use comm to make python side reconnect to the comm
+      //   // this should be ran only once
+      //   LogDebug("Refresh-comm called");
+      //   // FIXME: commenting the below out because there are some infinite loops going on here...
+      //   comm.send({
+      //     "command": "refresh-comm"
+      //   });
+      // }
     });
 }
 

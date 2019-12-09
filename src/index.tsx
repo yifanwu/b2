@@ -6,14 +6,14 @@ import "jqueryui";
 
 import "./elements.css";
 
-import { makeComm } from "./comm";
+import { makeComm, openRecoveryComm } from "./comm";
 import MidasContainer from "./components/MidasContainer";
 import { MidasSidebar } from "./components/MidasSidebar";
 import { LogSteps } from "./utils";
 
 import { SelectionShelf } from "./components/SelectionShelf";
 import { ProfilerShelf } from "./components/ProfilerShelf";
-
+import {tearDownMidasComponent} from "./setup"
 
 declare global {
   interface Window {
@@ -27,10 +27,11 @@ declare global {
 export function load_ipython_extension() {
 
   Jupyter.notebook.events.on("kernel_connected.Kernel", function() {
-    LogSteps("!!Kernel starting!!");
-    
+      tearDownMidasComponent();
   });
 
+  LogSteps("Kernel starting, opening recovery comm");
+  openRecoveryComm();
   makeComm();
 
 }
