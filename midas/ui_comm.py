@@ -19,7 +19,6 @@ from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, C
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, snap_to_nice_number
-from midas.charting.showme import gen_spec, infer_encoding
 import functools
 import inspect
 from midas.showme import infer_encoding

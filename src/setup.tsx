@@ -50,6 +50,7 @@ export function createMidasComponent(
   columnSelectMsg: (col: string, table: string) => void,
   addCurrentSelectionMsg: (valueStr: string) => void,
   makeSelectionFromShelf: (selection: string) => void,
+  removeDataFrameMsg: (dataFrame: string) => void,
   ): MidasSidebar {
   // LogSteps("createMidasComponent", midas_instance_name);
   const SIDEBAR_ID = "midas-sidebar-wrapper";
@@ -68,6 +69,7 @@ export function createMidasComponent(
       columnSelectMsg={columnSelectMsg}
       addCurrentSelectionMsg={addCurrentSelectionMsg}
       makeSelectionFromShelf={makeSelectionFromShelf}
+      removeDataFrameMsg={removeDataFrameMsg}
     />, document.getElementById("midas-sidebar-wrapper"));
 
   // note that this must happen after

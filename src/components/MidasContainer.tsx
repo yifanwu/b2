@@ -34,6 +34,7 @@ interface AlertItem {
 
 interface ContainerProps {
   addCurrentSelectionMsg: (valueStr: string) => void;
+  removeDataFrameMsg: (dataFrame: string) => void;
 }
 
 interface ContainerState {
@@ -244,10 +245,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
    * @param key the id of the data frame
    */
   removeDataFrame(dfName: string) {
-    this.props.comm.send({
-      "command": "remove_dataframe",
-      "df_name": dfName,
-    })
+    this.props.removeDataFrameMsg(dfName);
 
     this.setState(prevState => {
       return {

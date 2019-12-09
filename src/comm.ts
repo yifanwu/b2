@@ -108,9 +108,17 @@ export function makeComm() {
               "value": valueStr
             });
           };
+
+          const removeDataFrameMsg = (dfName: string) => {
+            comm.send({
+              "command": "remove_dataframe",
+              "df_name": dfName,
+            });
+          };
+
           const cellManager = new CellManager(midasInstanceName);
           const makeSelection = cellManager.makeSelection.bind(cellManager);
-          const ref = createMidasComponent(columnSelectMsg, addCurrentSelectionMsg, makeSelection);
+          const ref = createMidasComponent(columnSelectMsg, addCurrentSelectionMsg, makeSelection, removeDataFrameMsg);
           // cellManager.setDrawBrush(ref.getMidasContainerRef().drawBrush);
           const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);
