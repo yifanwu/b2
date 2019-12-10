@@ -65,14 +65,16 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   drawBrush(selection: any) { // will be a dictionary...
     if (JSON.stringify(selection) === this.state.currentBrush) {
-      LogDebug(`add brush called ${selection}, NOOP`);
+      LogDebug(`BRUSH NOOP, ${selection} is the same`);
       // this step is very important in preventing the cells from forming a loop
       return;
     }
+    LogDebug(`BRUSHING ${selection} and ${this.state.currentBrush} are different.`);
     // const selection = JSON.parse(selectionStr);
     // @ts-ignore because the vega view API is not fully TS typed.
     const scale = this.state.view.scale.bind(this.state.view);
     const signal = this.state.view.signal.bind(this.state.view);
+    const runAsync = this.state.view.runAsync.bind(this.state.view);
     const encoding = this.props.encoding;
     if (selection[encoding.x]) {
       const x_pixel_min = scale("x")(selection[encoding.x][0]);
@@ -83,6 +85,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       // and update the brush_x and brush_y
       LogDebug(`updated brush x: ${x_pixel_min}, ${x_pixel_max}`);
       signal("brush_x", [x_pixel_min, x_pixel_max]);
+      runAsync();
     }
     if (selection[encoding.y]) {
       const y_pixel_min = scale("y")(selection[encoding.y][0]);

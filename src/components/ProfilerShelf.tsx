@@ -61,7 +61,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ColumnShe
     });
     const content = (tableDivs.length > 0) ? tableDivs : <ProfileShelfLandingPage/>;
     return (
-      <div className="shelf" id="profiler-shelf">
+      <div  className="shelf" id="profiler-shelf">
       {/* <div className="midbar-shelf-header">source tables</div> */}
       {content}
       </div>

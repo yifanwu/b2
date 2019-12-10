@@ -158,7 +158,7 @@ class UiComm(object):
         if mdf.df_name in self.vis_spec:
             if self.vis_spec[mdf.df_name] == encoding and self.id_by_df_name[mdf.df_name] == mdf.id:
                 # no op
-                debug_log("no op, same stuff")
+                # debug_log("no op, same stuff")
                 return
 
         self.vis_spec[mdf.df_name] = encoding

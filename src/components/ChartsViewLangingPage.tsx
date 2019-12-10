@@ -1,7 +1,7 @@
 import React from "react";
 
 export const ChartsViewLandingPage: React.StatelessComponent<{}> = () => {
-  return <div>
+  return <>
     <div className="card landing-card">
       <b><b>charts</b> will be shown here.</b>
       <br></br>
@@ -15,5 +15,5 @@ export const ChartsViewLandingPage: React.StatelessComponent<{}> = () => {
       <br></br>
       <p>To load data, use <span className="code">m.read_table("your_data.csv")</span>, the columns will show up in the pannel to the left.  To quickly investigate the interesting columes, click on the column name to generate the <b>code</b> and the <b>charts</b>. For columns of little value, click the cross icon to hide the column.</p>
     </div>
-  </div>;
+  </>;
 };
