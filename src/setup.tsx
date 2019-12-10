@@ -6,7 +6,7 @@ import { LogSteps } from "./utils";
 import CellManager from "./CellManager";
 
 function removeResizer() {
-    $("#midas-resizer").remove()
+  $("#midas-resizer").remove()
 }
 
 /**
@@ -37,13 +37,15 @@ function makeResizer(onChange: (delta: number) => void) {
 
 function syncWidth(parentSelector: string, childSelector: string, marginAdjust = 0) {
   let parentwidth = $(parentSelector).width();
-  $(childSelector).width(parentwidth - marginAdjust );
+  $(childSelector).width(parentwidth - marginAdjust);
 }
 
 export function tearDownMidasComponent() {
-  removeResizer();
-  ReactDOM.unmountComponentAtNode(document.getElementById("midas-sidebar-wrapper"));
-  $("#midas-sidebar-wrapper").remove()
+  if ($("#midas-sidebar-wrapper").length != 0) {
+    removeResizer();
+    ReactDOM.unmountComponentAtNode(document.getElementById("midas-sidebar-wrapper"));
+    $("#midas-sidebar-wrapper").remove()
+  }
 }
 
 export function createMidasComponent(
@@ -51,12 +53,12 @@ export function createMidasComponent(
   addCurrentSelectionMsg: (valueStr: string) => void,
   makeSelectionFromShelf: (selection: string) => void,
   removeDataFrameMsg: (dataFrame: string) => void,
-  ): MidasSidebar {
+): MidasSidebar {
   // LogSteps("createMidasComponent", midas_instance_name);
   const SIDEBAR_ID = "midas-sidebar-wrapper";
 
   if ($(`#${SIDEBAR_ID}`).length === 0) {
-    $(window).resize(function() {
+    $(window).resize(function () {
       syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10);
     });
     const midasSideBarDiv = $(`<div id=\"${SIDEBAR_ID}\"/>`);
@@ -65,12 +67,12 @@ export function createMidasComponent(
 
   let midasRef;
   ReactDOM.render(<MidasSidebar
-      ref={(comp) => midasRef = comp}
-      columnSelectMsg={columnSelectMsg}
-      addCurrentSelectionMsg={addCurrentSelectionMsg}
-      makeSelectionFromShelf={makeSelectionFromShelf}
-      removeDataFrameMsg={removeDataFrameMsg}
-    />, document.getElementById("midas-sidebar-wrapper"));
+    ref={(comp) => midasRef = comp}
+    columnSelectMsg={columnSelectMsg}
+    addCurrentSelectionMsg={addCurrentSelectionMsg}
+    makeSelectionFromShelf={makeSelectionFromShelf}
+    removeDataFrameMsg={removeDataFrameMsg}
+  />, document.getElementById("midas-sidebar-wrapper"));
 
   // note that this must happen after
   if ($(`#midas-resizer`).length === 0) {

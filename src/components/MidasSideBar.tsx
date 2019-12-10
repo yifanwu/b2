@@ -77,17 +77,17 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
           ref={this.setSelectionShelfRef}
           makeSelectionFromShelf={this.props.makeSelectionFromShelf}
         />
-    </div>);
+      </div>);
     const displayStyle = this.state.isShown ? "block" : "none";
     return (
       <div style={{ "display": displayStyle }}>
         <div id="midas-resizer"></div>
         <div className="midas-inside">
-          { midbar }
+          {midbar}
           <MidasContainer
             removeDataFrameMsg={this.props.removeDataFrameMsg}
             addCurrentSelectionMsg={this.props.addCurrentSelectionMsg}
-            ref={this.setMidasContainerRef}/>
+            ref={this.setMidasContainerRef} />
         </div>
       </div>
     );

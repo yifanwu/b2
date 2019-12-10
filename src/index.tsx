@@ -25,13 +25,21 @@ declare global {
 
 
 export function load_ipython_extension() {
-
   Jupyter.notebook.events.on("kernel_connected.Kernel", function() {
       tearDownMidasComponent();
   });
 
   LogSteps("Kernel starting, opening recovery comm");
-  openRecoveryComm();
-  makeComm();
+  function checkIfNull() {
+    if(Jupyter.notebook.kernel === null) {
+       console.log("The kernel is null. Trying again in 100 milliseconds.")
+       window.setTimeout(checkIfNull, 100);
+    } else {
+      openRecoveryComm();
+      makeComm();
+    }
+}
+checkIfNull();
+
 
 }

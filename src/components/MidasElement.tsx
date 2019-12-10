@@ -124,17 +124,17 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       return selection;
     }
   }
-   oldGetDebouncedFunction(dfName: string, tick: (dfName: string) => void) {
+  oldGetDebouncedFunction(dfName: string, tick: (dfName: string) => void) {
     const callback = (signalName: string, value: any) => {
       // also need to call into python state...
       let valueStr = JSON.stringify(value);
       valueStr = (valueStr === "null") ? "None" : valueStr;
-  
+
       const c = Jupyter.notebook.insert_cell_above("code");
 
       this.setState(prevState => {
         prevState.generatedCells.push(c);
-        return prevState; 
+        return prevState;
       });
 
       const date = new Date().toLocaleString("en-US");
@@ -144,7 +144,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       LogDebug("Sending to comm the selection");
       tick(dfName);
     };
-  
+
     const wrapped = (name: any, value: any) => {
       const n = new Date();
       let l = (window as any).lastInvoked;
@@ -168,7 +168,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       let valueStr = JSON.stringify(processedValue);
       valueStr = (valueStr === "null") ? "None" : valueStr;
       this.props.addCurrentSelectionMsg(valueStr);
-      this.setState({currentBrush: valueStr});
+      this.setState({ currentBrush: valueStr });
       LogDebug(`Chart causing selection ${valueStr}`);
       this.props.tick(dfName);
     };
@@ -232,7 +232,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     // can do this in python too
     const changeSet = this.state.view
       .changeset()
-      .remove((datum: any) => {return datum.is_overview === false; })
+      .remove((datum: any) => { return datum.is_overview === false; })
       .insert(newValues);
 
     this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
@@ -246,10 +246,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     });
     this.setState(prevState => {
       let newState = {
-      elementId: prevState.elementId,
-      hidden: prevState.hidden,
-      view: prevState.view,
-      generatedCells: Array<any>(),      
+        elementId: prevState.elementId,
+        hidden: prevState.hidden,
+        view: prevState.view,
+        generatedCells: Array<any>(),
       }
       return newState;
     });
@@ -262,7 +262,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     return (
       <div className="card midas-element" id={getDfId(this.props.dfName)}>
         <div className="midas-header">
-          <DragHandle/>
+          <DragHandle />
           <span className="midas-title">{this.props.title}</span>
           <div className="midas-header-options"></div>
           <button
@@ -270,9 +270,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
             onClick={() => this.selectCell()}
           >cell</button>
           <button
-          className={"midas-header-button"}
-          onClick={() => this.clearGeneratedCells()}>
-              Clear generated cells
+            className={"midas-header-button"}
+            onClick={() => this.clearGeneratedCells()}>
+            Clear generated cells
           </button>
           <button
             className={"midas-header-button"}

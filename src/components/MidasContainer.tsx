@@ -53,7 +53,7 @@ interface ContainerState {
 }
 
 
-const MidasSortableContainer = SortableContainer(({children}: {children: any}) => {
+const MidasSortableContainer = SortableContainer(({ children }: { children: any }) => {
   return <div>{children}</div>;
 });
 
@@ -192,7 +192,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     const self = this;
     window.setTimeout(() => {
       self.setState(p => {
-        return { alertCounter: p.alertCounter + 1};
+        return { alertCounter: p.alertCounter + 1 };
       });
     }, ALERT_ALIVE_TIME);
   }
@@ -254,7 +254,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     });
   }
 
-   onSortEnd = ({oldIndex, newIndex}: {oldIndex: number, newIndex: number}) => {
+  onSortEnd = ({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) => {
     this.setState(prevState => {
       return {
         notebookMetaData: prevState.notebookMetaData,
@@ -274,7 +274,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     const chartDivs = elements.map(({
       notebookCellId, dfName, data, encoding, changeStep: chanageStep }, index) => {
       return <MidasElement
-        ref={r => {this.refsCollection[dfName] = r; }}
+        ref={r => { this.refsCollection[dfName] = r; }}
         addCurrentSelectionMsg={this.props.addCurrentSelectionMsg}
         cellId={notebookCellId}
         key={`${dfName}-${encoding.shape}-${encoding.x}-${encoding.y}`}
@@ -288,19 +288,19 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       />;
     });
     const alertDivs = [];
-    for (let i = alertCounter; i < alerts.length; i ++) {
+    for (let i = alertCounter; i < alerts.length; i++) {
       const a = alerts[i];
       const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-debug";
       alertDivs.push(<div
-          className={`card midas-alert ${className}`}
-          key={`alert-${a.aId}`}
-        >
-          {a.msg}
-          <button className="notification-btn" onClick={close}>x</button>
+        className={`card midas-alert ${className}`}
+        key={`alert-${a.aId}`}
+      >
+        {a.msg}
+        <button className="notification-btn" onClick={close}>x</button>
       </div>);
     }
     // const content = (chartDivs.length > 0) ? <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>{chartDivs}</MidasSortableContainer> : <ChartsViewLandingPage/>;
-    const content = (chartDivs.length > 0) ? chartDivs : <ChartsViewLandingPage/>;
+    const content = (chartDivs.length > 0) ? chartDivs : <ChartsViewLandingPage />;
     return (
       <div className="shelf" id="midas-floater-container">
         {content}

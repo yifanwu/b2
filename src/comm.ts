@@ -65,9 +65,10 @@ type MidasCommLoad = CommandLoad
                      | BrushCommLoad;
 
 export function openRecoveryComm() {
-  const comm = Jupyter.notebook.kernel.comm_manager.new_comm(MIDAS_RECOVERY_COMM_NAME)
-  LogDebug("Sending recovery message...")
-  comm.send({})
+    const comm = Jupyter.notebook.kernel.comm_manager.new_comm(MIDAS_RECOVERY_COMM_NAME)
+    LogDebug("Sending recovery message...")
+    comm.send({})
+ 
 }
 
 /**
