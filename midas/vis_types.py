@@ -71,12 +71,13 @@ class EncodingSpec(object):
         self.y = y
 
     def __eq__(self, other: 'EncodingSpec'):
-        if self.shape == other.shape and self.x == other.x and self.y == other.y:
-            return True
-        return False
+        return self.shape == other.shape and self.x == other.x and self.y == other.y
 
     def __ne__(self, other: 'EncodingSpec'):
         return not self.__eq__(other)
+    
+    def __repr__(self):
+        return f"EncodingSpec({self.shape!r}, {self.x!r}, {self.y!r})"
 
     def to_json(self):
         return '{{"shape": "{0}", "x": "{1}", "y" : "{2}"}}'.format(self.shape, self.x, self.y)

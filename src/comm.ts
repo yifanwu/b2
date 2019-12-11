@@ -1,5 +1,5 @@
 /// <reference path="./external/Jupyter.d.ts" />
-import { MIDAS_CELL_COMM_NAME } from "./constants";
+import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME } from "./constants";
 import { LogSteps, LogDebug } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType } from "./types";
@@ -64,6 +64,13 @@ type MidasCommLoad = CommandLoad
                      | UpdateCommLoad
                      | BrushCommLoad;
 
+export function openRecoveryComm() {
+    const comm = Jupyter.notebook.kernel.comm_manager.new_comm(MIDAS_RECOVERY_COMM_NAME)
+    LogDebug("Sending recovery message...")
+    comm.send({})
+ 
+}
+
 /**
  * Makes the comm responsible for discovery of which visualization
  * corresponds to which cell, accomplished through inspecting the
@@ -102,9 +109,17 @@ export function makeComm() {
               "value": valueStr
             });
           };
+
+          const removeDataFrameMsg = (dfName: string) => {
+            comm.send({
+              "command": "remove_dataframe",
+              "df_name": dfName,
+            });
+          };
+
           const cellManager = new CellManager(midasInstanceName);
           const makeSelection = cellManager.makeSelection.bind(cellManager);
-          const ref = createMidasComponent(columnSelectMsg, addCurrentSelectionMsg, makeSelection);
+          const ref = createMidasComponent(columnSelectMsg, addCurrentSelectionMsg, makeSelection, removeDataFrameMsg);
           // cellManager.setDrawBrush(ref.getMidasContainerRef().drawBrush);
           const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);
@@ -124,15 +139,15 @@ export function makeComm() {
         LogSteps(`CommClose`, msg);
       });
 
-      if ((window.performance) && (performance.navigation.type === 1)) {
-        // Page is reloaded, use comm to make python side reconnect to the comm
-        // this should be ran only once
-        LogDebug("Refresh-comm called");
-        // FIXME: commenting the below out because there are some infinite loops going on here...
-        // comm.send({
-        //   "command": "refresh-comm"
-        // });
-      }
+      // if ((window.performance) && (performance.navigation.type === 1)) {
+      //   // Page is reloaded, use comm to make python side reconnect to the comm
+      //   // this should be ran only once
+      //   LogDebug("Refresh-comm called");
+      //   // FIXME: commenting the below out because there are some infinite loops going on here...
+      //   comm.send({
+      //     "command": "refresh-comm"
+      //   });
+      // }
     });
 }
 

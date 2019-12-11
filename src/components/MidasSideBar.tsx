@@ -8,6 +8,7 @@ interface MidasSidebarProps {
   columnSelectMsg: (col: string, table: string) => void;
   addCurrentSelectionMsg: (valueStr: string) => void;
   makeSelectionFromShelf: (selection: string) => void;
+  removeDataFrameMsg: (dataFrame: string) => void;
 }
 
 interface MidasSidebarState {
@@ -83,8 +84,9 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
     return (<>
         <div id="midas-resizer"></div>
         <div className="midas-inside">
-          { midbar }
+          {midbar}
           <MidasContainer
+            removeDataFrameMsg={this.props.removeDataFrameMsg}
             addCurrentSelectionMsg={this.props.addCurrentSelectionMsg}
             ref={this.setMidasContainerRef}/>
         </div></>

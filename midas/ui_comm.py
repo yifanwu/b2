@@ -11,7 +11,7 @@ import json
 from pyperclip import copy
 import ast
 
-from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS
+from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS, MIDAS_RECOVERY_COMM_NAME
 from midas.state_types import DFName
 
 from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, VisualizedDFInfo, DFInfo
@@ -19,10 +19,35 @@ from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, C
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, snap_to_nice_number
+import functools
+import inspect
 from midas.showme import infer_encoding
+
+def logged(remove_on_chart_removal: bool):
+    def wrapper_factory(f):
+        @functools.wraps(f)
+        def wrapper(self, *args, **kwargs):
+            ret = f(self, *args, **kwargs)
+            params = inspect.signature(f).parameters
+
+            if remove_on_chart_removal and "df_name" in params:
+                index = list(inspect.signature(f).parameters).index("df_name") - 1
+                df_to_remove = args[index]
+                assert isinstance(df_to_remove, str)
+            elif remove_on_chart_removal and "df" in params:
+                index = list(inspect.signature(f).parameters).index("df") - 1
+                df_to_remove = args[index].df_name
+                assert isinstance(df_to_remove, str)
+            else:
+                df_to_remove = None
+            self.log(f, args, kwargs, df_to_remove)
+            return ret
+        return wrapper
+    return wrapper_factory
 
 class UiComm(object):
     comm: Comm
+    recovery_comm: Comm
     vis_spec: Dict[DFName, EncodingSpec]
     id_by_df_name: Dict[DFName, DFId]
     is_in_ipynb: bool
@@ -40,10 +65,24 @@ class UiComm(object):
         self.is_in_ipynb = is_in_ipynb
         self.midas_instance_name = midas_instance_name
         self.set_comm(midas_instance_name)
+        self.register_recovery_comm(midas_instance_name)
         self.get_df = get_df_fun
         self.create_df_from_ops = create_df_from_ops
+        self.logged_comms = [] # 
         self.add_selection = add_selection
         self.tmp_log = []
+
+    def log(self, function, args, kwargs, associated_df_name):
+        self.logged_comms.append((function, args, kwargs, associated_df_name))
+
+    def run_log(self):
+        for f, args, kwargs, _ in self.logged_comms:
+          f(self, *args, *kwargs)
+
+    def remove_df_from_log(self, df_name):
+        def does_not_contain_df_name(entry):
+            return entry[3] != df_name
+        self.logged_comms = list(filter(does_not_contain_df_name, self.logged_comms))
 
     def handle_msg(self, data_raw):
         data = data_raw["content"]["data"]
@@ -51,16 +90,19 @@ class UiComm(object):
         debug_log(f"got message {data}")
         if "command" in data:
             command = data["command"]
-            if command == "refresh-comm":
-                self.send_debug_msg("Refreshing comm")
-                self.set_comm(self.midas_instance_name)
-                return
+            # if command == "refresh-comm":
+            #     if not self.logged_comms:
+            #       return
+            #     else:
+            #       self.run_log()
+            #     # self.send_debug_msg("Refreshing comm")
+            #     self.set_comm(self.midas_instance_name)
             if command == "cell-ran":
                 if "code" in data:
                     code = data["code"]
                     self.process_code(code)
                 return
-            if command == "get_code_clipboard":
+            elif command == "get_code_clipboard":
                 df_name = DFName(data["df_name"])
                 df = self.get_df(df_name)
                 if df:
@@ -71,7 +113,7 @@ class UiComm(object):
                 # something went wrong, so let's tell comes...
                 self.send_user_error(f'no selection on {df_name} yet')
             
-            if command == "column-selected":
+            elif command == "column-selected":
                 # self.send_debug_msg("column-selected called")
                 column = data["column"]
                 df_name = DFName(data["df_name"])
@@ -80,7 +122,11 @@ class UiComm(object):
                 self.create_then_execute_cell(code, "query")
                 # now we need to figure out what kind of transformation is needed
                 # if nothing, we just show the table
-            if command == "add_current_selection":
+            elif command == "remove_dataframe":
+                del self.vis_spec[data["df_name"]]
+                self.remove_df_from_log(data["df_name"])
+
+            elif command == "add_current_selection":
                 value = json.loads(data["value"])
                 # parse it first!
                 # self.send_debug_msg(f"got add_current_selection message {value}")
@@ -134,7 +180,30 @@ class UiComm(object):
         else:
             self.comm = MockComm()
 
-    
+
+    def register_recovery_comm(self, midas_instance_name: str):
+        def target_func(comm, open_msg):
+            # comm is the kernel Comm instance
+            # msg is the comm_open message
+        
+            # Register handler for later messages
+            @comm.on_msg
+            def _recv(msg):
+                if not self.logged_comms:
+                    debug_log("Received recovery request, but nothing to recover, so no need to reopen comm.")
+                    return
+                else:
+                    debug_log("Received recovery request. Reopening comm...")
+                    self.set_comm(self.midas_instance_name)
+                    debug_log("Clearing stored visualizations...")
+                    self.vis_spec = {}
+                    debug_log("Comm reopened. Rerunning logged commands...")
+                    self.run_log()
+ 
+        debug_log("Registering recovery comm...")
+        get_ipython().kernel.comm_manager.register_target(MIDAS_RECOVERY_COMM_NAME, target_func)
+
+    @logged(remove_on_chart_removal=False)
     def create_profile(self, df: MidasDataFrame):
         # debug_log(f"creating profile {df.df_name}")
         if df.df_name is None:
@@ -149,28 +218,28 @@ class UiComm(object):
         self.comm.send(message)
         return
 
-
-    def create_chart(self, mdf: MidasDataFrame, encoding: EncodingSpec):
+    @logged(remove_on_chart_removal=True)
+    def create_chart(self, df: MidasDataFrame, encoding: EncodingSpec):
         # debug_log(f"creating chart {mdf.df_name}")
-        if mdf.df_name is None:
+        if df.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         # first check if the encodings has changed
-        if mdf.df_name in self.vis_spec:
-            if self.vis_spec[mdf.df_name] == encoding and self.id_by_df_name[mdf.df_name] == mdf.id:
+        if df.df_name in self.vis_spec:
+            if self.vis_spec[df.df_name] == encoding and self.id_by_df_name[df.df_name] == df.id:
                 # no op
                 # debug_log("no op, same stuff")
                 return
 
-        self.vis_spec[mdf.df_name] = encoding
-        self.id_by_df_name[mdf.df_name] = mdf.id
+        self.vis_spec[df.df_name] = encoding
+        self.id_by_df_name[df.df_name] = df.id
 
         # vega_lite = gen_spec(mdf.df_name, encoding)
-        records = dataframe_to_dict(mdf, FilterLabelOptions.unfiltered)
+        records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
         # TODO: check if we even need to do the dumping
         data = json.dumps(records)
         message = {
             'type': 'chart_render',
-            "dfName": mdf.df_name,
+            "dfName": df.df_name,
             'encoding': encoding.to_json(),
             'data': data,
         }
@@ -199,6 +268,7 @@ class UiComm(object):
         return df_assignments
     
 
+    @logged(remove_on_chart_removal=True)
     def update_chart_filtered_value(self, df: Optional[MidasDataFrame], df_name: DFName):
         # note that this is alwsays used for updating filtered information
         if df_name not in self.vis_spec:
@@ -299,11 +369,13 @@ class UiComm(object):
                     raise InternalLogicalError(f"{vis.shape} not handled")
         return result
 
+    @logged(remove_on_chart_removal=False)
     def update_selection_shelf_selection_name(self, old_name: str, new_name: str):
       self.shelf_selections[new_name] = self.shelf_selections[old_name]
       del self.shelf_selections[old_name]
     
 
+    @logged(remove_on_chart_removal=False)
     def remove_selection_from_shelf(self, df_name: str):
       del self.shelf_selections[df_name]
 

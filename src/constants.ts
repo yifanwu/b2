@@ -2,6 +2,7 @@ export const DEBOUNCE_RATE = 100;
 
 // export const MIDAS_INSTANCE_NAME = "m";
 export const MIDAS_CELL_COMM_NAME = "midas-cell-comm";
+export const MIDAS_RECOVERY_COMM_NAME = "midas-recovery-comm"
 
 // need to keep this in sync with the defaults.py file
 //   maybe consider changing this to a JSON file for better synchronization
