@@ -75,13 +75,13 @@ export function createMidasComponent(
   />, document.getElementById("midas-sidebar-wrapper"));
 
   // note that this must happen after
-  if ($(`#midas-resizer`).length === 0) {
-    makeResizer((delta) => {
-      let oldWidth = $("#midas-sidebar-wrapper").width();
-      $("#midas-sidebar-wrapper").width(oldWidth + delta);
-      syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10 * 2);
-    });
+  // if ($(`#midas-resizer`).length === 0) {
+  makeResizer((delta) => {
+    let oldWidth = $("#midas-sidebar-wrapper").width();
+    $("#midas-sidebar-wrapper").width(oldWidth + delta);
     syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10 * 2);
-  }
+  });
+  syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10 * 2);
+  // }
   return midasRef;
 }
