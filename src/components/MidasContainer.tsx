@@ -108,7 +108,8 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     for (let e of this.state.elements) {
       const idx = dfNames.findIndex((v) => v === e.dfName);
       if (idx > -1) {
-        const selectionItem = selectionArray[idx][e.dfName];
+        // [e.dfName]
+        const selectionItem = selectionArray[idx];
         this.refsCollection[e.dfName].drawBrush(selectionItem);
       }
     }

@@ -200,7 +200,7 @@ class UiComm(object):
                     debug_log("Comm reopened. Rerunning logged commands...")
                     self.run_log()
  
-        debug_log("Registering recovery comm...")
+        # debug_log("Registering recovery comm...")
         get_ipython().kernel.comm_manager.register_target(MIDAS_RECOVERY_COMM_NAME, target_func)
 
     @logged(remove_on_chart_removal=False)

@@ -31,15 +31,13 @@ export function load_ipython_extension() {
 
   LogSteps("Kernel starting, opening recovery comm");
   function checkIfNull() {
-    if(Jupyter.notebook.kernel === null) {
-       console.log("The kernel is null. Trying again in 100 milliseconds.")
+    if (Jupyter.notebook.kernel === null) {
+       console.log("The kernel is null. Trying again in 100 milliseconds.");
        window.setTimeout(checkIfNull, 100);
     } else {
       openRecoveryComm();
       makeComm();
     }
-}
-checkIfNull();
-
-
+  }
+  checkIfNull();
 }

@@ -65,9 +65,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     };
   }
 
-
-
-
   componentDidMount() {
     // FIXME: maybe do not need to run everytime???
     this.embed();
@@ -127,42 +124,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       return selection;
     }
   }
-  oldGetDebouncedFunction(dfName: string, tick: (dfName: string) => void) {
-    const callback = (signalName: string, value: any) => {
-      // also need to call into python state...
-      let valueStr = JSON.stringify(value);
-      valueStr = (valueStr === "null") ? "None" : valueStr;
 
-      const c = Jupyter.notebook.insert_cell_above("code");
-
-      this.setState(prevState => {
-        prevState.generatedCells.push(c);
-        return prevState;
-      });
-
-      const date = new Date().toLocaleString("en-US");
-      const text = `# [MIDAS] You selected the following from ${dfName} at time ${date}\nm.add_selection_by_interaction("${dfName}", ${valueStr})`;
-      c.set_text(text);
-      c.execute();
-      LogDebug("Sending to comm the selection");
-      tick(dfName);
-    };
-
-    const wrapped = (name: any, value: any) => {
-      const n = new Date();
-      let l = (window as any).lastInvoked;
-      (window as any).lastInvoked = n;
-      if (l) {
-        if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
-          clearTimeout((window as any).lastInvokedTimer);
-        }
-        (window as any).lastInvokedTimer = setTimeout(() => callback(name, value), DEBOUNCE_RATE);
-      } else {
-        l = n;
-      }
-    };
-    return wrapped;
-  }
   getDebouncedFunction(dfName: string) {
     const callback = (signalName: string, value: any) => {
       // also need to call into python state...

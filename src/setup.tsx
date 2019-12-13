@@ -41,10 +41,10 @@ function syncWidth(parentSelector: string, childSelector: string, marginAdjust =
 }
 
 export function tearDownMidasComponent() {
-  if ($("#midas-sidebar-wrapper").length != 0) {
+  if ($("#midas-sidebar-wrapper").length !== 0) {
     removeResizer();
     ReactDOM.unmountComponentAtNode(document.getElementById("midas-sidebar-wrapper"));
-    $("#midas-sidebar-wrapper").remove()
+    // $("#midas-sidebar-wrapper").remove();
   }
 }
 
