@@ -72,7 +72,7 @@ export function createMidasComponent(
     addCurrentSelectionMsg={addCurrentSelectionMsg}
     makeSelectionFromShelf={makeSelectionFromShelf}
     removeDataFrameMsg={removeDataFrameMsg}
-  />, document.getElementById("midas-sidebar-wrapper"));
+  />, document.getElementById(SIDEBAR_ID));
 
   // note that this must happen after
   // if ($(`#midas-resizer`).length === 0) {

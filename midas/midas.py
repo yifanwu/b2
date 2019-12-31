@@ -265,13 +265,18 @@ class Midas(object):
         
 
     def make_selections(self, current_selections_array: Optional[List[Dict]]=None):
+        """[summary]
+        
+        Keyword Arguments:
+            current_selections_array {Optional[List[Dict]]} --
+            note that the dict is Dict[DFName, SelectionValue] (default: {None})
+        """
         if current_selections_array is None:
             # this is a reset!
             self.current_selection = []
             self.tick()
             self.ui_comm.add_selection_to_shelf("")
         else:
-            # Dict[DFName, SelectionValue]
             current_selections = []
             for v in current_selections_array:
                 current_selections.extend(self.ui_comm.get_predicate_info(v))

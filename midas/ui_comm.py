@@ -253,6 +253,11 @@ class UiComm(object):
             def visit_Assign(self, node):
                 assignments.append(node.targets[0].id)
                 return node
+        # there are some magics that we should not parse
+        # if they do have magics it should start in the first line
+        if len(code) > 0 and code[0] == "%":
+            debug_log(f"magic encountered for code {code}")
+            return []
         nodes = ast.parse(code)
         CustomNodeTransformer().visit(nodes)
         assignements_str = ",".join(assignments)
@@ -333,7 +338,7 @@ class UiComm(object):
         
 
     def get_predicate_info(self, selections: Dict) -> List[SelectionValue]:
-        # debug_log(f"selection is {selection}")
+        # debug_log(f"selection is {selections}")
         if selections is None or len(selections.keys()) == 0:
             return []
         result = []
@@ -356,15 +361,21 @@ class UiComm(object):
             else:
                 if vis.shape == "circle":
                     y = ColumnRef(vis.y, df_name)
-                    x_selection = NumericRangeSelection(x, selection[vis.x][0], selection[vis.x][1])
-                    y_selection = NumericRangeSelection(y, selection[vis.y][0], selection[vis.y][1])
-                    result.extend([x_selection, y_selection])
+                    # the predicate is either going to be x or y
+                    if vis.x in selection:
+                        x_selection = NumericRangeSelection(x, selection[vis.x][0], selection[vis.x][1])
+                        result.append(x_selection)
+                    elif vis.y in selection:
+                        y_selection = NumericRangeSelection(y, selection[vis.y][0], selection[vis.y][1])
+                        result.append(y_selection)
+                    else:
+                        raise InternalLogicalError(f"Unknown selection {selection}");
                 elif vis.shape == "bar":
                     predicate = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
-                    result.extend([predicate])
+                    result.append(predicate)
                 elif vis.shape == "line":
                     x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
-                    result.extend([x_selection])
+                    result.append(x_selection)
                 else:
                     raise InternalLogicalError(f"{vis.shape} not handled")
         return result
