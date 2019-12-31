@@ -8,12 +8,11 @@ import {
 import { makeElementId } from "../config";
 import { View } from "vega";
 // we are going to be rendering vega-lite now for its superior layout etc.
-import { TopLevelSpec } from "vega-lite";
 import vegaEmbed from "vega-embed";
 import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX } from "../constants";
 import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell } from "../utils";
-import CellManager from "../CellManager";
 import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
+import { PerChartSelectionValue } from "../types";
 
 interface MidasElementProps {
   changeStep: number;
@@ -70,19 +69,20 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.embed();
   }
 
-  drawBrush(selection: any) { // will be a dictionary...
+  drawBrush(selection: PerChartSelectionValue) { // will be a dictionary...
     if (JSON.stringify(selection) === this.state.currentBrush) {
-      LogDebug(`BRUSH NOOP, ${selection} is the same`);
+      LogDebug(`BRUSH NOOP, ${JSON.stringify(selection)} is the same`);
       // this step is very important in preventing the cells from forming a loop
       return;
     }
-    LogDebug(`BRUSHING ${selection} and ${this.state.currentBrush} are different.`);
+    LogDebug(`BRUSHING ${JSON.stringify(selection)} and ${this.state.currentBrush} are different.`);
     // const selection = JSON.parse(selectionStr);
     // @ts-ignore because the vega view API is not fully TS typed.
     const scale = this.state.view.scale.bind(this.state.view);
     const signal = this.state.view.signal.bind(this.state.view);
     const runAsync = this.state.view.runAsync.bind(this.state.view);
     const encoding = this.props.encoding;
+    let hasModified = false;
     if (selection[encoding.x]) {
       const x_pixel_min = scale("x")(selection[encoding.x][0]);
       const l = selection[encoding.x].length;
@@ -93,12 +93,18 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       LogDebug(`updated brush x: ${x_pixel_min}, ${x_pixel_max}`);
       signal("brush_x", [x_pixel_min, x_pixel_max]);
       runAsync();
+      hasModified = true;
     }
     if (selection[encoding.y]) {
       const y_pixel_min = scale("y")(selection[encoding.y][0]);
       const y_pixel_max = scale("y")(selection[encoding.y][1]);
       // and update the brush_y and brush_y
       signal("brush_y", [y_pixel_min, y_pixel_max]);
+      runAsync();
+      hasModified = true;
+    }
+    if (!hasModified) {
+      LogInternalError(`Draw brush didn't modify any scales for selection ${selection}`);
     }
     return;
   }

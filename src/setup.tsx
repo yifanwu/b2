@@ -5,10 +5,9 @@ import { MidasSidebar } from "./components/MidasSidebar";
 import { LogSteps } from "./utils";
 import CellManager from "./CellManager";
 
-function removeResizer() {
-  $("#midas-resizer").remove()
-}
-
+const SIDEBAR_ID = "midas-sidebar-wrapper";
+const SIDEBAR_SELECTOR = `#${SIDEBAR_ID}`;
+const SIDE_INSIDE_SELECTOR = "#midas-inside";
 /**
  * Makes the resizer that allows changing the width of the sidebar.
  * @param divToResize the div representing the sidebar.
@@ -41,10 +40,9 @@ function syncWidth(parentSelector: string, childSelector: string, marginAdjust =
 }
 
 export function tearDownMidasComponent() {
-  if ($("#midas-sidebar-wrapper").length !== 0) {
-    removeResizer();
-    ReactDOM.unmountComponentAtNode(document.getElementById("midas-sidebar-wrapper"));
-    // $("#midas-sidebar-wrapper").remove();
+  if ($(`#${SIDEBAR_ID}`).length !== 0) {
+    ReactDOM.unmountComponentAtNode(document.getElementById(SIDEBAR_ID));
+    $(SIDEBAR_SELECTOR).remove();
   }
 }
 
@@ -55,11 +53,9 @@ export function createMidasComponent(
   removeDataFrameMsg: (dataFrame: string) => void,
 ): MidasSidebar {
   // LogSteps("createMidasComponent", midas_instance_name);
-  const SIDEBAR_ID = "midas-sidebar-wrapper";
-
-  if ($(`#${SIDEBAR_ID}`).length === 0) {
+  if ($(SIDEBAR_SELECTOR).length === 0) {
     $(window).resize(function () {
-      syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10);
+      syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10);
     });
     const midasSideBarDiv = $(`<div id=\"${SIDEBAR_ID}\"/>`);
     $("#notebook").append(midasSideBarDiv);
@@ -77,11 +73,11 @@ export function createMidasComponent(
   // note that this must happen after
   // if ($(`#midas-resizer`).length === 0) {
   makeResizer((delta) => {
-    let oldWidth = $("#midas-sidebar-wrapper").width();
-    $("#midas-sidebar-wrapper").width(oldWidth + delta);
-    syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10 * 2);
+    let oldWidth = $(SIDEBAR_SELECTOR).width();
+    $(SIDEBAR_SELECTOR).width(oldWidth + delta);
+    syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
   });
-  syncWidth("#midas-sidebar-wrapper", ".midas-inside", 10 * 2);
+  syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
   // }
   return midasRef;
 }

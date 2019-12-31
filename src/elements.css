@@ -361,7 +361,7 @@
   box-shadow: 0 0 var(--size-1) var(--blue-grey-100);
 }
 
-.midas-inside {
+#midas-inside {
   background-color: white;
   position: fixed;
   height: 91%;

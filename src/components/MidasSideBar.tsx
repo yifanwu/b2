@@ -83,7 +83,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
     </div>);
     return (<>
         <div id="midas-resizer"></div>
-        <div className="midas-inside">
+        <div id="midas-inside">
           {midbar}
           <MidasContainer
             removeDataFrameMsg={this.props.removeDataFrameMsg}

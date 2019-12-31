@@ -9,6 +9,7 @@ import { LogInternalError, LogSteps, getDfId, LogDebug } from "../utils";
 import { AlertType } from "../types";
 import { ALERT_ALIVE_TIME } from "../constants";
 import { EncodingSpec } from "../charts/vegaGen";
+import { SelectionValue } from "../types";
 
 // Mappings
 //  this stores the information connecting the cells to
@@ -96,7 +97,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
   drawBrush(selectionArrayStr: string) {
     const selectionArray = JSON.parse(selectionArrayStr);
-    if (selectionArray === "") {
+    if (selectionArrayStr === "") {
       for (let e of this.state.elements) {
         this.refsCollection[e.dfName].drawBrush("");
       }
@@ -109,8 +110,8 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       const idx = dfNames.findIndex((v) => v === e.dfName);
       if (idx > -1) {
         // [e.dfName]
-        const selectionItem = selectionArray[idx];
-        this.refsCollection[e.dfName].drawBrush(selectionItem);
+        const selectionItem = selectionArray[idx] as SelectionValue;
+        this.refsCollection[e.dfName].drawBrush(selectionItem[e.dfName]);
       }
     }
   }

@@ -4,6 +4,10 @@ export enum AlertType {
   Confirmation = "confirmation"
 }
 
+export type PerChartSelectionValue = {[index: string]: number[]};
+export type SelectionValue = {[index: string]: PerChartSelectionValue};
+
+
 export enum Context {
   SeenTogether = "SeenTogether",
   Derived = "Derived"

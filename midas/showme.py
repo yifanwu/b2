@@ -23,8 +23,9 @@ def infer_encoding(mdf: MidasDataFrame) -> Optional[EncodingSpec]:
         return None
     elif df_len == 2:
         first_col = df.labels[0]
-        # fow now let's just take the frist two columns
         second_col = df.labels[1]
+        # start with special cases!
+        # if this is a groupby, with numeric aggregation, then a bar chart -- TODO
         if is_string_dtype(df[first_col]) and is_numeric_dtype(df[second_col]):
             return EncodingSpec("bar", first_col, second_col)
         elif is_numeric_dtype(df[first_col]) and is_string_dtype(df[second_col]):
@@ -37,4 +38,3 @@ def infer_encoding(mdf: MidasDataFrame) -> Optional[EncodingSpec]:
         raise InternalLogicalError(f"Corner case in spec gen")
     else:
         raise InternalLogicalError(f"don't know how to handler more than 3 cases")
-
