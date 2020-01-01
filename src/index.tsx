@@ -28,7 +28,7 @@ export function load_ipython_extension() {
   Jupyter.notebook.events.on("kernel_connected.Kernel", function() {
       tearDownMidasComponent();
   });
-
+  let isFirst = true;
   LogSteps("Kernel starting, opening recovery comm");
   function checkIfNull() {
     if (Jupyter.notebook.kernel === null) {
@@ -36,7 +36,8 @@ export function load_ipython_extension() {
        window.setTimeout(checkIfNull, 100);
     } else {
       openRecoveryComm();
-      makeComm();
+      makeComm(isFirst);
+      isFirst = false;
     }
   }
   checkIfNull();

@@ -74,8 +74,13 @@ export function openRecoveryComm() {
  * Makes the comm responsible for discovery of which visualization
  * corresponds to which cell, accomplished through inspecting the
  * metadata of the message sent.
+ *
+ * We need to keep track of whether this is first time because
+ *   we do not want to add the event listen on Jupyter more than once
+ *   --- the event listeners are somehow still persistent even with page refresh..
+ *   Makecomm should be idempotent to page refresh.
  */
-export function makeComm() {
+export function makeComm(is_first_time = true) {
   LogSteps("makeComm");
   // refToSidebar: MidasSidebar
 
@@ -122,15 +127,17 @@ export function makeComm() {
           // cellManager.setDrawBrush(ref.getMidasContainerRef().drawBrush);
           const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);
-          // also start watching cell execution
-          Jupyter.notebook.events.on("finished_execute.CodeCell", function(evt: any, data: any) {
-            const code = data.cell.get_text();
-            comm.send({
-              command: "cell-ran",
-              code,
+
+          if (is_first_time) {
+            Jupyter.notebook.events.on("finished_execute.CodeCell", function(evt: any, data: any) {
+              const code = data.cell.get_text();
+              comm.send({
+                command: "cell-ran",
+                code,
+              });
+              // LogDebug(`FINISHED excuting cell with code: ${code}`);
             });
-            // LogDebug(`FINISHED excuting cell with code: ${code}`);
-          });
+          }
         }
       });
 

@@ -10,7 +10,7 @@ import { View } from "vega";
 // we are going to be rendering vega-lite now for its superior layout etc.
 import vegaEmbed from "vega-embed";
 import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX } from "../constants";
-import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell } from "../utils";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, comparePerChartSelection } from "../utils";
 import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
 import { PerChartSelectionValue } from "../types";
 
@@ -34,7 +34,7 @@ interface MidasElementState {
   generatedCells: any[];
   // yDomain: any;
   // xDomain: any;
-  currentBrush: string;
+  currentBrush: PerChartSelectionValue;
 }
 
 const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
@@ -70,12 +70,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 
   drawBrush(selection: PerChartSelectionValue) { // will be a dictionary...
-    if (JSON.stringify(selection) === this.state.currentBrush) {
-      LogDebug(`BRUSH NOOP, ${JSON.stringify(selection)} is the same`);
-      // this step is very important in preventing the cells from forming a loop
+    if (comparePerChartSelection(selection, this.state.currentBrush) ) {
+      LogDebug("BRUSH NOOP", selection);
       return;
     }
-    LogDebug(`BRUSHING ${JSON.stringify(selection)} and ${this.state.currentBrush} are different.`);
+    LogDebug(`BRUSHING`, [selection, this.state.currentBrush]);
     // const selection = JSON.parse(selectionStr);
     // @ts-ignore because the vega view API is not fully TS typed.
     const scale = this.state.view.scale.bind(this.state.view);
@@ -135,11 +134,12 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const callback = (signalName: string, value: any) => {
       // also need to call into python state...
       let processedValue = {};
-      processedValue[dfName] = this.roundIfPossible(value);
+      const cleanValue = this.roundIfPossible(value);
+      processedValue[dfName] = cleanValue;
       let valueStr = JSON.stringify(processedValue);
       valueStr = (valueStr === "null") ? "None" : valueStr;
       this.props.addCurrentSelectionMsg(valueStr);
-      this.setState({ currentBrush: valueStr });
+      this.setState({ currentBrush: cleanValue });
       LogDebug(`Chart causing selection ${valueStr}`);
       this.props.tick(dfName);
     };

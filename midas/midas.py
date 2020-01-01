@@ -224,11 +224,12 @@ class Midas(object):
     def get_current_selection(self):
         return self.current_selection
 
-
+    # this function just modifies the current selection and returns it
     def add_selection(self, selection: List[SelectionValue]) -> List[SelectionValue]:
         # FIXME: also add for no selection
         df_name = DFName(selection[0].column.df_name)
         date = datetime.now()
+        debug_log(f"your selection is {selection}")
         selection_event = SelectionEvent(date, selection, DFName(df_name))
         self.append_df_predicates(selection_event)
         new_selection = list(filter(lambda v: v.column.df_name != df_name, self.current_selection))

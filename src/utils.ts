@@ -1,3 +1,5 @@
+import { PerChartSelectionValue } from "./types";
+
 export const STRICT = true;
 
 export const FgRed = "\x1b[31m";
@@ -14,6 +16,19 @@ export function LogInternalError(message: string): null {
     throw new Error(message);
   }
   return null;
+}
+
+export function comparePerChartSelection(s1: PerChartSelectionValue, s2: PerChartSelectionValue) {
+  // iternate
+  if (Object.keys(s1).length !== Object.keys(s2).length) {
+    return false;
+  }
+  for (let k in Object.keys(s1)) {
+    if (s1[k] !== s2[k]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 
@@ -45,8 +60,12 @@ export function LogSteps(func: string, message?: string) {
   console.log(`${FgGreen}[${func}] ${message}${Reset}`);
 }
 
-export function LogDebug(message: string) {
-  console.log(`${FgMegenta}${message}${Reset}`);
+export function LogDebug(message: string, obj?: any) {
+  if (obj) {
+    console.log(`${FgMegenta}${message}\n`, obj, `\n${Reset}`);
+  } else {
+    console.log(`${FgMegenta}${message}${Reset}`);
+  }
 }
 
 

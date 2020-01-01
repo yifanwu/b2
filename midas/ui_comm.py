@@ -129,22 +129,26 @@ class UiComm(object):
             elif command == "add_current_selection":
                 value = json.loads(data["value"])
                 # parse it first!
-                # self.send_debug_msg(f"got add_current_selection message {value}")
-                selections = self.get_predicate_info(value)
-                all_predicate = self.add_selection(selections)
-                # now turn this into JSON
-                param_str = ""
-                if len(all_predicate) > 0:
-                    predicates = ",".join(list(map(lambda v: v.to_str(), all_predicate)))
-                    param_str = f"[{predicates}]"
-                # self.send_debug_msg(f"creating code\n{code}")
-                self.execute_fun("make_selections", param_str)
+                self.send_debug_msg(f"got add_current_selection message {value}")
+                self.handle_add_current_selection(value)
             else:
                 m = f"Command {command} not handled!"
                 # self.send_debug_msg(m)
                 raise NotAllCaseHandledError(m)
         else:
             debug_log(f"Got message from JS Comm: {data}")
+
+    # note that this is extracted out for better debugging.
+    def handle_add_current_selection(self, value: Dict):
+        selections = self.get_predicate_info(value)
+        all_predicate = self.add_selection(selections)
+        # now turn this into JSON
+        param_str = ""
+        if len(all_predicate) > 0:
+            predicates = ",".join(list(map(lambda v: v.to_str(), all_predicate)))
+            param_str = f"[{predicates}]"
+        # self.send_debug_msg(f"creating code\n{code}")
+        self.execute_fun("make_selections", param_str)
 
     def process_code(self, code: str):
         assigned_dfs = self.get_dfs_from_code_str(code)
@@ -335,49 +339,55 @@ class UiComm(object):
             "type": "navigate_to_vis",
             "value": df_name
         })
-        
 
+    # this is assumed to be the selection on only one chart
     def get_predicate_info(self, selections: Dict) -> List[SelectionValue]:
         # debug_log(f"selection is {selections}")
-        if selections is None or len(selections.keys()) == 0:
+        keys = selections.keys()
+        if selections is None or len(keys) == 0:
             return []
         result = []
-        for df_name in selections:
-            selection = selections[df_name]
-            # check if it's null, if it is, it's empty selection!
-            vis = self.vis_spec[df_name]
-            x = ColumnRef(vis.x, df_name)
-            if not selection:
-                if vis.shape == "circle":
-                    y = ColumnRef(vis.y, df_name)
-                    result.extend([
-                        EmptySelection(x),
-                        EmptySelection(y)
-                    ])
-                else:
-                    result.extend([
-                        EmptySelection(x)
-                    ])
+        if len(keys) != 1:
+            raise InternalLogicalError("Expected one key for selection")
+        df_name = list(keys)[0]
+        selection = selections[df_name]
+        # columns = list(column_selections.keys())
+        vis = self.vis_spec[df_name]
+        x = ColumnRef(vis.x, df_name)
+        if not selection:
+            if vis.shape == "circle":
+                y = ColumnRef(vis.y, df_name)
+                result.extend([
+                    EmptySelection(x),
+                    EmptySelection(y)
+                ])
             else:
-                if vis.shape == "circle":
-                    y = ColumnRef(vis.y, df_name)
-                    # the predicate is either going to be x or y
-                    if vis.x in selection:
-                        x_selection = NumericRangeSelection(x, selection[vis.x][0], selection[vis.x][1])
-                        result.append(x_selection)
-                    elif vis.y in selection:
-                        y_selection = NumericRangeSelection(y, selection[vis.y][0], selection[vis.y][1])
-                        result.append(y_selection)
-                    else:
-                        raise InternalLogicalError(f"Unknown selection {selection}");
-                elif vis.shape == "bar":
-                    predicate = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
-                    result.append(predicate)
-                elif vis.shape == "line":
-                    x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
+                result.extend([
+                    EmptySelection(x)
+                ])
+        else:
+            if vis.shape == "circle":
+                y = ColumnRef(vis.y, df_name)
+                # the predicate is either going to be x or y, or both
+                selections_added = 0
+                if vis.x in selection:
+                    x_selection = NumericRangeSelection(x, selection[vis.x][0], selection[vis.x][1])
                     result.append(x_selection)
-                else:
-                    raise InternalLogicalError(f"{vis.shape} not handled")
+                    selections_added += 1
+                if vis.y in selection:
+                    y_selection = NumericRangeSelection(y, selection[vis.y][0], selection[vis.y][1])
+                    result.append(y_selection)
+                    selections_added += 1
+                if selections_added == 0:
+                    raise InternalLogicalError(f"Unknown selection {selection}");
+            elif vis.shape == "bar":
+                predicate = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
+                result.append(predicate)
+            elif vis.shape == "line":
+                x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
+                result.append(x_selection)
+            else:
+                raise InternalLogicalError(f"{vis.shape} not handled")
         return result
 
     @logged(remove_on_chart_removal=False)
