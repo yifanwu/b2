@@ -259,18 +259,18 @@ class Midas(object):
                 yield df_info
         
 
-    def make_selections(self, current_selections_array: Optional[List[Dict]]=None):
+    def make_selections(self, current_selections_array: List[Dict]):
         """[summary]
         
         Keyword Arguments:
             current_selections_array {Optional[List[Dict]]} --
             note that the dict is Dict[DFName, SelectionValue] (default: {None})
         """
-        if current_selections_array is None:
+        if len(current_selections_array) == 0:
             # this is a reset!
             self.current_selection = []
             self.tick()
-            self.ui_comm.add_selection_to_shelf("")
+            self.ui_comm.add_selection_to_shelf([])
         else:
             current_selections = []
             for v in current_selections_array:

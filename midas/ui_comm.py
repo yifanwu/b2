@@ -139,7 +139,7 @@ class UiComm(object):
         selections = self.get_predicate_info(value)
         all_predicate = self.add_selection(selections)
         # now turn this into JSON
-        param_str = ""
+        param_str = "[]"
         if len(all_predicate) > 0:
             predicates = ",".join(list(map(lambda v: v.to_str(), all_predicate)))
             param_str = f"[{predicates}]"

@@ -62,7 +62,7 @@ export class SelectionShelf extends React.Component<SelectionShelfProps, Selecti
   }
 
   resetAllSelection() {
-    this.props.makeSelectionFromShelf("");
+    this.props.makeSelectionFromShelf("[]");
   }
 
   render() {

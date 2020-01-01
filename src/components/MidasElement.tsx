@@ -77,15 +77,18 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       return;
     }
     const signal = this.state.view.signal.bind(this.state.view);
+    const runAsync = this.state.view.runAsync.bind(this.state.view);
     if (Object.keys(selection).length === 0) {
       // make brush null
-      signal(SELECTION_SIGNAL, {});
+      // signal(SELECTION_SIGNAL, {});
+      signal(BRUSH_X_SIGNAL, [0,0])
+      runAsync();
+      return;
     }
     LogDebug(`BRUSHING`, [selection, this.state.currentBrush]);
     // const selection = JSON.parse(selectionStr);
     // @ts-ignore because the vega view API is not fully TS typed.
     const scale = this.state.view.scale.bind(this.state.view);
-    const runAsync = this.state.view.runAsync.bind(this.state.view);
     const encoding = this.props.encoding;
     let hasModified = false;
     if (selection[encoding.x]) {

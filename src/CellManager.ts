@@ -52,7 +52,7 @@ export default class CellManager {
       // check if it has been made before
       const idxBefore = this.cellsCreated.findIndex(v => (v.metadata) && (v.metadata.funName === MIDAS_SELECTION_FUN) && (v.metadata.params === params));
 
-      if (idxBefore > 0) {
+      if (idxBefore > -1) {
         if (this.cellsCreated[idxBefore].step === this.currentStep) {
           LogDebug("Ignored becasue just executed");
           return; // no op
