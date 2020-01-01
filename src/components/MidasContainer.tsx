@@ -36,6 +36,7 @@ interface AlertItem {
 interface ContainerProps {
   addCurrentSelectionMsg: (valueStr: string) => void;
   removeDataFrameMsg: (dataFrame: string) => void;
+  getCode: (dataFrame: string) => void;
 }
 
 interface ContainerState {
@@ -284,6 +285,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         tick={this.tick}
         title={dfName}
         encoding={encoding}
+        getCode={this.props.getCode}
         data={data}
         changeStep={chanageStep}
         removeChart={() => this.removeDataFrame(dfName)}

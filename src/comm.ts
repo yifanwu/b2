@@ -113,6 +113,12 @@ export function makeComm(is_first_time = true) {
               "value": valueStr
             });
           };
+          const getCode = (dfName: string) => {
+            comm.send({
+              "command": "get_code_clipboard",
+              "df_name": dfName
+            });
+          };
 
           const removeDataFrameMsg = (dfName: string) => {
             comm.send({
@@ -123,7 +129,7 @@ export function makeComm(is_first_time = true) {
 
           const cellManager = new CellManager(midasInstanceName);
           const makeSelection = cellManager.makeSelection.bind(cellManager);
-          const ref = createMidasComponent(columnSelectMsg, addCurrentSelectionMsg, makeSelection, removeDataFrameMsg);
+          const ref = createMidasComponent(columnSelectMsg, addCurrentSelectionMsg, makeSelection, removeDataFrameMsg, getCode);
           // cellManager.setDrawBrush(ref.getMidasContainerRef().drawBrush);
           const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);

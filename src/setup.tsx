@@ -51,6 +51,7 @@ export function createMidasComponent(
   addCurrentSelectionMsg: (valueStr: string) => void,
   makeSelectionFromShelf: (selection: string) => void,
   removeDataFrameMsg: (dataFrame: string) => void,
+  getCode: (dataFrame: string) => void,
 ): MidasSidebar {
   // LogSteps("createMidasComponent", midas_instance_name);
   if ($(SIDEBAR_SELECTOR).length === 0) {
@@ -65,6 +66,7 @@ export function createMidasComponent(
   ReactDOM.render(<MidasSidebar
     ref={(comp) => midasRef = comp}
     columnSelectMsg={columnSelectMsg}
+    getCode={getCode}
     addCurrentSelectionMsg={addCurrentSelectionMsg}
     makeSelectionFromShelf={makeSelectionFromShelf}
     removeDataFrameMsg={removeDataFrameMsg}

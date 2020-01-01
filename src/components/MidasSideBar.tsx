@@ -9,6 +9,7 @@ interface MidasSidebarProps {
   addCurrentSelectionMsg: (valueStr: string) => void;
   makeSelectionFromShelf: (selection: string) => void;
   removeDataFrameMsg: (dataFrame: string) => void;
+  getCode: (dataFrame: string) => void;
 }
 
 interface MidasSidebarState {
@@ -88,6 +89,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
           <MidasContainer
             removeDataFrameMsg={this.props.removeDataFrameMsg}
             addCurrentSelectionMsg={this.props.addCurrentSelectionMsg}
+            getCode={this.props.getCode}
             ref={this.setMidasContainerRef}/>
         </div></>
     );

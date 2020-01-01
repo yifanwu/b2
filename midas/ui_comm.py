@@ -57,7 +57,8 @@ class UiComm(object):
     def __init__(self, is_in_ipynb: bool, midas_instance_name: str,
       get_df_fun: Callable[[DFName], Optional[DFInfo]],
       create_df_from_ops: Callable[[RelationalOp], MidasDataFrame],
-      add_selection: Callable[[List[SelectionValue]], List[SelectionValue]]):
+      add_selection: Callable[[List[SelectionValue]], List[SelectionValue]],
+      get_filtered_code: Callable[[str], str]):
         self.next_id = 0
         self.vis_spec = {}
         self.id_by_df_name = {}
@@ -71,6 +72,7 @@ class UiComm(object):
         self.logged_comms = [] # 
         self.add_selection = add_selection
         self.tmp_log = []
+        self.get_filtered_code = get_filtered_code
 
     def log(self, function, args, kwargs, associated_df_name):
         self.logged_comms.append((function, args, kwargs, associated_df_name))
@@ -95,7 +97,6 @@ class UiComm(object):
             #       return
             #     else:
             #       self.run_log()
-            #     # self.send_debug_msg("Refreshing comm")
             #     self.set_comm(self.midas_instance_name)
             if command == "cell-ran":
                 if "code" in data:
@@ -103,16 +104,11 @@ class UiComm(object):
                     self.process_code(code)
                 return
             elif command == "get_code_clipboard":
-                df_name = DFName(data["df_name"])
-                df = self.get_df(df_name)
-                if df:
-                    # TODO: get predicates working again
-                    code = df.df.get_code()
-                    copy(code)
-                    return code
-                # something went wrong, so let's tell comes...
-                self.send_user_error(f'no selection on {df_name} yet')
-            
+                df_name = data["df_name"]
+                code = self.get_filtered_code(df_name)
+                # self.send_debug_msg(f"got code for {df_name}: {code}")
+                copy(code)
+                return
             elif command == "column-selected":
                 # self.send_debug_msg("column-selected called")
                 column = data["column"]

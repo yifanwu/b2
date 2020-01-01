@@ -16,7 +16,7 @@ from .stream import MidasSelectionStream
 from datetime import datetime
 from typing import Dict, List
 
-from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo
+from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
 from .util.errors import InternalLogicalError, debug_log
 from .vis_types import SelectionEvent, EncodingSpec
 from .state_types import DFName
@@ -57,7 +57,7 @@ class Midas(object):
             raise UserError("must assign a name")
         self.assigned_name = assigned_name
         # TODO: the organization here is still a little ugly
-        ui_comm = UiComm(is_in_ipynb, assigned_name, self.get_df_info, self.from_ops, self.add_selection)
+        ui_comm = UiComm(is_in_ipynb, assigned_name, self.get_df_info, self.from_ops, self.add_selection, self.get_filtered_code)
         self.ui_comm = ui_comm
         self.df_info_store = {}
         self.context = Context(self.df_info_store, self.from_ops)
@@ -238,10 +238,6 @@ class Midas(object):
         return self.current_selection
 
     def tick(self, all_predicate: Optional[List[SelectionValue]]=None):
-        # tell state to change
-        # self.current_tick += 1
-        # debug_log("all_predicate")
-        # print(all_predicate)
         if all_predicate is None:
             # reset every df's filter
             for df_info in self.get_visualized_df_info():
@@ -282,24 +278,19 @@ class Midas(object):
             self.tick(current_selections)
             self.ui_comm.add_selection_to_shelf(current_selections_array)
 
+    def get_filtered_code(self, df_name: str):
+        return get_midas_code(self.df_info_store[DFName(df_name)].df.ops)
+
+
+    def get_original_code(self, df_name: str):
+        return get_midas_code(self.df_info_store[DFName(df_name)].original_df.ops)
+
 
     def bind(self, df_name: DFName, cb):
         pass
-        # item = TickItem(df_name, cb)
-        # return self.event_loop.add_callback(item)
-
+        
 
     def add_facet(self, df_name: str, facet_column: str):
-        # 
         raise NotImplementedError()
-    
-
-
-    # def js_get_current_chart_code(self, df_name_raw: str) -> Optional[str]:
-    #     # figure out how to derive the current df
-    #     # don't have a story yet for complicated things...
-    #     # decide on if we want to focus on complex code gen...
-    #     return
-
 
 __all__ = ['Midas']

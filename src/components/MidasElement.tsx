@@ -24,6 +24,7 @@ interface MidasElementProps {
   tick: (dfName: string) => void;
   data: any[];
   addCurrentSelectionMsg: (value: string) => void;
+  getCode: (value: string) => void;
 }
 
 interface MidasElementState {
@@ -195,6 +196,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     navigateToNotebookCell(this.props.cellId);
   }
 
+  getCode() {
+    this.props.getCode(this.props.dfName);
+  }
+
   // FIXME: figure out the type...
   async replaceData(newValues: any) {
     if (!this.state.view) {
@@ -242,9 +247,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           >cell</button>
           <button
             className={"midas-header-button"}
-            onClick={() => this.clearGeneratedCells()}>
-            Clear generated cells
-          </button>
+            onClick={() => this.getCode()}
+          >code</button>
           <button
             className={"midas-header-button"}
             onClick={() => this.toggleHiddenStatus()}>
