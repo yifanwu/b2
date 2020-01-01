@@ -229,7 +229,6 @@ class Midas(object):
         # FIXME: also add for no selection
         df_name = DFName(selection[0].column.df_name)
         date = datetime.now()
-        debug_log(f"your selection is {selection}")
         selection_event = SelectionEvent(date, selection, DFName(df_name))
         self.append_df_predicates(selection_event)
         new_selection = list(filter(lambda v: v.column.df_name != df_name, self.current_selection))
@@ -238,7 +237,6 @@ class Midas(object):
         self.current_selection = new_selection
         return self.current_selection
 
-    # df_name: DFName, current_predicate: SelectionEvent, 
     def tick(self, all_predicate: Optional[List[SelectionValue]]=None):
         # tell state to change
         # self.current_tick += 1
