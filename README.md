@@ -44,3 +44,5 @@ When you change the Python side code, you can use the following at the beginning
 %load_ext autoreload
 %autoreload 2
 ```
+
+In addition, know that if the JavaScript side triggers any computation in Python, the print messages will not surface---if you want to do better testing, you can use the `comm` to send a debug message (in place of printing) for the entry call, and then you can mock the input by running code, which behaves like normal executions and prints normally.
