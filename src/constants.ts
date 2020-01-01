@@ -17,3 +17,5 @@ export const ALERT_ALIVE_TIME = 100000;
 export const SHELF_TEXT_MAX_LEN = 14;
 export const SELECTION_TEXT_MAX_LEN = 13;
 export const MIN_BRUSH_PX = 5;
+export const BRUSH_X_SIGNAL = "brush_x";
+export const BRUSH_Y_SIGNAL = "brush_y";

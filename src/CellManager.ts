@@ -48,7 +48,6 @@ export default class CellManager {
   }
 
   executeFunction(funName: string, params: string) {
-
     if (funName === MIDAS_SELECTION_FUN) {
       // check if it has been made before
       const idxBefore = this.cellsCreated.findIndex(v => (v.metadata) && (v.metadata.funName === MIDAS_SELECTION_FUN) && (v.metadata.params === params));

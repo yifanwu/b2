@@ -9,7 +9,7 @@ import { makeElementId } from "../config";
 import { View } from "vega";
 // we are going to be rendering vega-lite now for its superior layout etc.
 import vegaEmbed from "vega-embed";
-import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX } from "../constants";
+import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL } from "../constants";
 import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, comparePerChartSelection } from "../utils";
 import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
 import { PerChartSelectionValue } from "../types";
@@ -70,16 +70,21 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.embed();
   }
 
+  // TODO: instead of just supporting brush, also add clicking
   drawBrush(selection: PerChartSelectionValue) { // will be a dictionary...
     if (comparePerChartSelection(selection, this.state.currentBrush) ) {
       LogDebug("BRUSH NOOP", selection);
       return;
     }
+    const signal = this.state.view.signal.bind(this.state.view);
+    if (Object.keys(selection).length === 0) {
+      // make brush null
+      signal(SELECTION_SIGNAL, {});
+    }
     LogDebug(`BRUSHING`, [selection, this.state.currentBrush]);
     // const selection = JSON.parse(selectionStr);
     // @ts-ignore because the vega view API is not fully TS typed.
     const scale = this.state.view.scale.bind(this.state.view);
-    const signal = this.state.view.signal.bind(this.state.view);
     const runAsync = this.state.view.runAsync.bind(this.state.view);
     const encoding = this.props.encoding;
     let hasModified = false;
@@ -91,7 +96,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         : x_pixel_min + MIN_BRUSH_PX;
       // and update the brush_x and brush_y
       LogDebug(`updated brush x: ${x_pixel_min}, ${x_pixel_max}`);
-      signal("brush_x", [x_pixel_min, x_pixel_max]);
+      signal(BRUSH_X_SIGNAL, [x_pixel_min, x_pixel_max]);
       runAsync();
       hasModified = true;
     }
@@ -99,7 +104,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       const y_pixel_min = scale("y")(selection[encoding.y][0]);
       const y_pixel_max = scale("y")(selection[encoding.y][1]);
       // and update the brush_y and brush_y
-      signal("brush_y", [y_pixel_min, y_pixel_max]);
+      signal(BRUSH_Y_SIGNAL, [y_pixel_min, y_pixel_max]);
       runAsync();
       hasModified = true;
     }

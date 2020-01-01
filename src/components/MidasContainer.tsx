@@ -98,9 +98,11 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
   drawBrush(selectionArrayStr: string) {
     const selectionArray = JSON.parse(selectionArrayStr);
-    if (selectionArrayStr === "") {
+    // note that the below is actually not an array, but an empty string
+    // the empty string is differnt from epty array in that the brush need to be actively deselected
+    if (selectionArray === "") {
       for (let e of this.state.elements) {
-        this.refsCollection[e.dfName].drawBrush("");
+        this.refsCollection[e.dfName].drawBrush({});
       }
       return;
     }

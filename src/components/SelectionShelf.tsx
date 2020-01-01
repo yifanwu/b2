@@ -17,7 +17,7 @@ export class SelectionShelf extends React.Component<SelectionShelfProps, Selecti
   constructor(props: SelectionShelfProps) {
     super(props);
     this.setCurrentSelections = this.setCurrentSelections.bind(this);
-
+    this.resetAllSelection = this.resetAllSelection.bind(this);
     this.state = {
       selectionItem: [],
       currentActiveSelection: 0,
