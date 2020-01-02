@@ -69,11 +69,21 @@ export default class CellManager {
       // we also need to add the brush
     }
     const text = `${this.midasInstanceName}.${funName}(${params})`;
+    // decide if we should create a new cell or replace it
+    // we should replace the previous cell if the user has not interacted with the notebook cells
     this.create_cell_and_execute(text, "interaction", {funName, params });
     return;
   }
 
+  /**
+   * we can use one of the following two:
+   * - Jupyter.notebook.insert_cell_at_index(type, index);
+   * - Jupyter.notebook.insert_cell_above("code");
+   * 
+   * we are going to try with inserting at a fixed place
+   */
   create_cell_and_execute(text: string, funKind: FunKind, metadata?: CellMetaData) {
+    
     const cell = Jupyter.notebook.insert_cell_above("code");
     const d = CELL_DOT_ANNOTATION[funKind];
     if (!d) LogInternalError(`FunKind ${funKind} was not found`);
