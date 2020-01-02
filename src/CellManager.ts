@@ -17,7 +17,7 @@ interface CellMetaData {
 
 interface SingleCell {
   code: string;
-  cell: any; // the only way to identify the cell is the entire object apparently?
+  cell: any;
   time: Date;
   step: number;
   funKind: FunKind;
@@ -30,18 +30,33 @@ export default class CellManager {
    * there is a mini state machine w.r.t how the brushes are fired on the boolean value of shouldDrawBrush
    * true ---> (itx) false
    * false ---> (drawBrush) true
+   *
+   * current focus is set to the dataframe that currently has the focus
+     if it is null, that means no one has the focus
+     when new selections are made, they will replace the old one if the focus has NOT changed or switched to null.
+      we need current and prev because otherwise
    */
 
   currentStep: number;
   cellsCreated: SingleCell[];
   midasInstanceName: string;
+  prevFocus?: string;
+  currentFocus?: string;
 
   constructor(midasInstanceName: string) {
     this.currentStep = 0;
     this.cellsCreated = [];
     this.midasInstanceName = midasInstanceName;
+    this.prevFocus = undefined;
+    this.currentFocus = undefined;
   }
 
+  setFocus(dfName?: string) {
+    this.prevFocus = this.currentFocus;
+    this.currentFocus = dfName;
+    LogDebug(`Set focus: ${dfName}`);
+    LogDebug(`New values are: ${this.prevFocus} and ${this.currentFocus}`);
+  }
 
   makeSelection(selectionValue: string) {
     this.executeFunction(MIDAS_SELECTION_FUN, selectionValue);
@@ -49,13 +64,13 @@ export default class CellManager {
 
   executeFunction(funName: string, params: string) {
     if (funName === MIDAS_SELECTION_FUN) {
-      // check if it has been made before
+      // check if the selection has been made before
       const idxBefore = this.cellsCreated.findIndex(v => (v.metadata) && (v.metadata.funName === MIDAS_SELECTION_FUN) && (v.metadata.params === params));
 
       if (idxBefore > -1) {
         if (this.cellsCreated[idxBefore].step === this.currentStep) {
           LogDebug("Ignored becasue just executed");
-          return; // no op
+          return;
         }
         const cell = this.cellsCreated[idxBefore].cell;
         const cellIdx = Jupyter.notebook.find_cell_index(cell);
@@ -66,25 +81,30 @@ export default class CellManager {
         LogDebug("executing from cells created earlier");
         return;
       }
-      // we also need to add the brush
     }
     const text = `${this.midasInstanceName}.${funName}(${params})`;
-    // decide if we should create a new cell or replace it
-    // we should replace the previous cell if the user has not interacted with the notebook cells
-    this.create_cell_and_execute(text, "interaction", {funName, params });
+    LogDebug(`Creating new function and the values are: ${this.prevFocus} and ${this.currentFocus}`);
+    if (this.prevFocus && this.currentFocus) {
+      const cell = this.cellsCreated[this.cellsCreated.length - 1].cell;
+      this.exeucteCell(cell, text, "interaction");
+    } else {
+      this.createCellAndExecute(text, "interaction");
+    }
     return;
   }
 
+  createCellAndExecute(code: string, funKind: FunKind) {
+    const cell = Jupyter.notebook.insert_cell_above("code");
+    this.exeucteCell(cell, code, funKind);
+  }
   /**
    * we can use one of the following two:
    * - Jupyter.notebook.insert_cell_at_index(type, index);
    * - Jupyter.notebook.insert_cell_above("code");
-   * 
+   *
    * we are going to try with inserting at a fixed place
    */
-  create_cell_and_execute(text: string, funKind: FunKind, metadata?: CellMetaData) {
-    
-    const cell = Jupyter.notebook.insert_cell_above("code");
+  exeucteCell(cell: any, text: string, funKind: FunKind, metadata?: CellMetaData) {
     const d = CELL_DOT_ANNOTATION[funKind];
     if (!d) LogInternalError(`FunKind ${funKind} was not found`);
     const time = new Date().toLocaleTimeString(navigator.language, {hour: "2-digit", minute: "2-digit"});

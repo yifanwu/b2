@@ -2,14 +2,12 @@ import React from "react";
 import MidasContainer from "./MidasContainer";
 import { SelectionShelf } from "./SelectionShelf";
 import { ProfilerShelf } from "./ProfilerShelf";
-import CellManager from "../CellManager";
+import { MidasContainerFunctions } from "../types";
 
 interface MidasSidebarProps {
   columnSelectMsg: (col: string, table: string) => void;
-  addCurrentSelectionMsg: (valueStr: string) => void;
   makeSelectionFromShelf: (selection: string) => void;
-  removeDataFrameMsg: (dataFrame: string) => void;
-  getCode: (dataFrame: string) => void;
+  midasElementFunctions: MidasContainerFunctions;
 }
 
 interface MidasSidebarState {
@@ -87,9 +85,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
         <div id="midas-inside">
           {midbar}
           <MidasContainer
-            removeDataFrameMsg={this.props.removeDataFrameMsg}
-            addCurrentSelectionMsg={this.props.addCurrentSelectionMsg}
-            getCode={this.props.getCode}
+            containerFunctions={this.props.midasElementFunctions}
             ref={this.setMidasContainerRef}/>
         </div></>
     );

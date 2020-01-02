@@ -2,8 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 
 import { MidasSidebar } from "./components/MidasSidebar";
-import { LogSteps } from "./utils";
-import CellManager from "./CellManager";
+import { MidasContainerFunctions } from "./types";
 
 const SIDEBAR_ID = "midas-sidebar-wrapper";
 const SIDEBAR_SELECTOR = `#${SIDEBAR_ID}`;
@@ -13,9 +12,7 @@ const SIDE_INSIDE_SELECTOR = "#midas-inside";
  * @param divToResize the div representing the sidebar.
  */
 function makeResizer(onChange: (delta: number) => void) {
-
   let resizer = $("#midas-resizer");
-
   resizer.on("mousedown", (e) => {
     let x = e.clientX;
     let lastTotalMove = 0;
@@ -48,12 +45,9 @@ export function tearDownMidasComponent() {
 
 export function createMidasComponent(
   columnSelectMsg: (col: string, table: string) => void,
-  addCurrentSelectionMsg: (valueStr: string) => void,
   makeSelectionFromShelf: (selection: string) => void,
-  removeDataFrameMsg: (dataFrame: string) => void,
-  getCode: (dataFrame: string) => void,
+  midasElementFunctions: MidasContainerFunctions
 ): MidasSidebar {
-  // LogSteps("createMidasComponent", midas_instance_name);
   if ($(SIDEBAR_SELECTOR).length === 0) {
     $(window).resize(function () {
       syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10);
@@ -66,20 +60,15 @@ export function createMidasComponent(
   ReactDOM.render(<MidasSidebar
     ref={(comp) => midasRef = comp}
     columnSelectMsg={columnSelectMsg}
-    getCode={getCode}
-    addCurrentSelectionMsg={addCurrentSelectionMsg}
+    midasElementFunctions={midasElementFunctions}
     makeSelectionFromShelf={makeSelectionFromShelf}
-    removeDataFrameMsg={removeDataFrameMsg}
   />, document.getElementById(SIDEBAR_ID));
 
-  // note that this must happen after
-  // if ($(`#midas-resizer`).length === 0) {
   makeResizer((delta) => {
     let oldWidth = $(SIDEBAR_SELECTOR).width();
     $(SIDEBAR_SELECTOR).width(oldWidth + delta);
     syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
   });
   syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
-  // }
   return midasRef;
 }

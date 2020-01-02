@@ -125,7 +125,7 @@ class UiComm(object):
             elif command == "add_current_selection":
                 value = json.loads(data["value"])
                 # parse it first!
-                self.send_debug_msg(f"got add_current_selection message {value}")
+                # self.send_debug_msg(f"got add_current_selection message {value}")
                 self.handle_add_current_selection(value)
             else:
                 m = f"Command {command} not handled!"

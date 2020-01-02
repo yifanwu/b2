@@ -7,6 +7,15 @@ export enum AlertType {
 export type PerChartSelectionValue = {[index: string]: number[]};
 export type SelectionValue = {[index: string]: PerChartSelectionValue};
 
+export interface MidasElementFunctions {
+  addCurrentSelectionMsg: (valueStr: string) => void;
+  getCode: (dataFrame: string) => void;
+  setUIItxFocus: (dataFrame?: string) => void;
+}
+export interface MidasContainerFunctions {
+  removeDataFrameMsg: (dataFrame: string) => void;
+  elementFunctions: MidasElementFunctions;
+}
 
 export enum Context {
   SeenTogether = "SeenTogether",

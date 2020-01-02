@@ -2,10 +2,9 @@
 import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME } from "./constants";
 import { LogSteps, LogDebug } from "./utils";
 import { createMidasComponent } from "./setup";
-import { AlertType } from "./types";
+import { AlertType, MidasContainerFunctions } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
 import CellManager, { FunKind }  from "./CellManager";
-import { EncodingSpec } from "./charts/vegaGen";
 
 type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
@@ -31,7 +30,6 @@ type NotificationCommLoad  = {
 type BrushCommLoad = {
   type: string;
   dfName: string;
-  // again, not sure what gets sent..
   selection: any;
 };
 
@@ -82,15 +80,11 @@ export function openRecoveryComm() {
  */
 export function makeComm(is_first_time = true) {
   LogSteps("makeComm");
-  // refToSidebar: MidasSidebar
-
 
   Jupyter.notebook.kernel.comm_manager.register_target(MIDAS_CELL_COMM_NAME,
     function (comm: any, msg: any) {
-      LogDebug(`makeComm first message: ${JSON.stringify(msg)}`);
       const set_on_msg = (onMessage: (r: MidasSidebar) => void ) => {
         comm.on_msg(onMessage);
-        LogDebug("set the handler to new");
       };
       comm.on_msg((msg: any) => {
         // the first time
@@ -104,15 +98,16 @@ export function makeComm(is_first_time = true) {
               column,
               df_name: tableName,
             };
-            // console.log(`Clicked, and sending message with contents ${JSON.stringify(payload)}`);
             comm.send(payload);
           };
+
           const addCurrentSelectionMsg = (valueStr: string) => {
             comm.send({
               "command": "add_current_selection",
               "value": valueStr
             });
           };
+
           const getCode = (dfName: string) => {
             comm.send({
               "command": "get_code_clipboard",
@@ -128,9 +123,18 @@ export function makeComm(is_first_time = true) {
           };
 
           const cellManager = new CellManager(midasInstanceName);
+          const setUIItxFocus = cellManager.setFocus.bind(cellManager);
+          const containerFunctions: MidasContainerFunctions = {
+            removeDataFrameMsg,
+            elementFunctions: {
+              addCurrentSelectionMsg,
+              getCode,
+              setUIItxFocus
+            }
+          };
+
           const makeSelection = cellManager.makeSelection.bind(cellManager);
-          const ref = createMidasComponent(columnSelectMsg, addCurrentSelectionMsg, makeSelection, removeDataFrameMsg, getCode);
-          // cellManager.setDrawBrush(ref.getMidasContainerRef().drawBrush);
+          const ref = createMidasComponent(columnSelectMsg, makeSelection, containerFunctions);
           const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);
 
@@ -141,7 +145,6 @@ export function makeComm(is_first_time = true) {
                 command: "cell-ran",
                 code,
               });
-              // LogDebug(`FINISHED excuting cell with code: ${code}`);
             });
           }
         }
@@ -150,16 +153,6 @@ export function makeComm(is_first_time = true) {
       comm.on_close(function (msg: any) {
         LogSteps(`CommClose`, msg);
       });
-
-      // if ((window.performance) && (performance.navigation.type === 1)) {
-      //   // Page is reloaded, use comm to make python side reconnect to the comm
-      //   // this should be ran only once
-      //   LogDebug("Refresh-comm called");
-      //   // FIXME: commenting the below out because there are some infinite loops going on here...
-      //   comm.send({
-      //     "command": "refresh-comm"
-      //   });
-      // }
     });
 }
 
@@ -189,7 +182,6 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         return;
       }
       case "add_selection_to_shelf": {
-        // we also need to draw the brushes here as well
         const selectionLoad = load as BasicLoad;
         refToSelectionShelf.addSelectionItem(selectionLoad.value);
         refToMidas.drawBrush(selectionLoad.value);
@@ -210,7 +202,7 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
       case "create_then_execute_cell": {
         // const cellId = msg.parent_header.msg_id;
         const cellLoad = load as ExecuteCodeLoad;
-        cellManager.create_cell_and_execute(cellLoad.code, cellLoad.funKind);
+        cellManager.createCellAndExecute(cellLoad.code, cellLoad.funKind);
         return;
       }
       case "navigate_to_vis": {
@@ -220,12 +212,10 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
       }
       case "profiler": {
         const cellId = msg.parent_header.msg_id;
-        // we are going to start the data explorers
         const dataLoad = load as ProfilerComm;
         LogSteps("Profiler", dataLoad.dfName);
         const tableName = dataLoad.dfName;
         const columnItems = JSON.parse(dataLoad.columns);
-        // DataProps
         refToProfilerShelf.addOrReplaceTableItem(tableName, columnItems, cellId);
         return;
       }
@@ -243,15 +233,10 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
       }
       case "chart_update_data": {
         const updateLoad = load as UpdateCommLoad;
-        // LogSteps("Chart update", updateLoad.dfName);
-        console.log(updateLoad.newData);
         refToMidas.replaceData(updateLoad.dfName, updateLoad.newData);
-        // also navigate
         refToMidas.navigate(updateLoad.dfName);
         return;
       }
     }
   };
 }
-
-

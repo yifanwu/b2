@@ -5,14 +5,15 @@ import {
   SortableElement,
   SortableHandle,
 } from "react-sortable-hoc";
-import { makeElementId } from "../config";
 import { View } from "vega";
 // we are going to be rendering vega-lite now for its superior layout etc.
 import vegaEmbed from "vega-embed";
-import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL } from "../constants";
-import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, comparePerChartSelection } from "../utils";
+
 import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
-import { PerChartSelectionValue } from "../types";
+import { makeElementId } from "../config";
+import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL } from "../constants";
+import { PerChartSelectionValue, MidasElementFunctions } from "../types";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, comparePerChartSelection } from "../utils";
 
 interface MidasElementProps {
   changeStep: number;
@@ -23,8 +24,7 @@ interface MidasElementProps {
   encoding: EncodingSpec;
   tick: (dfName: string) => void;
   data: any[];
-  addCurrentSelectionMsg: (value: string) => void;
-  getCode: (value: string) => void;
+  functions: MidasElementFunctions;
 }
 
 interface MidasElementState {
@@ -81,7 +81,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     if (Object.keys(selection).length === 0) {
       // make brush null
       // signal(SELECTION_SIGNAL, {});
-      signal(BRUSH_X_SIGNAL, [0,0])
+      signal(BRUSH_X_SIGNAL, [0, 0]);
       runAsync();
       return;
     }
@@ -147,10 +147,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       processedValue[dfName] = cleanValue;
       let valueStr = JSON.stringify(processedValue);
       valueStr = (valueStr === "null") ? "None" : valueStr;
-      this.props.addCurrentSelectionMsg(valueStr);
+      this.props.functions.addCurrentSelectionMsg(valueStr);
       this.setState({ currentBrush: cleanValue });
       LogDebug(`Chart causing selection ${valueStr}`);
       this.props.tick(dfName);
+      document.getElementById(getDfId(this.props.dfName)).focus();
     };
 
     const wrapped = (name: any, value: any) => {
@@ -205,7 +206,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 
   getCode() {
-    this.props.getCode(this.props.dfName);
+    this.props.functions.getCode(this.props.dfName);
   }
 
   // FIXME: figure out the type...
@@ -222,29 +223,21 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
   }
 
-  clearGeneratedCells() {
-    console.log(`There are ${this.state.generatedCells.length} to clear`);
-    this.state.generatedCells.forEach(c => {
-      console.log(`Deleting cell that exists at index ${Jupyter.notebook.find_cell_index(c)}`);
-      Jupyter.notebook.delete_cell(Jupyter.notebook.find_cell_index(c))
-    });
-    this.setState(prevState => {
-      let newState = {
-        elementId: prevState.elementId,
-        hidden: prevState.hidden,
-        view: prevState.view,
-        generatedCells: Array<any>(),
-      }
-      return newState;
-    });
-  }
-
   /**
    * Renders this component.
    */
   render() {
     return (
-      <div className="card midas-element" id={getDfId(this.props.dfName)}>
+      <div className="card midas-element" id={getDfId(this.props.dfName)}
+        tabIndex={-1}
+        onFocus={() => {
+          LogDebug(`element for ${this.props.dfName} focused`);
+          this.props.functions.setUIItxFocus(this.props.dfName);
+        }}
+        onBlur={() => {
+          LogDebug(`element for ${this.props.dfName} blurred`);
+            this.props.functions.setUIItxFocus();
+          }}>
         <div className="midas-header">
           <DragHandle />
           <span className="midas-title">{this.props.title}</span>

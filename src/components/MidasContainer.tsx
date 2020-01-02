@@ -1,15 +1,14 @@
 import React, { RefObject } from "react";
 import arrayMove from "array-move";
-import { TopLevelSpec } from "vega-lite";
 import { SortableContainer } from "react-sortable-hoc";
 
-import MidasElement from "./MidasElement";
-import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
-import { LogInternalError, LogSteps, getDfId, LogDebug } from "../utils";
-import { AlertType } from "../types";
-import { ALERT_ALIVE_TIME } from "../constants";
 import { EncodingSpec } from "../charts/vegaGen";
-import { SelectionValue } from "../types";
+import { ALERT_ALIVE_TIME } from "../constants";
+import { AlertType, MidasContainerFunctions, SelectionValue } from "../types";
+import { LogInternalError, LogSteps, getDfId, LogDebug } from "../utils";
+
+import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
+import MidasElement from "./MidasElement";
 
 // Mappings
 //  this stores the information connecting the cells to
@@ -34,9 +33,7 @@ interface AlertItem {
 }
 
 interface ContainerProps {
-  addCurrentSelectionMsg: (valueStr: string) => void;
-  removeDataFrameMsg: (dataFrame: string) => void;
-  getCode: (dataFrame: string) => void;
+  containerFunctions: MidasContainerFunctions;
 }
 
 interface ContainerState {
@@ -229,7 +226,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         // here we are replacing the value
         prevState.elements[idx] = newElement;
       } else {
-        LogDebug(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`);
+        // LogDebug(`Adding data frame: ${dfName} associated with cell ${notebookCellId}`);
         prevState.elements.push(newElement);
       }
       return prevState;
@@ -250,7 +247,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
    * @param key the id of the data frame
    */
   removeDataFrame(dfName: string) {
-    this.props.removeDataFrameMsg(dfName);
+    this.props.containerFunctions.removeDataFrameMsg(dfName);
 
     this.setState(prevState => {
       return {
@@ -280,14 +277,13 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       notebookCellId, dfName, data, encoding, changeStep: chanageStep }, index) => {
       return <MidasElement
         ref={r => { this.refsCollection[dfName] = r; }}
-        addCurrentSelectionMsg={this.props.addCurrentSelectionMsg}
+        functions={this.props.containerFunctions.elementFunctions}
         cellId={notebookCellId}
         key={`${dfName}-${encoding.shape}-${encoding.x}-${encoding.y}`}
         dfName={dfName}
         tick={this.tick}
         title={dfName}
         encoding={encoding}
-        getCode={this.props.getCode}
         data={data}
         changeStep={chanageStep}
         removeChart={() => this.removeDataFrame(dfName)}
