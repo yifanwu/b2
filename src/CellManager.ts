@@ -60,7 +60,7 @@ export default class CellManager {
   setFocus(dfName?: string) {
     this.prevFocus = this.currentFocus;
     this.currentFocus = dfName;
-    LogDebug(`Set focus: ${dfName}`);
+    // LogDebug(`Set focus: ${dfName}`);
   }
 
   makeSelection(selectionValue: string) {
@@ -88,7 +88,7 @@ export default class CellManager {
       }
     }
     const text = `${this.midasInstanceName}.${funName}(${params})`;
-    LogDebug(`Focus checking ${this.prevFocus}, ${this.currentFocus}`);
+    // LogDebug(`Focus checking ${this.prevFocus}, ${this.currentFocus}`);
     if (this.prevFocus && this.currentFocus) {
       const cell = this.cellsCreated[this.cellsCreated.length - 1].cell;
       this.exeucteCell(cell, text, "interaction");

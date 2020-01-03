@@ -200,7 +200,7 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         const cellId = msg.parent_header.msg_id;
         const reactiveLoad = load as BasicLoad;
         refToMidas.captureCell(reactiveLoad.value, cellId);
-        refToMidas.addAlert(`Success adding cell to ${reactiveLoad.value}`, AlertType.Confirmation);
+        LogDebug(`Success adding cell to ${reactiveLoad.value} for cell ${cellId}`);
         return;
       }
       case "execute_fun": {

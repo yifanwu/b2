@@ -6,10 +6,10 @@ from .ui_comm import UiComm
 
 @magics_class
 class MidasMagic(Magics):
-    uiComm: UiComm
-    def __init__(self, shell, uiComm: UiComm):
+    ui_comm: UiComm
+    def __init__(self, shell, ui_comm: UiComm):
         super(MidasMagic, self).__init__(shell)
-        self.uiComm = uiComm
+        self.ui_comm = ui_comm
 
     @cell_magic
     @magic_arguments()
@@ -23,8 +23,8 @@ class MidasMagic(Magics):
         """
         args = parse_argstring(self.reactive, line)
         if (args.df_name):
-            print("NEW cell magic with shell", args.df_name, "with cell", cell)
-            self.comm.send({"type": "reactive", "value": args.df_name})
+            # self.ui_comm.send_debug_msg(f"NEW cell magic with shell: { args.df_name} with cell: {cell}")
+            self.ui_comm.add_reactive_cell(args.df_name)
             shell = get_ipython().get_ipython()
             shell.run_cell(cell)
         else:

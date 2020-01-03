@@ -1,4 +1,3 @@
-from datetime import datetime
 from midas.midas_algebra.data_types import DFId
 from IPython import get_ipython 
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_any_dtype 
@@ -6,7 +5,7 @@ from midas.midas_algebra.selection import SelectionValue
 from ipykernel.comm import Comm # type: ignore
 import numpy as np
 # from json import loads
-from typing import Dict, Callable, Optional, List, cast, Tuple, Any
+from typing import Dict, Callable, Optional, List
 import json
 from pyperclip import copy
 import ast
@@ -14,7 +13,7 @@ import ast
 from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS, MIDAS_RECOVERY_COMM_NAME
 from midas.state_types import DFName
 
-from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, VisualizedDFInfo, DFInfo
+from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo
 from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import EncodingSpec, FilterLabelOptions
@@ -320,6 +319,14 @@ class UiComm(object):
             "type": "create_then_execute_cell",
             "funKind": funKind,
             "code": s
+        })
+
+    # note that we do not need to provide the cellid
+    #   that's information to be captured on the JS end.
+    def add_reactive_cell(self, df_name):
+        self.comm.send({
+            "type": "reactive",
+            "value": df_name
         })
 
     def execute_fun(self, fun: str, params: str):

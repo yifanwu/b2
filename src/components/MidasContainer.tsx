@@ -106,11 +106,9 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     }
 
     const dfNames = selectionArray.map((s: any) => Object.keys(s)[0]) as string[];
-    // console.log("current state of elements is", this.state.elements);
     for (let e of this.state.elements) {
       const idx = dfNames.findIndex((v) => v === e.dfName);
       if (idx > -1) {
-        // [e.dfName]
         const selectionItem = selectionArray[idx] as SelectionValue;
         this.refsCollection[e.dfName].drawBrush(selectionItem[e.dfName]);
       }
@@ -140,20 +138,29 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
 
   tick(dfName: string) {
-    console.log("midas container tick called", dfName);
-    // look up the reactiveCells
     const cells = this.state.reactiveCells.get(dfName);
-    if (cells) {
-      const cellIdxs = cells.map(c => {
-        const cIdxMsg = Jupyter.notebook.get_msg_cell(c);
+    function getCell(c: number) {
+      const cIdxMsg = Jupyter.notebook.get_msg_cell(c);
+      if (cIdxMsg) {
         const idx = Jupyter.notebook.find_cell_index(cIdxMsg);
-        if (idx) {
+        if (idx > -1) {
+          LogDebug(`Found cell for ${dfName} with ${c}`);
           return idx;
-        } else {
-          // maybe report this to the user
-          LogInternalError(`One of the cells is no longer found`);
         }
-      });
+      }
+      LogDebug(`One of the cells is no longer found for ${c}`);
+    }
+    if (cells) {
+      let cellIdxs = [];
+      for (let i = 0; i < cells.length; i ++) {
+        const r = getCell(cells[i]);
+        if (r) {
+          cellIdxs.push(r);
+        } else {
+          // remove if they are no longer available
+          cells.splice(i, 1);
+        }
+      }
       LogSteps(`[${dfName}] Reactively executing cells ${cellIdxs}`);
       Jupyter.notebook.execute_cells(cellIdxs);
     }
