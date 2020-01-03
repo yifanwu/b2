@@ -64,23 +64,23 @@ class CategoricalDistribution(DfTransform):
 VegaSpecType = Dict[str, Any]
 
 class EncodingSpec(object):
-    def __init__(self, shape: str, x: str, y: str):
+    def __init__(self, mark: str, x: str, y: str):
         # bar, circle, line
-        self.shape = shape
+        self.mark = mark
         self.x = x
         self.y = y
 
     def __eq__(self, other: 'EncodingSpec'):
-        return self.shape == other.shape and self.x == other.x and self.y == other.y
+        return self.mark == other.mark and self.x == other.x and self.y == other.y
 
     def __ne__(self, other: 'EncodingSpec'):
         return not self.__eq__(other)
     
     def __repr__(self):
-        return f"EncodingSpec({self.shape!r}, {self.x!r}, {self.y!r})"
+        return f"EncodingSpec({self.mark!r}, {self.x!r}, {self.y!r})"
 
     def to_json(self):
-        return '{{"shape": "{0}", "x": "{1}", "y" : "{2}"}}'.format(self.shape, self.x, self.y)
+        return '{{"mark": "{0}", "x": "{1}", "y" : "{2}"}}'.format(self.mark, self.x, self.y)
 
 # class ChartInfo(NamedTuple):
 #     """[summary]

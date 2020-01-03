@@ -11,6 +11,7 @@ export interface MidasElementFunctions {
   addCurrentSelectionMsg: (valueStr: string) => void;
   getCode: (dataFrame: string) => void;
   setUIItxFocus: (dataFrame?: string) => void;
+  getChartCode: (dataFrame: string) => void;
 }
 
 export interface MidasContainerFunctions {

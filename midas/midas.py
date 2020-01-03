@@ -13,7 +13,6 @@ except ImportError as err:
     logging = lambda x, y: None
 
 from .stream import MidasSelectionStream
-from datetime import datetime
 from typing import Dict, List
 
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code

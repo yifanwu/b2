@@ -98,12 +98,6 @@ class UiComm(object):
         debug_log(f"got message {data}")
         if "command" in data:
             command = data["command"]
-            # if command == "refresh-comm":
-            #     if not self.logged_comms:
-            #       return
-            #     else:
-            #       self.run_log()
-            #     self.set_comm(self.midas_instance_name)
             if command == "cell-ran":
                 if "code" in data:
                     code = data["code"]
@@ -115,6 +109,13 @@ class UiComm(object):
                 # self.send_debug_msg(f"got code for {df_name}: {code}")
                 copy(code)
                 return
+            elif command == "get_visualization_code_clipboard":
+                df_name = data["df_name"]
+                encoding = self.vis_spec[df_name]
+                encoding_arg = f"mark='{encoding.mark}', x='{encoding.x}', y='{encoding.y}'"
+                code = f"{df_name}.show({encoding_arg})"
+                # self.send_debug_msg(f"got code for {df_name}: {code}")
+                copy(code)
             elif command == "column-selected":
                 # self.send_debug_msg("column-selected called")
                 column = data["column"]
@@ -143,6 +144,7 @@ class UiComm(object):
         else:
             debug_log(f"Got message from JS Comm: {data}")
 
+
     # note that this is extracted out for better debugging.
     def handle_add_current_selection(self, value: Dict):
         selections = self.get_predicate_info(value)
@@ -155,10 +157,9 @@ class UiComm(object):
         # self.send_debug_msg(f"creating code\n{code}")
         self.execute_fun("make_selections", param_str)
 
+
     def process_code(self, code: str):
         assigned_dfs = self.get_dfs_from_code_str(code)
-        # assigned_dfs_str = ",".join([cast(str, df.df_name) for df in assigned_dfs])
-        # we need to create the code
         if len(assigned_dfs) == 0:
             # do nothing
             debug_log("no df to process")
@@ -166,16 +167,12 @@ class UiComm(object):
         # code_lines = []
         for df in assigned_dfs:
             if df.is_base_df:
-                # line = f"{df.df_name}.show_profile()"
                 # just execute it! since there is no configuration
                 df.show_profile()
             else:
                 encoding = infer_encoding(df)
-                encoding_arg = f"shape='{encoding.shape}', x='{encoding.x}', y='{encoding.y}'"
-                line = f"{df.df_name}.show({encoding_arg})"
-                self.create_then_execute_cell(line, "chart")
-        #     code_lines.append(line)
-        # code = "\n".join(code_lines)
+                df.show(mark=encoding.mark, x=encoding.x, y=encoding.y)
+
 
     def set_comm(self, midas_instance_name: str):
         if self.is_in_ipynb:
@@ -360,7 +357,7 @@ class UiComm(object):
         vis = self.vis_spec[df_name]
         x = ColumnRef(vis.x, df_name)
         if not selection:
-            if vis.shape == "circle":
+            if vis.mark == "circle":
                 y = ColumnRef(vis.y, df_name)
                 result.extend([
                     EmptySelection(x),
@@ -371,7 +368,7 @@ class UiComm(object):
                     EmptySelection(x)
                 ])
         else:
-            if vis.shape == "circle":
+            if vis.mark == "circle":
                 y = ColumnRef(vis.y, df_name)
                 # the predicate is either going to be x or y, or both
                 selections_added = 0
@@ -385,14 +382,14 @@ class UiComm(object):
                     selections_added += 1
                 if selections_added == 0:
                     raise InternalLogicalError(f"Unknown selection {selection}");
-            elif vis.shape == "bar":
+            elif vis.mark == "bar":
                 predicate = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
                 result.append(predicate)
-            elif vis.shape == "line":
+            elif vis.mark == "line":
                 x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
                 result.append(x_selection)
             else:
-                raise InternalLogicalError(f"{vis.shape} not handled")
+                raise InternalLogicalError(f"{vis.mark} not handled")
         return result
 
     @logged(remove_on_chart_removal=False)

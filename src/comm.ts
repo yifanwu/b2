@@ -108,6 +108,13 @@ export function makeComm(is_first_time = true) {
             });
           };
 
+          const getChartCode = (dfName: string) => {
+            comm.send({
+              "command": "get_visualization_code_clipboard",
+              "df_name": dfName
+            });
+          };
+
           const getCode = (dfName: string) => {
             comm.send({
               "command": "get_code_clipboard",
@@ -129,7 +136,8 @@ export function makeComm(is_first_time = true) {
             elementFunctions: {
               addCurrentSelectionMsg,
               getCode,
-              setUIItxFocus
+              setUIItxFocus,
+              getChartCode
             }
           };
 

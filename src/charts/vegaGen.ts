@@ -3,9 +3,11 @@ import { TopLevelSpec } from "vega-lite";
 
 
 export interface EncodingSpec {
-  shape: string;
+  mark: string;
   x: string;
   y: string;
+  color?: string;
+  size?: string;
 }
 
 const colorSpec = {
@@ -40,7 +42,7 @@ function genSelection(brush_only_x: boolean) {
 
 // TODO: TopLevelSpec
 export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[]) {
-  switch (encoding.shape) {
+  switch (encoding.mark) {
     case "bar":
       return {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
@@ -93,6 +95,6 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
         "opacity": {"value": 0.5}
       };
     default:
-      throw Error(`${encoding.shape} not handled`);
+      throw Error(`${encoding.mark} not handled`);
   }
 }

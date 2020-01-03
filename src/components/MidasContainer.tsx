@@ -93,6 +93,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     return this.state.idToCell[name];
   }
 
+
   drawBrush(selectionArrayStr: string) {
     const selectionArray = JSON.parse(selectionArrayStr);
     // note that the below is actually not an array, but an empty string
@@ -115,6 +116,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       }
     }
   }
+
 
   setMidasPythonInstanceName(midasPythonInstanceName: string) {
     this.setState({ midasPythonInstanceName });
@@ -279,7 +281,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         ref={r => { this.refsCollection[dfName] = r; }}
         functions={this.props.containerFunctions.elementFunctions}
         cellId={notebookCellId}
-        key={`${dfName}-${encoding.shape}-${encoding.x}-${encoding.y}`}
+        key={`${dfName}-${encoding.mark}-${encoding.x}-${encoding.y}`}
         dfName={dfName}
         tick={this.tick}
         title={dfName}

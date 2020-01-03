@@ -6,7 +6,6 @@ import {
   SortableHandle,
 } from "react-sortable-hoc";
 import { View } from "vega";
-// we are going to be rendering vega-lite now for its superior layout etc.
 import vegaEmbed from "vega-embed";
 
 import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
@@ -31,10 +30,7 @@ interface MidasElementState {
   elementId: string;
   hidden: boolean;
   view: View;
-  // both are initial domains that we are fixing
   generatedCells: any[];
-  // yDomain: any;
-  // xDomain: any;
   currentBrush: PerChartSelectionValue;
 }
 
@@ -52,7 +48,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.embed = this.embed.bind(this);
     this.drawBrush = this.drawBrush.bind(this);
     this.getDebouncedFunction = this.getDebouncedFunction.bind(this);
-
+    this.changeVisual = this.changeVisual.bind(this);
+    this.toggleHiddenStatus = this.toggleHiddenStatus.bind(this);
+    
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
       hidden: false,
@@ -119,7 +117,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   roundIfPossible(selection: any) {
     const encoding = this.props.encoding;
-    if (encoding.shape !== "bar") {
+    if (encoding.mark !== "bar") {
 
       let rounedEncoding: any = {};
       // {"horsepower: []"}
@@ -152,7 +150,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       LogDebug(`Chart causing selection ${valueStr}`);
       this.props.tick(dfName);
       this.props.functions.setUIItxFocus(this.props.dfName);
-      // this makes sure that the focus is set
+      // have to set focus manually because the focus is not set
       document.getElementById(getDfId(this.props.dfName)).focus();
     };
 
@@ -189,9 +187,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       .catch((err: Error) => console.error(err));
   }
 
-  /**
-   * Toggles whether the visualization can be seen
-   */
   toggleHiddenStatus() {
     this.setState(prevState => {
       return { hidden: !prevState.hidden };
@@ -203,7 +198,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
    * Note that currently if the output was generated and then the page
    * is refreshed, this may not work.
    */
-  selectCell() {
+  changeVisual() {
+    this.props.functions.getChartCode(this.props.dfName);
     navigateToNotebookCell(this.props.cellId);
   }
 
@@ -211,12 +207,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.props.functions.getCode(this.props.dfName);
   }
 
-  // FIXME: figure out the type...
+  // FIXME: define type
   async replaceData(newValues: any) {
     if (!this.state.view) {
       LogInternalError(`Vega view should have already been defined by now!`);
     }
-    // can do this in python too
     const changeSet = this.state.view
       .changeset()
       .remove((datum: any) => { return datum.is_overview === false; })
@@ -225,16 +220,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
   }
 
-  /**
-   * Renders this component.
-   */
   render() {
+    // note that the handlers are in the form  () => fun(), because of scoping issues in javascript
     return (
       <div className="card midas-element" id={getDfId(this.props.dfName)}
         tabIndex={-1}
-        // onFocus={() => {
-        //   this.props.functions.setUIItxFocus(this.props.dfName);
-        // }}
         onBlur={() => {
             this.props.functions.setUIItxFocus();
           }}>
@@ -242,24 +232,27 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           <DragHandle />
           <span className="midas-title">{this.props.title}</span>
           <div className="midas-header-options"></div>
-          <button
+          {/* <button
             className={"midas-header-button"}
             onClick={() => this.selectCell()}
-          >cell</button>
+          >cell</button> */}
+          <button
+            className={"midas-header-button"}
+            onClick={() => this.changeVisual()}
+          >📊</button>
           <button
             className={"midas-header-button"}
             onClick={() => this.getCode()}
-          >code</button>
+          >📋</button>
           <button
             className={"midas-header-button"}
             onClick={() => this.toggleHiddenStatus()}>
-            {this.state.hidden ? "+" : "-"}
+            {this.state.hidden ? "➕" : "➖"}
           </button>
-
           <button
-            className={"midas-header-button"}
-            onClick={this.props.removeChart}>
-            x
+            className={"midas-header-button close-chart-btn"}
+            onClick={() => this.props.removeChart()}>
+            ❌
           </button>
         </div>
         <div

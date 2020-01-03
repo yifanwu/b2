@@ -387,6 +387,13 @@
   overflow-y: auto;
 }
 
+.close-chart-btn {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.close-chart-btn:hover {
+  color: rgba(0, 0, 0, 1);
+}
 
 a.tip span {
   display: none
