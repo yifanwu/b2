@@ -18,7 +18,7 @@ import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebo
 interface MidasElementProps {
   changeStep: number;
   cellId: string;
-  removeChart: MouseEventHandler;
+  removeChart: () => void;
   dfName: string;
   title: string;
   encoding: EncodingSpec;
@@ -73,7 +73,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   // TODO: instead of just supporting brush, also add clicking
   drawBrush(selection: PerChartSelectionValue) { // will be a dictionary...
     if (comparePerChartSelection(selection, this.state.currentBrush) ) {
-      LogDebug("BRUSH NOOP", selection);
+      // LogDebug("BRUSH NOOP", selection);
       return;
     }
     const signal = this.state.view.signal.bind(this.state.view);
@@ -151,6 +151,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       this.setState({ currentBrush: cleanValue });
       LogDebug(`Chart causing selection ${valueStr}`);
       this.props.tick(dfName);
+      this.props.functions.setUIItxFocus(this.props.dfName);
+      // this makes sure that the focus is set
       document.getElementById(getDfId(this.props.dfName)).focus();
     };
 
@@ -230,12 +232,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     return (
       <div className="card midas-element" id={getDfId(this.props.dfName)}
         tabIndex={-1}
-        onFocus={() => {
-          LogDebug(`element for ${this.props.dfName} focused`);
-          this.props.functions.setUIItxFocus(this.props.dfName);
-        }}
+        // onFocus={() => {
+        //   this.props.functions.setUIItxFocus(this.props.dfName);
+        // }}
         onBlur={() => {
-          LogDebug(`element for ${this.props.dfName} blurred`);
             this.props.functions.setUIItxFocus();
           }}>
         <div className="midas-header">
@@ -258,7 +258,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
           <button
             className={"midas-header-button"}
-            onClick={(e) => this.props.removeChart(e)}>
+            onClick={this.props.removeChart}>
             x
           </button>
         </div>

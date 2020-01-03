@@ -56,23 +56,29 @@ class UiComm(object):
 
     def __init__(self, is_in_ipynb: bool, midas_instance_name: str,
       get_df_fun: Callable[[DFName], Optional[DFInfo]],
+      remove_df_fun: Callable[[DFName], None],
       create_df_from_ops: Callable[[RelationalOp], MidasDataFrame],
       add_selection: Callable[[List[SelectionValue]], List[SelectionValue]],
       get_filtered_code: Callable[[str], str]):
-        self.next_id = 0
-        self.vis_spec = {}
-        self.id_by_df_name = {}
-        self.shelf_selections = {}
+
+        # functions passed at creation time
         self.is_in_ipynb = is_in_ipynb
         self.midas_instance_name = midas_instance_name
         self.set_comm(midas_instance_name)
         self.register_recovery_comm(midas_instance_name)
         self.get_df = get_df_fun
+        self.remove_df_fun = remove_df_fun
         self.create_df_from_ops = create_df_from_ops
-        self.logged_comms = [] # 
         self.add_selection = add_selection
+        self.get_filtered_code = get_filtered_code\
+
+        # internal state
+        self.next_id = 0
+        self.vis_spec = {}
+        self.id_by_df_name = {}
+        self.shelf_selections = {}
+        self.logged_comms = []
         self.tmp_log = []
-        self.get_filtered_code = get_filtered_code
 
     def log(self, function, args, kwargs, associated_df_name):
         self.logged_comms.append((function, args, kwargs, associated_df_name))
@@ -119,8 +125,11 @@ class UiComm(object):
                 # now we need to figure out what kind of transformation is needed
                 # if nothing, we just show the table
             elif command == "remove_dataframe":
-                del self.vis_spec[data["df_name"]]
-                self.remove_df_from_log(data["df_name"])
+                df_name = data["df_name"]
+                self.remove_df_fun(df_name)
+                # local store
+                del self.vis_spec[df_name]
+                self.remove_df_from_log(df_name)
 
             elif command == "add_current_selection":
                 value = json.loads(data["value"])

@@ -57,7 +57,7 @@ class Midas(object):
             raise UserError("must assign a name")
         self.assigned_name = assigned_name
         # TODO: the organization here is still a little ugly
-        ui_comm = UiComm(is_in_ipynb, assigned_name, self.get_df_info, self.from_ops, self.add_selection, self.get_filtered_code)
+        ui_comm = UiComm(is_in_ipynb, assigned_name, self.get_df_info, self.remove_df, self.from_ops, self.add_selection, self.get_filtered_code)
         self.ui_comm = ui_comm
         self.df_info_store = {}
         self.context = Context(self.df_info_store, self.from_ops)

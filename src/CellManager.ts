@@ -42,6 +42,7 @@ export default class CellManager {
   midasInstanceName: string;
   prevFocus?: string;
   currentFocus?: string;
+  lastExecutedCell?: any;
 
   constructor(midasInstanceName: string) {
     this.currentStep = 0;
@@ -49,13 +50,17 @@ export default class CellManager {
     this.midasInstanceName = midasInstanceName;
     this.prevFocus = undefined;
     this.currentFocus = undefined;
+    this.lastExecutedCell = null;
+  }
+
+  setLastExecutedCell(cell: any) {
+    this.lastExecutedCell = cell;
   }
 
   setFocus(dfName?: string) {
     this.prevFocus = this.currentFocus;
     this.currentFocus = dfName;
     LogDebug(`Set focus: ${dfName}`);
-    LogDebug(`New values are: ${this.prevFocus} and ${this.currentFocus}`);
   }
 
   makeSelection(selectionValue: string) {
@@ -69,7 +74,7 @@ export default class CellManager {
 
       if (idxBefore > -1) {
         if (this.cellsCreated[idxBefore].step === this.currentStep) {
-          LogDebug("Ignored becasue just executed");
+          // LogDebug("Ignored becasue just executed");
           return;
         }
         const cell = this.cellsCreated[idxBefore].cell;
@@ -78,12 +83,12 @@ export default class CellManager {
         cell.execute();
         this.currentStep += 1;
         this.cellsCreated[idxBefore].step = this.currentStep;
-        LogDebug("executing from cells created earlier");
+        // LogDebug("executing from cells created earlier");
         return;
       }
     }
     const text = `${this.midasInstanceName}.${funName}(${params})`;
-    LogDebug(`Creating new function and the values are: ${this.prevFocus} and ${this.currentFocus}`);
+    LogDebug(`Focus checking ${this.prevFocus}, ${this.currentFocus}`);
     if (this.prevFocus && this.currentFocus) {
       const cell = this.cellsCreated[this.cellsCreated.length - 1].cell;
       this.exeucteCell(cell, text, "interaction");
@@ -94,8 +99,14 @@ export default class CellManager {
   }
 
   createCellAndExecute(code: string, funKind: FunKind) {
-    const cell = Jupyter.notebook.insert_cell_above("code");
-    this.exeucteCell(cell, code, funKind);
+    if (this.lastExecutedCell) {
+      const idx = Jupyter.notebook.find_cell_index(this.lastExecutedCell);
+      const cell = Jupyter.notebook.insert_cell_at_index("code", idx + 1);
+      this.exeucteCell(cell, code, funKind);
+    } else {
+      const cell = Jupyter.notebook.insert_cell_above("code");
+      this.exeucteCell(cell, code, funKind);
+    }
   }
   /**
    * we can use one of the following two:

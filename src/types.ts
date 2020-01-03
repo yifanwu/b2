@@ -12,6 +12,7 @@ export interface MidasElementFunctions {
   getCode: (dataFrame: string) => void;
   setUIItxFocus: (dataFrame?: string) => void;
 }
+
 export interface MidasContainerFunctions {
   removeDataFrameMsg: (dataFrame: string) => void;
   elementFunctions: MidasElementFunctions;
