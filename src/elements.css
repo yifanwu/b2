@@ -382,7 +382,8 @@
 
 #midas-midbar {
   width: var(--size-11);
-  background-color: var(--blue-100);
+  /* background-color: var(--blue-100); */
+  background-color: var(--yellow-vivid-100);
   box-sizing: border-box;
   overflow-y: auto;
 }

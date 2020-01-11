@@ -45,8 +45,8 @@ export function tearDownMidasComponent() {
 
 export function createMidasComponent(
   columnSelectMsg: (col: string, table: string) => void,
-  makeSelectionFromShelf: (selection: string) => void,
-  midasElementFunctions: MidasContainerFunctions
+  // makeSelectionFromShelf: (selection: string) => void,
+  containerFunctions: MidasContainerFunctions
 ): MidasSidebar {
   if ($(SIDEBAR_SELECTOR).length === 0) {
     $(window).resize(function () {
@@ -60,8 +60,8 @@ export function createMidasComponent(
   ReactDOM.render(<MidasSidebar
     ref={(comp) => midasRef = comp}
     columnSelectMsg={columnSelectMsg}
-    midasElementFunctions={midasElementFunctions}
-    makeSelectionFromShelf={makeSelectionFromShelf}
+    midasElementFunctions={containerFunctions}
+    // makeSelectionFromShelf={makeSelectionFromShelf}
   />, document.getElementById(SIDEBAR_ID));
 
   makeResizer((delta) => {

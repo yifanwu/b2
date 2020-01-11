@@ -4,7 +4,10 @@ export enum AlertType {
   Confirmation = "confirmation"
 }
 
-export type PerChartSelectionValue = {[index: string]: number[]};
+// the index is the column names, corresponding to values
+// even if it's a single value, we will just wrap it in an array
+export type PerChartSelectionValue = {[index: string]: number[] | string[]};
+
 export type SelectionValue = {[index: string]: PerChartSelectionValue};
 
 export interface MidasElementFunctions {
@@ -12,6 +15,7 @@ export interface MidasElementFunctions {
   getCode: (dataFrame: string) => void;
   setUIItxFocus: (dataFrame?: string) => void;
   getChartCode: (dataFrame: string) => void;
+  executeCapturedCells: (svg: string, comments: string) => void;
 }
 
 export interface MidasContainerFunctions {

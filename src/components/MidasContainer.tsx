@@ -44,8 +44,7 @@ interface ContainerState {
   // FIXME: the idToCell might not be needed given that we have refs.
   idToCell: Map<string, number>;
   // maps signals to cellIds
-  reactiveCells: Map<string, number[]>;
-  allReactiveCells: Set<number>;
+  // allReactiveCells: Set<number>;
   alerts: AlertItem[];
   midasPythonInstanceName: string;
   alertCounter: number;
@@ -65,8 +64,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
   constructor(props?: ContainerProps) {
     super(props);
-    this.tick = this.tick.bind(this);
-    this.captureCell = this.captureCell.bind(this);
     this.addAlert = this.addAlert.bind(this);
     this.drawBrush = this.drawBrush.bind(this);
 
@@ -76,8 +73,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       elements: [],
       refs: new Map(),
       idToCell: new Map(),
-      reactiveCells: new Map(),
-      allReactiveCells: new Set(),
       alerts: [],
       midasPythonInstanceName: null,
     };
@@ -133,51 +128,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         elements: prevState.elements,
         idToCell: prevState.idToCell,
       };
-    });
-  }
-
-
-  tick(dfName: string) {
-    const cells = this.state.reactiveCells.get(dfName);
-    function getCell(c: number) {
-      const cIdxMsg = Jupyter.notebook.get_msg_cell(c);
-      if (cIdxMsg) {
-        const idx = Jupyter.notebook.find_cell_index(cIdxMsg);
-        if (idx > -1) {
-          LogDebug(`Found cell for ${dfName} with ${c}`);
-          return idx;
-        }
-      }
-      LogDebug(`One of the cells is no longer found for ${c}`);
-    }
-    if (cells) {
-      let cellIdxs = [];
-      for (let i = 0; i < cells.length; i ++) {
-        const r = getCell(cells[i]);
-        if (r) {
-          cellIdxs.push(r);
-        } else {
-          // remove if they are no longer available
-          cells.splice(i, 1);
-        }
-      }
-      LogSteps(`[${dfName}] Reactively executing cells ${cellIdxs}`);
-      Jupyter.notebook.execute_cells(cellIdxs);
-    }
-  }
-
-
-  captureCell(dfName: string, cellId: number) {
-    if (this.state.allReactiveCells.has(cellId)) {
-      // we have already done this before
-      return;
-    }
-    this.setState(prevState => {
-      if (prevState.reactiveCells.has(dfName)) {
-        prevState.reactiveCells.get(dfName).push(cellId);
-      } else {
-        prevState.reactiveCells.set(dfName, [cellId]);
-      }
     });
   }
 
@@ -272,8 +222,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         elements: arrayMove(prevState.elements, oldIndex, newIndex),
         refs: prevState.refs,
         idToCell: prevState.idToCell,
-        reactiveCells: prevState.reactiveCells,
-        allReactiveCells: prevState.allReactiveCells,
         alerts: prevState.alerts
       };
     });
@@ -290,7 +238,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         cellId={notebookCellId}
         key={`${dfName}-${encoding.mark}-${encoding.x}-${encoding.y}`}
         dfName={dfName}
-        tick={this.tick}
         title={dfName}
         encoding={encoding}
         data={data}

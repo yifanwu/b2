@@ -1,5 +1,5 @@
 /// <reference path="./external/Jupyter.d.ts" />
-import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME } from "./constants";
+import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME, MIDAS_SELECTION_FUN } from "./constants";
 import { LogSteps, LogDebug } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType, MidasContainerFunctions } from "./types";
@@ -15,6 +15,12 @@ type ExecuteCodeLoad = {
   code: string;
 };
 
+type ExecuteSelectionLoad = {
+  type: string;
+  params: string;
+  dfname: string;
+};
+
 type ExecuteFunCallLoad = {
   type: string;
   funName: string;
@@ -27,7 +33,7 @@ type NotificationCommLoad  = {
   value: string;
 };
 
-type BrushCommLoad = {
+type SynchronizeSelectionLoad = {
   type: string;
   dfName: string;
   selection: any;
@@ -60,7 +66,8 @@ type MidasCommLoad = CommandLoad
                      | ProfilerComm
                      | ChartRenderComm
                      | UpdateCommLoad
-                     | BrushCommLoad;
+                     | SynchronizeSelectionLoad
+                     | ExecuteSelectionLoad;
 
 export function openRecoveryComm() {
     const comm = Jupyter.notebook.kernel.comm_manager.new_comm(MIDAS_RECOVERY_COMM_NAME);
@@ -131,18 +138,20 @@ export function makeComm(is_first_time = true) {
 
           const cellManager = new CellManager(midasInstanceName);
           const setUIItxFocus = cellManager.setFocus.bind(cellManager);
+          const executeCapturedCells = cellManager.executeCapturedCells.bind(cellManager);
+
           const containerFunctions: MidasContainerFunctions = {
             removeDataFrameMsg,
             elementFunctions: {
               addCurrentSelectionMsg,
               getCode,
               setUIItxFocus,
-              getChartCode
+              getChartCode,
+              executeCapturedCells
             }
           };
 
-          const makeSelection = cellManager.makeSelection.bind(cellManager);
-          const ref = createMidasComponent(columnSelectMsg, makeSelection, containerFunctions);
+          const ref = createMidasComponent(columnSelectMsg, containerFunctions);
           const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);
 
@@ -170,7 +179,7 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
 
   let refToMidas = refToSidebar.getMidasContainerRef();
   let refToProfilerShelf = refToSidebar.getProfilerShelfRef();
-  let refToSelectionShelf = refToSidebar.getSelectionShelfRef();
+  // let refToSelectionShelf = refToSidebar.getSelectionShelfRef();
 
   return function on_msg(msg: any) {
     // LogSteps("on_msg", JSON.stringify(msg));
@@ -190,17 +199,29 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         refToMidas.addAlert(errorLoad.value, alertType);
         return;
       }
-      case "add_selection_to_shelf": {
-        const selectionLoad = load as BasicLoad;
-        refToSelectionShelf.addSelectionItem(selectionLoad.value);
-        refToMidas.drawBrush(selectionLoad.value);
-        break;
+      case "after_selection": {
+        const selectionLoad = load as SynchronizeSelectionLoad;
+        refToMidas.drawBrush(selectionLoad.selection);
+        cellManager.runReactiveCells(selectionLoad.dfName);
+        return;
       }
+      // case "add_selection_to_shelf": {
+      //   const selectionLoad = load as BasicLoad;
+      //   refToSelectionShelf.addSelectionItem(selectionLoad.value);
+      //   refToMidas.drawBrush(selectionLoad.value);
+      //   break;
+      // }
       case "reactive": {
         const cellId = msg.parent_header.msg_id;
         const reactiveLoad = load as BasicLoad;
-        refToMidas.captureCell(reactiveLoad.value, cellId);
+        cellManager.captureCell(reactiveLoad.value, cellId);
         LogDebug(`Success adding cell to ${reactiveLoad.value} for cell ${cellId}`);
+        return;
+      }
+      case "execute_selection": {
+        // note that this case is a special case of the execution
+        const selectionLoad = load as ExecuteSelectionLoad;
+        cellManager.executeFunction(MIDAS_SELECTION_FUN, selectionLoad.params);
         return;
       }
       case "execute_fun": {

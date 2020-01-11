@@ -5,7 +5,7 @@ from midas.midas_algebra.selection import SelectionValue
 from ipykernel.comm import Comm # type: ignore
 import numpy as np
 # from json import loads
-from typing import Dict, Callable, Optional, List
+from typing import Dict, Callable, Optional, List, Tuple
 import json
 from pyperclip import copy
 import ast
@@ -146,15 +146,14 @@ class UiComm(object):
 
     # note that this is extracted out for better debugging.
     def handle_add_current_selection(self, value: Dict):
-        selections = self.get_predicate_info(value)
+        selections, df_name = self.get_predicate_info(value)
         all_predicate = self.add_selection(selections)
         # now turn this into JSON
         param_str = "[]"
         if len(all_predicate) > 0:
-            predicates = ",".join(list(map(lambda v: v.to_str(), all_predicate)))
-            param_str = f"[{predicates}]"
-        # self.send_debug_msg(f"creating code\n{code}")
-        self.execute_fun("make_selections", param_str)
+            predicates = ",  \n".join(list(map(lambda v: v.to_str(), all_predicate)))
+            param_str = f"[\n  {predicates}\n]"
+        self.execute_selection(param_str, df_name)
 
 
     def process_code(self, code: str):
@@ -298,6 +297,11 @@ class UiComm(object):
             })
         return
 
+    def run_reactive_cells(self, df_name: DFName):
+        self.comm.send({
+            "type": "run_reactive",
+            "value": df_name
+        })
 
     def send_user_error(self, message: str):
         self.comm.send({
@@ -306,10 +310,11 @@ class UiComm(object):
             "value": message
         })
 
-    def add_selection_to_shelf(self, selections):
+    def after_selection(self, selections, df_name):
         self.comm.send({
-            "type": "add_selection_to_shelf",
-            "value": json.dumps(selections)
+            "type": "after_selection",
+            "selection": json.dumps(selections),
+            "dfName": df_name
         })
         
     def create_then_execute_cell(self, s, funKind):
@@ -323,10 +328,17 @@ class UiComm(object):
 
     # note that we do not need to provide the cellid
     #   that's information to be captured on the JS end.
-    def add_reactive_cell(self, df_name):
+    def add_reactive_cell(self, df_name: str):
         self.comm.send({
             "type": "reactive",
             "value": df_name
+        })
+
+    def execute_selection(self, params: str, df_name: str):
+        self.comm.send({
+            "type": "execute_selection",
+            "params": params,
+            "dfName": df_name,
         })
 
     def execute_fun(self, fun: str, params: str):
@@ -349,12 +361,25 @@ class UiComm(object):
             "value": df_name
         })
 
-    # this is assumed to be the selection on only one chart
-    def get_predicate_info(self, selections: Dict) -> List[SelectionValue]:
+    def get_predicate_info(self, selections: Dict) -> Tuple[List[SelectionValue], str]:
+        """[summary]
+        
+        Arguments:
+            selections {Dict} -- [description]
+        
+        Raises:
+            InternalLogicalError: "if the selection is not in the format expected"
+        
+        Returns:
+            Tuple[List[SelectionValue], str] -- [description]
+        """
         # debug_log(f"selection is {selections}")
+        if selections is None:
+            raise InternalLogicalError("selection must be defined")
         keys = selections.keys()
-        if selections is None or len(keys) == 0:
-            return []
+        if len(keys) == 0:
+            # return [], df_name
+            raise InternalLogicalError("selection df must be defined")
         result = []
         if len(keys) != 1:
             raise InternalLogicalError("Expected one key for selection")
@@ -397,7 +422,7 @@ class UiComm(object):
                 result.append(x_selection)
             else:
                 raise InternalLogicalError(f"{vis.mark} not handled")
-        return result
+        return result, df_name
 
     @logged(remove_on_chart_removal=False)
     def update_selection_shelf_selection_name(self, old_name: str, new_name: str):

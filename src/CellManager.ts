@@ -1,4 +1,4 @@
-import { LogDebug, navigateToNotebookCell, LogInternalError } from "./utils";
+import { LogDebug, commentUncommented, LogInternalError, LogSteps } from "./utils";
 import { MIDAS_SELECTION_FUN } from "./constants";
 
 const CELL_DOT_ANNOTATION = {
@@ -43,18 +43,18 @@ export default class CellManager {
   prevFocus?: string;
   currentFocus?: string;
   lastExecutedCell?: any;
+  reactiveCells: Map<string, number[]>;
 
   constructor(midasInstanceName: string) {
+    this.captureCell = this.captureCell.bind(this);
+
     this.currentStep = 0;
     this.cellsCreated = [];
     this.midasInstanceName = midasInstanceName;
     this.prevFocus = undefined;
     this.currentFocus = undefined;
     this.lastExecutedCell = null;
-  }
-
-  setLastExecutedCell(cell: any) {
-    this.lastExecutedCell = cell;
+    this.reactiveCells = new Map();
   }
 
   setFocus(dfName?: string) {
@@ -63,9 +63,55 @@ export default class CellManager {
     // LogDebug(`Set focus: ${dfName}`);
   }
 
-  makeSelection(selectionValue: string) {
-    this.executeFunction(MIDAS_SELECTION_FUN, selectionValue);
+  executeCapturedCells(svg: string, comments: string) {
+    this.createCellAndExecute(`#${comments}\nfrom IPython.display import SVG, display\ndisplay(SVG(data=\'${svg}\'))`, "chart");
   }
+
+  runReactiveCells(dfName: string) {
+    // "" is for all reactive cells
+    function getCell(c: number) {
+      const cIdxMsg = Jupyter.notebook.get_msg_cell(c);
+      if (cIdxMsg) {
+        const idx = Jupyter.notebook.find_cell_index(cIdxMsg);
+        if (idx > -1) {
+          LogDebug(`Found cell for ${dfName} with ${c}`);
+          return idx;
+        }
+      }
+      LogDebug(`One of the cells is no longer found for ${c}`);
+    }
+
+    function processCells(cells: number[]) {
+      let cellIdxs = [];
+      for (let i = 0; i < cells.length; i ++) {
+        const r = getCell(cells[i]);
+        if (r) {
+          cellIdxs.push(r);
+        } else {
+          // remove if they are no longer available to save checking next time
+          cells.splice(i, 1);
+        }
+      }
+      LogSteps(`[${dfName}] Reactively executing cells ${cellIdxs}`);
+      Jupyter.notebook.execute_cells(cellIdxs);
+    }
+
+    // processed separately to ensure that the splicing would work correctly
+    const allCells = this.reactiveCells.get("");
+    const dfCells = this.reactiveCells.get(dfName);
+    if (allCells) processCells(allCells);
+    if (dfCells) processCells(dfCells);
+  }
+
+
+  captureCell(dfName: string, cellId: number) {
+    if (this.reactiveCells.has(dfName)) {
+      this.reactiveCells.get(dfName).push(cellId);
+    } else {
+      this.reactiveCells.set(dfName, [cellId]);
+    }
+  }
+
 
   executeFunction(funName: string, params: string) {
     if (funName === MIDAS_SELECTION_FUN) {
@@ -91,7 +137,10 @@ export default class CellManager {
     // LogDebug(`Focus checking ${this.prevFocus}, ${this.currentFocus}`);
     if (this.prevFocus && this.currentFocus) {
       const cell = this.cellsCreated[this.cellsCreated.length - 1].cell;
-      this.exeucteCell(cell, text, "interaction");
+      const old_code = cell.get_text();
+      const commented = commentUncommented(old_code);
+      // commnet out last uncommented
+      this.exeucteCell(cell, `${commented}\n${text}`, "interaction");
     } else {
       this.createCellAndExecute(text, "interaction");
     }
@@ -104,7 +153,7 @@ export default class CellManager {
       const cell = Jupyter.notebook.insert_cell_at_index("code", idx + 1);
       this.exeucteCell(cell, code, funKind);
     } else {
-      const cell = Jupyter.notebook.insert_cell_above("code");
+      const cell = Jupyter.notebook.insert_cell_below("code");
       this.exeucteCell(cell, code, funKind);
     }
   }
@@ -124,6 +173,7 @@ export default class CellManager {
     cell.code_mirror.display.lineDiv.scrollIntoView();
     cell.execute();
     this.currentStep += 1;
+    this.lastExecutedCell = cell;
     this.cellsCreated.push({
       metadata,
       code: text,

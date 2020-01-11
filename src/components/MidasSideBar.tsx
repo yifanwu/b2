@@ -6,7 +6,7 @@ import { MidasContainerFunctions } from "../types";
 
 interface MidasSidebarProps {
   columnSelectMsg: (col: string, table: string) => void;
-  makeSelectionFromShelf: (selection: string) => void;
+  // makeSelectionFromShelf: (selection: string) => void;
   midasElementFunctions: MidasContainerFunctions;
 }
 
@@ -17,7 +17,7 @@ interface MidasSidebarState {
 export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSidebarState> {
 
   midasContainerRef: MidasContainer;
-  selectionShelfRef: SelectionShelf;
+  // selectionShelfRef: SelectionShelf;
   profilerShelfRef: ProfilerShelf;
 
   constructor(props?: MidasSidebarProps) {
@@ -31,7 +31,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
 
     this.setMidasContainerRef = this.setMidasContainerRef.bind(this);
     this.setProfilerShelfRef = this.setProfilerShelfRef.bind(this);
-    this.setSelectionShelfRef = this.setSelectionShelfRef.bind(this);
+    // this.setSelectionShelfRef = this.setSelectionShelfRef.bind(this);
   }
 
   hide() {
@@ -49,9 +49,9 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
     this.profilerShelfRef = input;
   }
 
-  setSelectionShelfRef(input: SelectionShelf) {
-    this.selectionShelfRef = input;
-  }
+  // setSelectionShelfRef(input: SelectionShelf) {
+  //   this.selectionShelfRef = input;
+  // }
 
   getMidasContainerRef() {
     return this.midasContainerRef;
@@ -61,9 +61,9 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
     return this.profilerShelfRef;
   }
 
-  getSelectionShelfRef() {
-    return this.selectionShelfRef;
-  }
+  // getSelectionShelfRef() {
+  //   return this.selectionShelfRef;
+  // }
 
   render() {
     if (!this.state.isShown) {
@@ -75,10 +75,10 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
           ref={this.setProfilerShelfRef}
           columnSelectMsg={this.props.columnSelectMsg}
         />
-        <SelectionShelf
+        {/* <SelectionShelf
           ref={this.setSelectionShelfRef}
           makeSelectionFromShelf={this.props.makeSelectionFromShelf}
-        />
+        /> */}
     </div>);
     return (<>
         <div id="midas-resizer"></div>

@@ -18,17 +18,32 @@ export function LogInternalError(message: string): null {
   return null;
 }
 
-export function comparePerChartSelection(s1: PerChartSelectionValue, s2: PerChartSelectionValue) {
-  // iternate
-  if (Object.keys(s1).length !== Object.keys(s2).length) {
-    return false;
-  }
-  for (let k in Object.keys(s1)) {
-    if (s1[k] !== s2[k]) {
+/**
+ * @param s1 one selection
+ * @param s2 another selections
+ * returns false if the two values are not the same, and true if the same
+ */
+export function comparePerChartSelection(s1?: PerChartSelectionValue, s2?: PerChartSelectionValue) {
+  if (s1 && s2) {
+    // iternate
+    if (Object.keys(s1).length !== Object.keys(s2).length) {
       return false;
     }
+    for (let k of Object.keys(s1)) {
+      LogDebug("keys", k);
+      if (s1[k] !== s2[k]) {
+        return false;
+      }
+    }
+    return true;
+  } else if (s1) {
+    return false;
+  } else if (s2) {
+    return false;
+  } else {
+    // both must be null
+    return true;
   }
-  return true;
 }
 
 
@@ -54,6 +69,26 @@ export function navigateToNotebookCell(cellId: string) {
   // if (cell_div) {
   //   cell_div
   // }
+}
+
+export function commentUncommented(code: string) {
+  const newCode: string[] = [];
+  for (let l of code.split("\n")) {
+    LogDebug("code", l);
+    if (l.length > 0) {
+      // check if starts with "#"
+      if (!l.includes("🔵")) {
+        if (l[0] !== "#") {
+          LogDebug("adding with #", l);
+          newCode.push(`# ${l}`);
+        } else {
+          LogDebug("adding", l);
+          newCode.push(l);
+        }
+      }
+    }
+  }
+  return newCode.join("\n");
 }
 
 export function LogSteps(func: string, message?: string) {

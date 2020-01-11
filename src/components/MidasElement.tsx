@@ -21,7 +21,6 @@ interface MidasElementProps {
   dfName: string;
   title: string;
   encoding: EncodingSpec;
-  tick: (dfName: string) => void;
   data: any[];
   functions: MidasElementFunctions;
 }
@@ -50,15 +49,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.getDebouncedFunction = this.getDebouncedFunction.bind(this);
     this.changeVisual = this.changeVisual.bind(this);
     this.toggleHiddenStatus = this.toggleHiddenStatus.bind(this);
-    
+    this.snapToCell = this.snapToCell.bind(this);
+
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
       hidden: false,
       view: null,
       elementId,
       generatedCells: [],
-      // yDomain: null,
-      // xDomain: null
       currentBrush: null,
     };
   }
@@ -71,7 +69,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   // TODO: instead of just supporting brush, also add clicking
   drawBrush(selection: PerChartSelectionValue) { // will be a dictionary...
     if (comparePerChartSelection(selection, this.state.currentBrush) ) {
-      // LogDebug("BRUSH NOOP", selection);
+      LogDebug("BRUSH NOOP", [selection, this.state.currentBrush]);
       return;
     }
     const signal = this.state.view.signal.bind(this.state.view);
@@ -148,7 +146,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       this.props.functions.addCurrentSelectionMsg(valueStr);
       this.setState({ currentBrush: cleanValue });
       LogDebug(`Chart causing selection ${valueStr}`);
-      this.props.tick(dfName);
       this.props.functions.setUIItxFocus(this.props.dfName);
       // have to set focus manually because the focus is not set
       document.getElementById(getDfId(this.props.dfName)).focus();
@@ -207,6 +204,18 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.props.functions.getCode(this.props.dfName);
   }
 
+  snapToCell() {
+    // get the current svg
+    // lame comments for now (maybe: code and selection, for the future)
+    const executeCapturedCells = this.props.functions.executeCapturedCells;
+    const comments = this.props.dfName;
+    this.state.view.toSVG()
+      .then(function(svg) {
+        executeCapturedCells(svg, comments);
+      })
+      .catch(function(err) { console.error(err); });
+  }
+
   // FIXME: define type
   async replaceData(newValues: any) {
     if (!this.state.view) {
@@ -232,10 +241,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           <DragHandle />
           <span className="midas-title">{this.props.title}</span>
           <div className="midas-header-options"></div>
-          {/* <button
+          <button
             className={"midas-header-button"}
-            onClick={() => this.selectCell()}
-          >cell</button> */}
+            onClick={() => this.snapToCell()}
+          >📷</button>
           <button
             className={"midas-header-button"}
             onClick={() => this.changeVisual()}
