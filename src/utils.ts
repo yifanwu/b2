@@ -1,4 +1,4 @@
-import { PerChartSelectionValue } from "./types";
+import { PerChartSelectionValue, SelectionValue } from "./types";
 
 export const STRICT = true;
 
@@ -18,6 +18,17 @@ export function LogInternalError(message: string): null {
   return null;
 }
 
+
+
+function compareArray(as: SelectionValue, bs: SelectionValue) {
+  // REDZONE --- this part has been buggy historically...
+  if (as.length !== bs.length) return false;
+  // @ts-ignore, union typing string and number is causing some issues here.
+  for (let a of as) if (bs.indexOf(a) < 0) return false;
+  return true;
+}
+
+
 /**
  * @param s1 one selection
  * @param s2 another selections
@@ -30,8 +41,8 @@ export function comparePerChartSelection(s1?: PerChartSelectionValue, s2?: PerCh
       return false;
     }
     for (let k of Object.keys(s1)) {
-      LogDebug("keys", k);
-      if (s1[k] !== s2[k]) {
+      // this doesn't work because we need to compare array values
+      if (!compareArray(s1[k], s2[k])) {
         return false;
       }
     }

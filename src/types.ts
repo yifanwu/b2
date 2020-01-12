@@ -6,9 +6,8 @@ export enum AlertType {
 
 // the index is the column names, corresponding to values
 // even if it's a single value, we will just wrap it in an array
-export type PerChartSelectionValue = {[index: string]: number[] | string[]};
-
-export type SelectionValue = {[index: string]: PerChartSelectionValue};
+export type SelectionValue = number[] | string[];
+export type PerChartSelectionValue = {[index: string]: SelectionValue};
 
 export interface MidasElementFunctions {
   addCurrentSelectionMsg: (valueStr: string) => void;
