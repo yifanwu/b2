@@ -2,13 +2,11 @@ from midas.midas_algebra.dataframe import MidasDataFrame
 from datascience import Table
 import numpy as np
 from math import log10, pow
-from typing import cast
 from pandas import notnull
 
-from .errors import InternalLogicalError, debug_log
-from midas.constants import COUNT_COL_NAME, IS_OVERVIEW_FIELD_NAME
-from midas.vis_types import DfTransformType, DfTransform, NumericDistribution, FilterLabelOptions
-from midas.util.errors import type_check_with_warning
+from .errors import InternalLogicalError
+from midas.constants import IS_OVERVIEW_FIELD_NAME
+from midas.vis_types import FilterLabelOptions
 
 
 def get_chart_title(df_name: str):

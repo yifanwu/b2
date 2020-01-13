@@ -168,8 +168,8 @@ class UiComm(object):
                 # just execute it! since there is no configuration
                 df.show_profile()
             else:
-                encoding = infer_encoding(df)
-                df.show(mark=encoding.mark, x=encoding.x, y=encoding.y)
+                encoding = infer_encoding(df).__dict__
+                df.show(**encoding)
 
 
     def set_comm(self, midas_instance_name: str):

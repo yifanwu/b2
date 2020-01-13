@@ -1,12 +1,17 @@
 import { IS_OVERVIEW_FIELD_NAME } from "../constants";
-import { TopLevelSpec } from "vega-lite";
+import { LogInternalError } from "../utils";
 
+type SelectionType = "multiclick" | "brush";
+type SelectionDimensions = "" | "x" | "y" | "xy";
 
 export interface EncodingSpec {
-  mark: string;
+  mark: "bar" | "circle" | "line";
   x: string;
+  xType: "ordinal" | "quantitative" | "temporal";
   y: string;
-  color?: string;
+  yType: "ordinal" | "quantitative" | "temporal";
+  selectionType: SelectionType;
+  selectionDimensions: SelectionDimensions;
   size?: string;
 }
 
@@ -17,37 +22,67 @@ const colorSpec = {
   "legend": null
 };
 
-function genSelection(brush_only_x: boolean) {
-  const spec = {
-    "zoom": {
-      "type": "interval",
-      "bind": "scales",
-      "translate": "[mousedown[!event.shiftKey], window:mouseup] > window:mousemove!",
-      "zoom": "wheel!"
-    },
-    "brush": {
-      "type": "interval",
-      "resolve": "union",
-      "on": "[mousedown[event.shiftKey], window:mouseup] > window:mousemove!",
-      "translate": "[mousedown[event.shiftKey], window:mouseup] > window:mousemove!",
-      // @ts-ignore
-      "zoom": null
-    }
+// for the field "zoom", under top-level "selection"
+const zoomSelection = {
+  "type": "interval",
+  "bind": "scales",
+  "translate": "[mousedown[!event.shiftKey], window:mouseup] > window:mousemove!",
+  "zoom": "wheel!"
+};
+
+// for the field "brush", under top-level "selection"
+function brushSelection(selectionKind: SelectionDimensions) {
+  let result = {
+    "type": "interval",
+    "resolve": "union",
+    "on": "[mousedown[event.shiftKey], window:mouseup] > window:mousemove!",
+    "translate": "[mousedown[event.shiftKey], window:mouseup] > window:mousemove!",
+    // @ts-ignore
+    "zoom": null
   };
-  if (brush_only_x) {
-    spec["brush"]["encodings"] = ["x"];
+  if (selectionKind === "x") {
+    result["encodings"] = "x";
+  } else if (selectionKind === "y") {
+    result["encodings"] = "y";
   }
-  return spec;
+  return result;
 }
 
-// TODO: TopLevelSpec
+function genSelection(selectionType: SelectionType, selectionDimensions: SelectionDimensions) {
+  if (selectionDimensions === "") {
+    return {
+      "zoom": zoomSelection
+    };
+  }
+  if (selectionType === "multiclick") {
+    return {
+      "zoom": zoomSelection,
+      "select": multiClickSelection
+    };
+  }
+  if (selectionType === "brush") {
+    return {
+      "zoom": zoomSelection,
+      "brush": brushSelection(selectionDimensions)
+    };
+  }
+  LogInternalError(`Only two selection types are supported, but you specified ${selectionType}`);
+  // roll with it?
+  return {
+    "zoom": zoomSelection
+  };
+}
+
+// for the field "select", under top-level "selection"
+const multiClickSelection = {"type": "multi"};
+
 export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[]) {
   switch (encoding.mark) {
     case "bar":
       return {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": `Midas Generated Visualization of dataframe ${dfName}`,
-        "selection": genSelection(true),
+        "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
         "data": {
           "values": data
         },
@@ -55,16 +90,33 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
         "encoding": {
           "x": {
               "field": encoding.x,
-              "type": "ordinal"
+              "type": encoding.xType
           },
           "y": {
               "field": encoding.y,
-              "type": "quantitative",
+              "type": encoding.yType,
               // @ts-ignore
               "stack": null
           },
           "color": colorSpec,
-          "opacity": {"value": 0.5}
+          "opacity": {
+            "value": 0.5
+          },
+          "stroke": {"value": "#F0B429"},
+          "strokeWidth": {
+            "condition": [
+              {
+                "test": {
+                  "and": [
+                    {"selection": "select"},
+                    "length(data(\"select_store\"))"
+                  ]
+                },
+                "value": 3
+              }
+            ],
+            "value": 0
+          }
         }
       };
     case "circle":
@@ -72,11 +124,11 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": `Midas for ${dfName}`,
         "data": { "values": data },
-        "selection": genSelection(false),
+        "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
         "mark": "point",
         "encoding": {
-          "x": {"field": encoding.x, "type": "quantitative"},
-          "y": {"field": encoding.y, "type": "quantitative"},
+          "x": {"field": encoding.x, "type": encoding.xType},
+          "y": {"field": encoding.y, "type": encoding.yType},
           "color": colorSpec,
           "opacity": {"value": 0.5}
         }
@@ -86,10 +138,11 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": dfName,
         "data": { "values": data },
+        "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
         "mark": "line",
         "encoding": {
-            "x": {"field": encoding.x, "type": "temporal"},
-            "y": {"field": encoding.y, "type": "quantitative"}
+            "x": {"field": encoding.x, "type": encoding.xType},
+            "y": {"field": encoding.y, "type": encoding.yType}
         },
         "color": colorSpec,
         "opacity": {"value": 0.5}

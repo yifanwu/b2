@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import NamedTuple, List, Any, Optional, Dict
+from typing import List, Any, Dict
 
 from midas.midas_algebra.selection import SelectionValue
 from midas.state_types import DFName
@@ -37,59 +37,35 @@ class SelectionEvent(object):
         return f"df: {self.df_name}\n  predicates: {self.predicate}"
 
 
-
-class DfTransformType(Enum):
-    categorical_distribution = "categorical_distribution"
-    numeric_distribution = "numeric_distribution"
-
-class DfTransform(object):
-    df_transform_type: DfTransformType
-    pass
-
-class NumericDistribution(DfTransform):
-    def __init__(self):
-        self.df_transform_type = DfTransformType.numeric_distribution
-        self.bins = None
-
-    def set_bin(self, bins):
-        self.bins = bins
-
-
-class CategoricalDistribution(DfTransform):
-    def __init__(self):
-        self.df_transform_type = DfTransformType.categorical_distribution
-
-
 # basic stub for Vega typing
 VegaSpecType = Dict[str, Any]
 
+
 class EncodingSpec(object):
-    def __init__(self, mark: str, x: str, y: str):
-        # bar, circle, line
-        self.mark = mark
+    def __init__(self, mark: str, x: str, x_type: str, y: str, y_type: str, selection_type: str, selection_dimensions: str):
+        self.mark = mark # bar, circle, line
         self.x = x
+        self.x_type = x_type
         self.y = y
+        self.y_type = y_type
+        self.selection_dimensions = selection_dimensions
+        self.selection_type = selection_type
+
 
     def __eq__(self, other: 'EncodingSpec'):
-        return self.mark == other.mark and self.x == other.x and self.y == other.y
+        return self.mark == other.mark and self.selection_type == other.selection_type \
+            and self.x == other.x and self.x_type == other.x_type \
+            and self.y == other.y and self.y_type == other.y_type
+
 
     def __ne__(self, other: 'EncodingSpec'):
         return not self.__eq__(other)
     
+
     def __repr__(self):
-        return f"EncodingSpec({self.mark!r}, {self.x!r}, {self.y!r})"
+        # FIXME: not sure why we have a "!r" here...
+        return f"EncodingSpec({self.mark!r}, {self.x!r}, {self.x_type}, {self.y!r}, {self.y_type}, {self.selection_type!r})"
+
 
     def to_json(self):
-        return '{{"mark": "{0}", "x": "{1}", "y" : "{2}"}}'.format(self.mark, self.x, self.y)
-
-# class ChartInfo(NamedTuple):
-#     """[summary]
-    
-#     Arguments:
-#         NamedTuple {[type]} -- [description]
-#     """
-#     chart_type: ChartType
-#     # ASK Arvind: this seems to be redundant information to the vega spec?
-#     encodings: Dict[Channel, str]
-#     vega_spec: VegaSpecType
-#     chart_title: str
+        return f'{{"mark": "{self.mark}", "x": "{self.x}", "xType": "{self.x_type}", "y": "{self.y}", "yType": "{self.y_type}", "selectionType": "{self.selection_type}"}}'

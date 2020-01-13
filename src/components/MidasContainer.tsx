@@ -95,7 +95,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     // the empty string is differnt from epty array in that the brush need to be actively deselected
     if (selectionArray.length === 0) {
       for (let e of this.state.elements) {
-        this.refsCollection[e.dfName].drawBrush({});
+        this.refsCollection[e.dfName].updateSelectionMarks({});
       }
       return;
     }
@@ -105,7 +105,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       const idx = dfNames.findIndex((v) => v === e.dfName);
       if (idx > -1) {
         const selectionItem = selectionArray[idx] as SelectionValue;
-        this.refsCollection[e.dfName].drawBrush(selectionItem[e.dfName]);
+        this.refsCollection[e.dfName].updateSelectionMarks(selectionItem[e.dfName]);
       }
     }
   }

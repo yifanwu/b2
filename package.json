@@ -1,7 +1,7 @@
 {
   "name": "midas",
   "version": "0.0.1",
-  "description": "Augmenting notebooks with interactions using [Vega](https://vega.github.io/vega)",
+  "description": "Reification of interactions in computational notebooks",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yifanwu/midas.git"
@@ -43,7 +43,7 @@
     "tslint-react": "^4.0.0",
     "vega": "5.4.0",
     "vega-embed": "^4.2.1",
-    "vega-lite": "3.3.0"
+    "vega-lite": "^4.0.2"
   },
   "devDependencies": {
     "css-loader": "^3.1.0",

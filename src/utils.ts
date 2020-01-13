@@ -32,12 +32,14 @@ function compareArray(as: SelectionValue, bs: SelectionValue) {
 /**
  * @param s1 one selection
  * @param s2 another selections
+ * note that the first one could contain LESS
+ * this seems rather weird as a result of the encoding of the selection...
  * returns false if the two values are not the same, and true if the same
  */
-export function comparePerChartSelection(s1?: PerChartSelectionValue, s2?: PerChartSelectionValue) {
+export function isFristSelectionContainedBySecond(s1?: PerChartSelectionValue, s2?: PerChartSelectionValue) {
   if (s1 && s2) {
     // iternate
-    if (Object.keys(s1).length !== Object.keys(s2).length) {
+    if (Object.keys(s1).length > Object.keys(s2).length) {
       return false;
     }
     for (let k of Object.keys(s1)) {

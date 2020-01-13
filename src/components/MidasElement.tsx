@@ -10,9 +10,9 @@ import vegaEmbed from "vega-embed";
 
 import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
 import { makeElementId } from "../config";
-import { SELECTION_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL } from "../constants";
+import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_LOOKUP_KEY, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL } from "../constants";
 import { PerChartSelectionValue, MidasElementFunctions } from "../types";
-import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, comparePerChartSelection } from "../utils";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFristSelectionContainedBySecond } from "../utils";
 
 interface MidasElementProps {
   changeStep: number;
@@ -45,7 +45,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   constructor(props: any) {
     super(props);
     this.embed = this.embed.bind(this);
-    this.drawBrush = this.drawBrush.bind(this);
+    this.updateSelectionMarks = this.updateSelectionMarks.bind(this);
     this.getDebouncedFunction = this.getDebouncedFunction.bind(this);
     this.changeVisual = this.changeVisual.bind(this);
     this.toggleHiddenStatus = this.toggleHiddenStatus.bind(this);
@@ -66,46 +66,67 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.embed();
   }
 
-  // TODO: instead of just supporting brush, also add clicking
-  drawBrush(selection: PerChartSelectionValue) { // will be a dictionary...
-    if (comparePerChartSelection(selection, this.state.currentBrush) ) {
+  isMultiSelect() {
+    return this.props.encoding.mark === "bar";
+  }
+
+  updateSelectionMarks(selection: PerChartSelectionValue) {
+    if (isFristSelectionContainedBySecond(selection, this.state.currentBrush) ) {
       LogDebug("BRUSH NOOP", [selection, this.state.currentBrush]);
       return;
     }
     const signal = this.state.view.signal.bind(this.state.view);
     const runAsync = this.state.view.runAsync.bind(this.state.view);
     if (Object.keys(selection).length === 0) {
-      // make brush null
-      // signal(SELECTION_SIGNAL, {});
-      signal(BRUSH_X_SIGNAL, [0, 0]);
+      if (this.isMultiSelect()) {
+        signal(MULTICLICK_TOGGLE, false);
+        signal(MULTICLICK_PIXEL_SIGNAL, null);
+      } else {
+        signal(BRUSH_X_SIGNAL, [0, 0]);
+      }
       runAsync();
       return;
     }
     LogDebug(`BRUSHING`, [selection, this.state.currentBrush]);
-    // const selection = JSON.parse(selectionStr);
     // @ts-ignore because the vega view API is not fully TS typed.
     const scale = this.state.view.scale.bind(this.state.view);
     const encoding = this.props.encoding;
     let hasModified = false;
-    if (selection[encoding.x]) {
-      const x_pixel_min = scale("x")(selection[encoding.x][0]);
-      const l = selection[encoding.x].length;
-      const x_pixel_max = (l > 1)
-        ? scale("x")(selection[encoding.x][l - 1])
-        : x_pixel_min + MIN_BRUSH_PX;
-      // and update the brush_x and brush_y
-      LogDebug(`updated brush x: ${x_pixel_min}, ${x_pixel_max}`);
-      signal(BRUSH_X_SIGNAL, [x_pixel_min, x_pixel_max]);
+    if (this.isMultiSelect()) {
+      // get all the idx's and then select
+      // ugh...
+      const values = selection[encoding.x];
+      signal(MULTICLICK_TOGGLE, false);
+      signal(MULTICLICK_PIXEL_SIGNAL, null);
+      signal(MULTICLICK_TOGGLE, true);
+      // MAYBE TODO: find diff instead of clearing
+      // @ts-ignore ugh this string/number issue is dumb
+      values.map((v: string) => {
+        const idx = this.props.data.findIndex((d) => d[encoding.x] === v);
+        // plus one because vega-lite starts from 1
+        signal(MULTICLICK_PIXEL_SIGNAL, idx + 1);
+        hasModified = true;
+      });
       runAsync();
-      hasModified = true;
-    }
-    if (selection[encoding.y]) {
-      const y_pixel_min = scale("y")(selection[encoding.y][0]);
-      const y_pixel_max = scale("y")(selection[encoding.y][1]);
-      // and update the brush_y and brush_y
-      signal(BRUSH_Y_SIGNAL, [y_pixel_min, y_pixel_max]);
-      runAsync();
-      hasModified = true;
+    } else {
+      if (selection[encoding.x]) {
+        const x_pixel_min = scale("x")(selection[encoding.x][0]);
+        const l = selection[encoding.x].length;
+        const x_pixel_max = (l > 1)
+          ? scale("x")(selection[encoding.x][l - 1])
+          : x_pixel_min + MIN_BRUSH_PX;
+        LogDebug(`updated brush x: ${x_pixel_min}, ${x_pixel_max}`);
+        signal(BRUSH_X_SIGNAL, [x_pixel_min, x_pixel_max]);
+        runAsync();
+        hasModified = true;
+      }
+      if (selection[encoding.y]) {
+        const y_pixel_min = scale("y")(selection[encoding.y][0]);
+        const y_pixel_max = scale("y")(selection[encoding.y][1]);
+        signal(BRUSH_Y_SIGNAL, [y_pixel_min, y_pixel_max]);
+        runAsync();
+        hasModified = true;
+      }
     }
     if (!hasModified) {
       LogInternalError(`Draw brush didn't modify any scales for selection ${selection}`);
@@ -115,31 +136,35 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   roundIfPossible(selection: any) {
     const encoding = this.props.encoding;
-    if (encoding.mark !== "bar") {
-
-      let rounedEncoding: any = {};
-      // {"horsepower: []"}
-      if (selection[encoding.x]) {
-        // if it's number
-        // get diff
-        const digits = getDigitsToRound(selection[encoding.x][1], selection[encoding.x][0]);
-        rounedEncoding[encoding.x] = selection[encoding.x].map((v: number) => Math.round(v * digits) / digits);
-      }
-      if (selection[encoding.y]) {
-        const digits = getDigitsToRound(selection[encoding.y][1], selection[encoding.y][0]);
-        rounedEncoding[encoding.y] = selection[encoding.y].map((v: number) => Math.round(v * digits) / digits);
-      }
-      return rounedEncoding;
-    } else {
-      return selection;
+    let rounedEncoding: any = {};
+    if (selection[encoding.x]) {
+      const digits = getDigitsToRound(selection[encoding.x][1], selection[encoding.x][0]);
+      rounedEncoding[encoding.x] = selection[encoding.x].map((v: number) => Math.round(v * digits) / digits);
     }
+    if (selection[encoding.y]) {
+      const digits = getDigitsToRound(selection[encoding.y][1], selection[encoding.y][0]);
+      rounedEncoding[encoding.y] = selection[encoding.y].map((v: number) => Math.round(v * digits) / digits);
+    }
+    return rounedEncoding;
   }
 
-  getDebouncedFunction(dfName: string) {
+  getDebouncedFunction(dfName: string, encoding: string) {
     const callback = (signalName: string, value: any) => {
       // also need to call into python state...
       let processedValue = {};
-      const cleanValue = this.roundIfPossible(value);
+      let cleanValue = {};
+      if (!this.isMultiSelect()) {
+        cleanValue = this.roundIfPossible(value);
+      } else {
+        // we need to access via the weird key
+        const idxs = value[MULTICLICK_LOOKUP_KEY];
+        let selValue = [];
+        if (idxs) {
+          // then we need to read the data...
+          selValue = idxs.map((idx: number) => this.props.data[idx][this.props.encoding.x]);
+        }
+        cleanValue[this.props.encoding.x] = selValue;
+      }
       processedValue[dfName] = cleanValue;
       let valueStr = JSON.stringify(processedValue);
       valueStr = (valueStr === "null") ? "None" : valueStr;
@@ -150,7 +175,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       // have to set focus manually because the focus is not set
       document.getElementById(getDfId(this.props.dfName)).focus();
     };
-
     const wrapped = (name: any, value: any) => {
       const n = new Date();
       let l = (window as any).lastInvoked;
@@ -178,8 +202,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           view,
         });
         (window as any)[`view_${dfName}`] = view;
-        const cb = this.getDebouncedFunction(dfName);
-        res.view.addSignalListener(SELECTION_SIGNAL, cb);
+        if (this.isMultiSelect()) {
+          const cb = this.getDebouncedFunction(dfName, encoding.mark);
+          res.view.addSignalListener(MULTICLICK_SIGNAL, cb);
+        } else {
+          const cb = this.getDebouncedFunction(dfName, encoding.mark);
+          res.view.addSignalListener(BRUSH_SIGNAL, cb);
+        }
       })
       .catch((err: Error) => console.error(err));
   }
