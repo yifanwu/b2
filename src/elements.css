@@ -286,10 +286,6 @@
   align-self: left;
 }
 
-.sortable {
-  /* display: inline-flex; */
-}
-
 .chart-btns {
   align-self: center;
   margin-right: 0;

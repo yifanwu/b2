@@ -1,6 +1,6 @@
 import React, { RefObject } from "react";
 import arrayMove from "array-move";
-import { SortableContainer } from "react-sortable-hoc";
+// import { SortableContainer } from "react-sortable-hoc";
 
 import { EncodingSpec } from "../charts/vegaGen";
 import { ALERT_ALIVE_TIME } from "../constants";
@@ -51,9 +51,9 @@ interface ContainerState {
 }
 
 
-const MidasSortableContainer = SortableContainer(({ children }: { children: any }) => {
-  return <div>{children}</div>;
-});
+// const MidasSortableContainer = SortableContainer(({ children }: { children: any }) => {
+//   return <div>{children}</div>;
+// }, {withRef: true});
 
 /**
  * Container for the MidasElements that hold the visualization.
@@ -215,16 +215,37 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     });
   }
 
-  onSortEnd = ({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) => {
-    this.setState(prevState => {
-      return {
-        notebookMetaData: prevState.notebookMetaData,
-        elements: arrayMove(prevState.elements, oldIndex, newIndex),
-        refs: prevState.refs,
-        idToCell: prevState.idToCell,
-        alerts: prevState.alerts
-      };
-    });
+  // onSortEnd = ({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) => {
+  //   this.setState(prevState => {
+  //     return {
+  //       notebookMetaData: prevState.notebookMetaData,
+  //       elements: arrayMove(prevState.elements, oldIndex, newIndex),
+  //       refs: prevState.refs,
+  //       idToCell: prevState.idToCell,
+  //       alerts: prevState.alerts
+  //     };
+  //   });
+  // }
+
+  moveElement(oldIndex: number) {
+    return (direction: "left" | "right") => {
+      let newIndex = oldIndex + 1;
+      if (direction === "left") {
+        newIndex = oldIndex - 1;
+      }
+      // FIXME: bound the max and the min
+
+      this.setState(prevState => {
+        return {
+          notebookMetaData: prevState.notebookMetaData,
+          elements: arrayMove(prevState.elements, oldIndex, newIndex),
+          refs: prevState.refs,
+          idToCell: prevState.idToCell,
+          alerts: prevState.alerts
+        };
+      });
+    };
+
   }
 
 
@@ -233,7 +254,9 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     const chartDivs = elements.map(({
       notebookCellId, dfName, data, encoding, changeStep: chanageStep }, index) => {
       return <MidasElement
-        ref={r => { this.refsCollection[dfName] = r; }}
+        ref={r => this.refsCollection[dfName] = r}
+        // index={index}
+        moveElement={this.moveElement(index)}
         functions={this.props.containerFunctions.elementFunctions}
         cellId={notebookCellId}
         key={`${dfName}-${encoding.mark}-${encoding.x}-${encoding.y}`}
@@ -257,7 +280,13 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         <button className="notification-btn" onClick={close}>x</button>
       </div>);
     }
-    // const content = (chartDivs.length > 0) ? <MidasSortableContainer axis="xy" onSortEnd={this.onSortEnd} useDragHandle>{chartDivs}</MidasSortableContainer> : <ChartsViewLandingPage/>;
+    // const content = (chartDivs.length > 0) ?
+    //   <MidasSortableContainer
+    //     axis="xy"
+    //     onSortEnd={this.onSortEnd}
+    //     useDragHandle
+    //   >{chartDivs}</MidasSortableContainer>
+    //   : <ChartsViewLandingPage/>;
     const content = (chartDivs.length > 0) ? chartDivs : <ChartsViewLandingPage />;
     return (
       <div className="shelf" id="midas-floater-container">

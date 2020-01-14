@@ -21,13 +21,14 @@ function makeResizer(onChange: (delta: number) => void) {
       let totalMove = x - e.clientX;
       let delta = totalMove - lastTotalMove;
       lastTotalMove = totalMove;
-
       onChange(delta);
     });
   });
 
   $(window).on("mouseup", () => {
     $(window).off("mousemove");
+    // check the size of the new div, if it's large enough, change the css
+    $(".sortable").css({"display": "inline-flex"});
   });
 }
 

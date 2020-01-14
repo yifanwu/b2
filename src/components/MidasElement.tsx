@@ -1,10 +1,10 @@
 /// <reference path="../external/Jupyter.d.ts" />
 import React, { MouseEventHandler } from "react";
-import {
-  SortableContainer,
-  SortableElement,
-  SortableHandle,
-} from "react-sortable-hoc";
+// import {
+//   SortableContainer,
+//   SortableElement,
+//   SortableHandle,
+// } from "react-sortable-hoc";
 import { View } from "vega";
 import vegaEmbed from "vega-embed";
 
@@ -22,6 +22,7 @@ interface MidasElementProps {
   title: string;
   encoding: EncodingSpec;
   data: any[];
+  moveElement: (direction: "left" | "right") => void;
   functions: MidasElementFunctions;
 }
 
@@ -33,7 +34,7 @@ interface MidasElementState {
   currentBrush: PerChartSelectionValue;
 }
 
-const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
+// const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
 // in theory they should each have their own call back,
 // but in practice, there is only one selection happening at a time due to single user
 
@@ -50,6 +51,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.changeVisual = this.changeVisual.bind(this);
     this.toggleHiddenStatus = this.toggleHiddenStatus.bind(this);
     this.snapToCell = this.snapToCell.bind(this);
+    this.moveLeft = this.moveLeft.bind(this);
+    this.moveRight = this.moveRight.bind(this);
 
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
@@ -258,6 +261,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
   }
 
+  moveLeft() {
+    this.props.moveElement("left");
+  }
+  moveRight() {
+    this.props.moveElement("right");
+  }
+
   render() {
     // note that the handlers are in the form  () => fun(), because of scoping issues in javascript
     return (
@@ -267,7 +277,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
             this.props.functions.setUIItxFocus();
           }}>
         <div className="midas-header">
-          <DragHandle />
+          {/* <DragHandle /> */}
+          <span className="move-chart" onClick={this.moveLeft}>⬅️</span>
+          <span className="move-chart" onClick={this.moveRight}>➡️</span>
           <span className="midas-title">{this.props.title}</span>
           <div className="midas-header-options"></div>
           <button
