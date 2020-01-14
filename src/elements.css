@@ -132,6 +132,10 @@
   margin-bottom: var(--size-2);
 }
 
+.midas-header-options :hover {
+  cursor: pointer;
+}
+
 .reset-button :hover {
   border: 2px solid var(--red-200);
 }

@@ -151,3 +151,9 @@ export function trimStr(s: string, len: number) {
   const amountToKeep = Math.floor(len / 2) - 1;
   return s.slice(0, amountToKeep) + "..." + s.slice(s.length - amountToKeep, s.length);
 }
+
+// very vega specific
+// note that we can only support one valyue at a time otherwis3e vega is going to error out
+export function getMultiClickValue(idx: number) {
+  return {"unit": "", "fields": [{"type": "E", "field": "_vgsid_"}], "values": [idx]};
+}

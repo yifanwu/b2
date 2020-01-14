@@ -12,7 +12,7 @@ import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
 import { makeElementId } from "../config";
 import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_LOOKUP_KEY, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL } from "../constants";
 import { PerChartSelectionValue, MidasElementFunctions } from "../types";
-import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFristSelectionContainedBySecond } from "../utils";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFristSelectionContainedBySecond, getMultiClickValue } from "../utils";
 
 interface MidasElementProps {
   changeStep: number;
@@ -107,7 +107,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       values.map((v: string) => {
         const idx = this.props.data.findIndex((d) => d[encoding.x] === v);
         // plus one because vega-lite starts from 1
-        signal(MULTICLICK_PIXEL_SIGNAL, idx + 1);
+        signal(MULTICLICK_PIXEL_SIGNAL, getMultiClickValue(idx + 1));
         hasModified = true;
       });
       runAsync();
@@ -163,8 +163,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         const idxs = value[MULTICLICK_LOOKUP_KEY];
         let selValue = [];
         if (idxs) {
-          // then we need to read the data...
-          selValue = idxs.map((idx: number) => this.props.data[idx][this.props.encoding.x]);
+          // then we need to read the data; the index must be minus one because of vega's indexing scheme
+          selValue = idxs.map((idx: number) => this.props.data[idx - 1][this.props.encoding.x]);
         }
         cleanValue[this.props.encoding.x] = selValue;
       }
@@ -278,32 +278,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           }}>
         <div className="midas-header">
           {/* <DragHandle /> */}
-          <span className="move-chart" onClick={this.moveLeft}>⬅️</span>
-          <span className="move-chart" onClick={this.moveRight}>➡️</span>
           <span className="midas-title">{this.props.title}</span>
-          <div className="midas-header-options"></div>
-          <button
-            className={"midas-header-button"}
-            onClick={() => this.snapToCell()}
-          >📷</button>
-          <button
-            className={"midas-header-button"}
-            onClick={() => this.changeVisual()}
-          >📊</button>
-          <button
-            className={"midas-header-button"}
-            onClick={() => this.getCode()}
-          >📋</button>
-          <button
-            className={"midas-header-button"}
-            onClick={() => this.toggleHiddenStatus()}>
-            {this.state.hidden ? "➕" : "➖"}
-          </button>
-          <button
-            className={"midas-header-button close-chart-btn"}
-            onClick={() => this.props.removeChart()}>
-            ❌
-          </button>
+          <span className="midas-header-options" onClick={this.moveLeft}>⬅️</span>
+          <span className="midas-header-options" onClick={this.moveRight}>➡️</span>
+          <span className="midas-header-options" onClick={() => this.snapToCell()}>📷</span>
+          <span className="midas-header-options" onClick={() => this.changeVisual()}>📊</span>
+          <span className="midas-header-options" onClick={() => this.getCode()}>📋</span>
+          <span className="midas-header-options" onClick={() => this.toggleHiddenStatus()}>{this.state.hidden ? "➕" : "➖"}</span>
+          <span className={"midas-header-options"} onClick={() => this.props.removeChart()}>❌</span>
         </div>
         <div
           id={this.state.elementId}

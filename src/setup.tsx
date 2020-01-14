@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 
 import { MidasSidebar } from "./components/MidasSidebar";
 import { MidasContainerFunctions } from "./types";
+import { MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW } from "./constants";
 
 const SIDEBAR_ID = "midas-sidebar-wrapper";
 const SIDEBAR_SELECTOR = `#${SIDEBAR_ID}`;
@@ -28,7 +29,9 @@ function makeResizer(onChange: (delta: number) => void) {
   $(window).on("mouseup", () => {
     $(window).off("mousemove");
     // check the size of the new div, if it's large enough, change the css
-    $(".sortable").css({"display": "inline-flex"});
+    if ($("#midas-sidebar-wrapper").width() > MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW) {
+      $(".midas-element").css({"display": "inline-flex", "flex-direction": "column"});
+    }
   });
 }
 

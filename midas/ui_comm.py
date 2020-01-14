@@ -296,7 +296,8 @@ class UiComm(object):
                 "newData": new_data
             })
         return
-
+    
+    @logged(remove_on_chart_removal=True)
     def run_reactive_cells(self, df_name: DFName):
         self.comm.send({
             "type": "run_reactive",
@@ -310,6 +311,7 @@ class UiComm(object):
             "value": message
         })
 
+    @logged(remove_on_chart_removal=True)
     def after_selection(self, selections, df_name):
         self.comm.send({
             "type": "after_selection",
