@@ -78,10 +78,6 @@ export function navigateToNotebookCell(cellId: string) {
   if (!index) throw LogInternalError(`Was not able to find cell ${cellId}`);
   Jupyter.notebook.select(index);
   cell.code_mirror.display.lineDiv.scrollIntoView();
-  // const cell_div = Jupyter.CodeCell.msg_cells[cellId];
-  // if (cell_div) {
-  //   cell_div
-  // }
 }
 
 export function commentUncommented(code: string) {

@@ -1,3 +1,0 @@
-[submodule "midas_algebra"]
-	path = midas/midas_algebra
-	url = git@github.com:yifanwu/midas_algebra.git
