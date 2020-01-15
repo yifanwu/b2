@@ -96,8 +96,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const encoding = this.props.encoding;
     let hasModified = false;
     if (this.isMultiSelect()) {
-      // get all the idx's and then select
-      // ugh...
+      // get all the idx's and then select (a little awk due to Vega lite's implementation decisions)
       const values = selection[encoding.x];
       signal(MULTICLICK_TOGGLE, false);
       signal(MULTICLICK_PIXEL_SIGNAL, null);
@@ -151,7 +150,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     return rounedEncoding;
   }
 
-  getDebouncedFunction(dfName: string, encoding: string) {
+  getDebouncedFunction(dfName: string) {
     const callback = (signalName: string, value: any) => {
       // also need to call into python state...
       let processedValue = {};
@@ -206,10 +205,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         });
         (window as any)[`view_${dfName}`] = view;
         if (this.isMultiSelect()) {
-          const cb = this.getDebouncedFunction(dfName, encoding.mark);
+          const cb = this.getDebouncedFunction(dfName);
           res.view.addSignalListener(MULTICLICK_SIGNAL, cb);
         } else {
-          const cb = this.getDebouncedFunction(dfName, encoding.mark);
+          const cb = this.getDebouncedFunction(dfName);
           res.view.addSignalListener(BRUSH_SIGNAL, cb);
         }
       })
