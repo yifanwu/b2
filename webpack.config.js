@@ -30,30 +30,6 @@ module.exports = [
       library: "nbextensions/midas/index",
       path: outputPath,
       libraryTarget: outputLibraryTarget
-    },
-      // externals: {
-      //   "vega": "vega",
-      //   "@jupyter-widgets/base": "@jupyter-widgets/base",
-      //   "./index": "nbextensions/midas/index"
-      // }
+    }
   }),
-  // // the widget extension
-  // Object.assign({}, commonConfig, {
-  //   entry: "./src/widget.ts",
-  //   output: {
-  //     filename: "widget.js",
-  //     path: outputPath,
-  //     libraryTarget: outputLibraryTarget
-  //   },
-  // }),
-  // Object.assign({}, commonConfig, {
-  //   entry: "./src/floater.css",
-  //   output: {
-  //     filename: "floater.css",
-  //     library: "nbextensions/midas/index",
-  //     path: outputPath,
-  //     libraryTarget: outputLibraryTarget
-  //   }
-  // }),
-
 ];

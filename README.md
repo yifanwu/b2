@@ -2,14 +2,15 @@
 
 ## 🚧 Warning 🚧
 
-The code is still under heavy construction; please 
+The code is still under heavy construction; please check back on status.
 
 ## Installation Guide
 
-To follow the example notebooks, note that you should add the following to your IPython config file (as it expects the extension to be auto-loaded)
+Clone the repository and cd into the project:
 
-```python
-c.InteractiveShellApp.extensions = [
-    'midas'
-]
+```sh
+python setup.py develop
+jupyter nbextension install --py --symlink midas
 ```
+
+Note the JS file has been built and deployed at `midas/static/index.js`.
