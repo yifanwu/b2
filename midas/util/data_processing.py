@@ -41,6 +41,7 @@ def snap_to_nice_number(n: float):
 
 
 # TODO: we need to test this...
+# taken from ipyvega
 def sanitize_dataframe(df: Table):
     """Sanitize a DataFrame to prepare it for serialization.
     
@@ -102,14 +103,8 @@ def sanitize_dataframe(df: Table):
 def dataframe_to_dict(df: MidasDataFrame, include_filter_label: FilterLabelOptions):
     """[summary]
     
-    Arguments:
-        df {Table} -- [description]
-    
     Keyword Arguments:
         include_filter_label {bool} -- whether we should insert another column indicating (default: {False})
-    
-    Returns:
-        [type] -- [description]
     """
     clean_df = sanitize_dataframe(df.table)
     if clean_df is None:

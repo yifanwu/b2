@@ -224,20 +224,16 @@ class UiComm(object):
 
     @logged(remove_on_chart_removal=True)
     def create_chart(self, df: MidasDataFrame, encoding: EncodingSpec):
-        # debug_log(f"creating chart {mdf.df_name}")
         if df.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         # first check if the encodings has changed
         if df.df_name in self.vis_spec:
             if self.vis_spec[df.df_name] == encoding and self.id_by_df_name[df.df_name] == df.id:
-                # no op
-                # debug_log("no op, same stuff")
                 return
 
         self.vis_spec[df.df_name] = encoding
         self.id_by_df_name[df.df_name] = df.id
 
-        # vega_lite = gen_spec(mdf.df_name, encoding)
         records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
         # TODO: check if we even need to do the dumping
         data = json.dumps(records)

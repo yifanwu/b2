@@ -54,11 +54,9 @@ def find_name(throw_error=False) -> Optional[str]:
         a = body.targets[0].id # type: ignore
         if throw_error and (a is None):
             raise InternalLogicalError("We did not get a name when expected!")
-        # debug_log(f"found name {a}")
         return a
     elif throw_error:
         raise UserError("We expect you to assing this compute to a variable")
-    # debug_log("find_name did NOT find a name")
     return None
 
 ifnone = lambda a, b: b if a is None else a
@@ -88,7 +86,6 @@ def diff_selection_value(new_selection: List[SelectionValue], old_selection: Lis
         return False
 
     diff = []
-    # iterate through the items in new_selection
     for s in new_selection:
         if not find_selection(s, old_selection):
             diff.append(s)

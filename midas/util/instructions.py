@@ -1,3 +1,3 @@
 HELP_INSTRUCTION = """
-> bind()
+# TODO
 """
