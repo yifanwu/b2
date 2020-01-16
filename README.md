@@ -1,11 +1,10 @@
 # Midas, Reifying Interactions in Jupyter Notebook
 
-## Installation Guide
+## 🚧 Warning 🚧
 
-```bash
-git submodule init
-git submodule update
-```
+The code is still under heavy construction; please 
+
+## Installation Guide
 
 To follow the example notebooks, note that you should add the following to your IPython config file (as it expects the extension to be auto-loaded)
 

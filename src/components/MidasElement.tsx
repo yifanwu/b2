@@ -1,5 +1,5 @@
 /// <reference path="../external/Jupyter.d.ts" />
-import React, { MouseEventHandler } from "react";
+import React from "react";
 // import {
 //   SortableContainer,
 //   SortableElement,

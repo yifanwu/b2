@@ -2,14 +2,12 @@ LONG_DESCRIPTION = """
 Midas
 ============
 
-IPython/Jupyter notebook module that enables developers to get visualizations from dataframes with simple specifications
-
-Using `Vega <https://github.com/vega/vega/>` and `Vega-Lite <https://github.com/vega/vega-lite/>`.
+Reification of interactions in Jupyter Notebook.
 
 For more information, see https://github.com/yifanwu/midas.
 """
 
-DESCRIPTION         = "Midas: An IPython/Jupyter widget for interacting with dataframes"
+DESCRIPTION         = "Midas: Reification of interactions in Jupyter Notebook"
 NAME                = "midas"
 PACKAGES            = ['midas',
                        'midas.tests']
@@ -28,7 +26,6 @@ DATA_FILES          = [
                             ]),
                             ('etc/jupyter/nbconfig/notebook.d' , ['midas.json'])
                         ]
-ENTRY_POINTS        = {'altair.vegalite.v3.renderer': ['notebook=midas:entry_point_renderer']}
 EXTRAS_REQUIRE      = {'widget': ['ipywidgets']}
 
 
@@ -76,7 +73,6 @@ setup(name=NAME,
       packages=PACKAGES,
       package_data=PACKAGE_DATA,
       data_files=DATA_FILES,
-      entry_points=ENTRY_POINTS,
       extras_require=EXTRAS_REQUIRE,
       include_package_data=True,
       classifiers=[
