@@ -9,11 +9,11 @@ const CELL_DOT_ANNOTATION = {
 
 export type FunKind = "chart" | "query" | "interaction";
 
-interface CellMetaData {
-  funName: string;
-  // without the comment
-  params: string;
-}
+// interface CellMetaData {
+//   funName: string;
+//   // without the comment
+//   params: string;
+// }
 
 interface SingleCell {
   code: string;
@@ -21,7 +21,7 @@ interface SingleCell {
   time: Date;
   step: number;
   funKind: FunKind;
-  metadata?: CellMetaData;
+  // metadata?: CellMetaData;
 }
 
 export default class CellManager {
@@ -64,7 +64,7 @@ export default class CellManager {
   }
 
   executeCapturedCells(svg: string, comments: string) {
-    this.createCellAndExecute(`#${comments}\nfrom IPython.display import SVG, display\ndisplay(SVG(data=\'${svg}\'))`, "chart");
+    this.createCell(`#${comments}\nfrom IPython.display import SVG, display\ndisplay(SVG(data=\'${svg}\'))`, "chart", true);
   }
 
   runReactiveCells(dfName: string) {
@@ -113,50 +113,55 @@ export default class CellManager {
   }
 
 
+  /**
+   * This is triggered by the interactions
+   * @param funName
+   * @param params
+   */
   executeFunction(funName: string, params: string) {
-    if (funName === MIDAS_SELECTION_FUN) {
-      // check if the selection has been made before
-      const idxBefore = this.cellsCreated.findIndex(v => (v.metadata) && (v.metadata.funName === MIDAS_SELECTION_FUN) && (v.metadata.params === params));
-
-      if (idxBefore > -1) {
-        if (this.cellsCreated[idxBefore].step === this.currentStep) {
-          // LogDebug("Ignored becasue just executed");
-          return;
-        }
-        const cell = this.cellsCreated[idxBefore].cell;
-        const cellIdx = Jupyter.notebook.find_cell_index(cell);
-        Jupyter.notebook.select(cellIdx);
-        cell.execute();
-        this.currentStep += 1;
-        this.cellsCreated[idxBefore].step = this.currentStep;
-        // LogDebug("executing from cells created earlier");
-        return;
-      }
-    }
     const text = `${this.midasInstanceName}.${funName}(${params})`;
-    // LogDebug(`Focus checking ${this.prevFocus}, ${this.currentFocus}`);
-    if (this.prevFocus && this.currentFocus) {
+    if ((funName === MIDAS_SELECTION_FUN) && this.prevFocus && this.currentFocus) {
       const cell = this.cellsCreated[this.cellsCreated.length - 1].cell;
       const old_code = cell.get_text();
       const commented = commentUncommented(old_code);
-      // commnet out last uncommented
       this.exeucteCell(cell, `${commented}\n${text}`, "interaction");
     } else {
-      this.createCellAndExecute(text, "interaction");
+      this.createCell(text, "interaction", true);
     }
     return;
   }
 
-  createCellAndExecute(code: string, funKind: FunKind) {
+  /**
+   * this is invoked by none-selections code effects
+   * @param code
+   * @param funKind
+   */
+  createCell(code: string, funKind: FunKind, shouldExecute: boolean) {
+    let cell;
     if (this.lastExecutedCell) {
       const idx = Jupyter.notebook.find_cell_index(this.lastExecutedCell);
-      const cell = Jupyter.notebook.insert_cell_at_index("code", idx + 1);
-      this.exeucteCell(cell, code, funKind);
+      cell = Jupyter.notebook.insert_cell_at_index("code", idx + 1);
     } else {
-      const cell = Jupyter.notebook.insert_cell_below("code");
+      cell = Jupyter.notebook.insert_cell_below("code");
+    }
+    const d = CELL_DOT_ANNOTATION[funKind];
+    if (!d) LogInternalError(`FunKind ${funKind} was not found`);
+    const time = new Date().toLocaleTimeString(navigator.language, {hour: "2-digit", minute: "2-digit"});
+    const comment = `# ${d} ${time} ${d}\n`;
+    cell.set_text(comment + code);
+    cell.code_mirror.display.lineDiv.scrollIntoView();
+    this.cellsCreated.push({
+      code,
+      funKind,
+      cell,
+      step: this.currentStep,
+      time: new Date()
+    });
+    if (shouldExecute) {
       this.exeucteCell(cell, code, funKind);
     }
   }
+
   /**
    * we can use one of the following two:
    * - Jupyter.notebook.insert_cell_at_index(type, index);
@@ -164,24 +169,10 @@ export default class CellManager {
    *
    * we are going to try with inserting at a fixed place
    */
-  exeucteCell(cell: any, text: string, funKind: FunKind, metadata?: CellMetaData) {
-    const d = CELL_DOT_ANNOTATION[funKind];
-    if (!d) LogInternalError(`FunKind ${funKind} was not found`);
-    const time = new Date().toLocaleTimeString(navigator.language, {hour: "2-digit", minute: "2-digit"});
-    const comment = `# ${d} ${time} ${d}\n`;
-    cell.set_text(comment + text);
-    cell.code_mirror.display.lineDiv.scrollIntoView();
+  exeucteCell(cell: any, code: string, funKind: FunKind) {
     cell.execute();
     this.currentStep += 1;
     this.lastExecutedCell = cell;
-    this.cellsCreated.push({
-      metadata,
-      code: text,
-      funKind,
-      cell,
-      step: this.currentStep,
-      time: new Date()
-    });
     return cell.cell_id;
   }
 }

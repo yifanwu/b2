@@ -1,6 +1,6 @@
 // the following are configurations that affects how the UI behaves
 export const DEBOUNCE_RATE = 100;
-export const ALERT_ALIVE_TIME = 100000;
+// export const ALERT_ALIVE_TIME = 100000;
 export const SHELF_TEXT_MAX_LEN = 14;
 export const SELECTION_TEXT_MAX_LEN = 13;
 export const MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW = 600;

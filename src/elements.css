@@ -259,6 +259,7 @@
   position: absolute;
   min-height: 200px;
   background-color: var(--yellow-vivid-100);
+  cursor: grab;
   /* overflow: scroll; */
 }
 
@@ -299,9 +300,9 @@
 
 /* have fading animation */
 /* note that we need to coodinate with ALERT_ALIVE_TIME */
-.midas-alert {
+/* .midas-alert {
   animation: logo-animation linear 10s;
-}
+} */
 
 @keyframes logo-animation{
   0% {
@@ -381,13 +382,6 @@
   cursor: col-resize;
 }
 
-#midas-midbar {
-  width: var(--size-11);
-  /* background-color: var(--blue-100); */
-  background-color: var(--yellow-vivid-100);
-  box-sizing: border-box;
-  overflow-y: auto;
-}
 
 .close-chart-btn {
   color: rgba(0, 0, 0, 0.5);
@@ -416,4 +410,13 @@ a.tip:hover span {
     position: absolute;
     top: 10px;
     text-decoration: none
+}
+
+/* deprecated */
+#midas-midbar {
+  width: var(--size-11);
+  /* background-color: var(--blue-100); */
+  background-color: var(--yellow-vivid-100);
+  box-sizing: border-box;
+  overflow-y: auto;
 }

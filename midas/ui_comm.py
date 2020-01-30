@@ -10,7 +10,7 @@ import json
 from pyperclip import copy
 import ast
 
-from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS, MIDAS_RECOVERY_COMM_NAME
+from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS, MIDAS_RECOVERY_COMM_NAME, STUB_DISTRIBUTION_BIN
 from midas.state_types import DFName
 
 from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo
@@ -120,10 +120,12 @@ class UiComm(object):
                 column = data["column"]
                 df_name = DFName(data["df_name"])
                 self.tmp = f"{column}_{df_name}"
-                code = self.create_distribution_query(column, df_name)
-                self.create_then_execute_cell(code, "query")
-                # now we need to figure out what kind of transformation is needed
-                # if nothing, we just show the table
+                code, execute = self.create_distribution_query(column, df_name)
+                if code:
+                    if execute:
+                        self.create_cell(code, "query", True)
+                    else:
+                        self.create_cell(code, "query", False)
             elif command == "remove_dataframe":
                 df_name = data["df_name"]
                 self.remove_df_fun(df_name)
@@ -292,13 +294,6 @@ class UiComm(object):
                 "newData": new_data
             })
         return
-    
-    @logged(remove_on_chart_removal=True)
-    def run_reactive_cells(self, df_name: DFName):
-        self.comm.send({
-            "type": "run_reactive",
-            "value": df_name
-        })
 
     def send_user_error(self, message: str):
         self.comm.send({
@@ -315,13 +310,14 @@ class UiComm(object):
             "dfName": df_name
         })
         
-    def create_then_execute_cell(self, s, funKind):
+    def create_cell(self, s, fun_kind, should_run):
         # self.send_debug_msg(f"create_cell_with_text called {s}")
         # self.send_debug_msg(f"creating cell: {annotated}")
         self.comm.send({
-            "type": "create_then_execute_cell",
-            "funKind": funKind,
-            "code": s
+            "type": "create_cell",
+            "funKind": fun_kind,
+            "code": s,
+            "shouldRun": should_run
         })
 
     # note that we do not need to provide the cellid
@@ -350,6 +346,13 @@ class UiComm(object):
         self.comm.send({
             "type": "notification",
             "style": "debug",
+            "value": message
+        })
+
+    def send_error_msg(self, message: str):
+        self.comm.send({
+            "type": "notification",
+            "style": "error",
             "value": message
         })
 
@@ -454,12 +457,8 @@ class UiComm(object):
             "value": message
         })
 
-    def create_distribution_query(self, col_name: str, df_name: str) -> str:
-        '''
-        directly generating the queries out of convenience,
-           since lambda expressions are used...
-        '''
-
+    # returns a tuple to indicate if the retured result should be ran
+    def create_distribution_query(self, col_name: str, df_name: str) -> Tuple[Optional[str], bool]:
         df_info = self.get_df(DFName(df_name))
         if df_info is None:
             raise InternalLogicalError("Should not be getting distribution on unregistered dataframes and columns")
@@ -468,10 +467,11 @@ class UiComm(object):
         new_name = f"{col_name}_distribution"
         if (is_string_dtype(col_value)):
             code = f"{new_name} = {df.df_name}.group('{col_name}')"
-            return code
+            return (code, True)
         elif (is_datetime64_any_dtype(col_value)):
             # TODO temporal bining, @Ryan?
-            raise NotImplementedError("Cannot bin temporal values yet")
+            self.send_error_msg(f'')
+            return[None, False]
         else:
             # we need to write the binning function and then print it out...
             # get the bound
@@ -479,7 +479,7 @@ class UiComm(object):
             current_max_bins = len(unique_vals)
             if (current_max_bins < MAX_BINS):
                 code = f"{new_name} = {df.df_name}.group('{col_name}')"
-                return code
+                return (code, True)
 
             # TODO(: the distribution is a little too coarse grained
             #           with data like this: s = np.random.normal(0, 0.1, 20)
@@ -488,11 +488,21 @@ class UiComm(object):
             d_max = unique_vals[-1]
             d_min = unique_vals[0]
             min_bucket_size = (d_max - d_min) / min_bucket_count
+            def create_code(bound):
+                bin_column_name = f"{col_name}_bin"
+                binning_lambda = f"lambda x: int(x/{bound}) * {bound}"
+                bin_transform = f"{df.df_name}.append_column('{bin_column_name}', {df.df_name}.apply({binning_lambda}, '{col_name}'))"
+                grouping_transform = f"{new_name} = {df.df_name}.group('{bin_column_name}')"
+                code = f"{bin_transform}\n{grouping_transform}"
+                return code
             # print(MAX_BINS, current_max_bins, d_max, d_min)
-            bound = snap_to_nice_number(min_bucket_size)
-            bin_column_name = f"{col_name}_bin"
-            binning_lambda = f"lambda x: int(x/{bound}) * {bound}"
-            bin_transform = f"{df.df_name}.append_column('{bin_column_name}', {df.df_name}.apply({binning_lambda}, '{col_name}'))"
-            grouping_transform = f"{new_name} = {df.df_name}.group('{bin_column_name}')"
-            code = f"{bin_transform}\n{grouping_transform}"
-            return code
+            try:
+                bound = snap_to_nice_number(min_bucket_size)
+                return (create_code(bound), True)
+            except ValueError as e:
+                # let's still given them a stub code
+                code = create_code(STUB_DISTRIBUTION_BIN)
+                self.send_error_msg(f'We are not able to create a chart for {df_name} due to the following error: "{e}".\nThis is likely a matter of data quality and one solution is to clean the data, and another is to specify how the chart should be made.\nPlease modify the stub code we have created for you.')
+                return (f"# please modify the code for cleaner data\n{code}", False)
+                
+            

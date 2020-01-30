@@ -3,10 +3,11 @@ import React from "react";
 interface CloseButtonProps {
   onClick: () => void;
   size: number;
+  color?: string;
 }
 
 export const CloseButton: React.StatelessComponent<CloseButtonProps> = (p) => {
-  const buttonSvg = <svg width={p.size} viewBox="0 0 475.2 475.2">
+  const buttonSvg = <svg width={p.size} viewBox="0 0 475.2 475.2" fill={p.color ? p.color : "black"}>
     <g><path d="M405.6,69.6C360.7,24.7,301.1,0,237.6,0s-123.1,24.7-168,69.6S0,174.1,0,237.6s24.7,123.1,69.6,168s104.5,69.6,168,69.6
       s123.1-24.7,168-69.6s69.6-104.5,69.6-168S450.5,114.5,405.6,69.6z M386.5,386.5c-39.8,39.8-92.7,61.7-148.9,61.7
       s-109.1-21.9-148.9-61.7c-82.1-82.1-82.1-215.7,0-297.8C128.5,48.9,181.4,27,237.6,27s109.1,21.9,148.9,61.7

@@ -127,7 +127,11 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
         "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
         "mark": "point",
         "encoding": {
-          "x": {"field": encoding.x, "type": encoding.xType},
+          "x": {
+            "field": encoding.x,
+            "type": encoding.xType,
+            "scale": {"zero": false}
+          },
           "y": {"field": encoding.y, "type": encoding.yType},
           "color": colorSpec,
           "opacity": {"value": 0.5}

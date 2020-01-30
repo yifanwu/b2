@@ -3,12 +3,12 @@ import arrayMove from "array-move";
 // import { SortableContainer } from "react-sortable-hoc";
 
 import { EncodingSpec } from "../charts/vegaGen";
-import { ALERT_ALIVE_TIME } from "../constants";
 import { AlertType, MidasContainerFunctions, SelectionValue } from "../types";
 import { LogInternalError, LogSteps, getDfId, LogDebug } from "../utils";
 
 import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
 import MidasElement from "./MidasElement";
+import { CloseButton } from "./CloseButton";
 
 // Mappings
 //  this stores the information connecting the cells to
@@ -29,7 +29,7 @@ interface ContainerElementState {
 interface AlertItem {
   msg: string;
   alertType: AlertType;
-  aId: number;
+  shown: boolean;
 }
 
 interface ContainerProps {
@@ -44,10 +44,9 @@ interface ContainerState {
   // FIXME: the idToCell might not be needed given that we have refs.
   idToCell: Map<string, number>;
   // maps signals to cellIds
-  // allReactiveCells: Set<number>;
   alerts: AlertItem[];
+  // used to create ids for alerts
   midasPythonInstanceName: string;
-  alertCounter: number;
 }
 
 
@@ -66,9 +65,9 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     super(props);
     this.addAlert = this.addAlert.bind(this);
     this.drawBrush = this.drawBrush.bind(this);
+    this.removeAlert = this.removeAlert.bind(this);
 
     this.state = {
-      alertCounter: 0,
       notebookMetaData: [],
       elements: [],
       refs: new Map(),
@@ -133,29 +132,34 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
 
   navigate(dfName: string) {
-    // TODO @yifan/@ryan
     const elmnt = document.getElementById(getDfId(dfName));
     elmnt.scrollIntoView();
   }
 
 
   addAlert(msg: string, alertType: AlertType = AlertType.Error) {
-    // make this disappearing
-    const aId = this.state.alerts.length;
+    // const idx = this.state.alerts.length;
     this.setState(prevState => {
       prevState.alerts.push({
         msg,
         alertType,
-        aId
+        shown: true,
       });
       return prevState;
     });
-    const self = this;
-    window.setTimeout(() => {
-      self.setState(p => {
-        return { alertCounter: p.alertCounter + 1 };
-      });
-    }, ALERT_ALIVE_TIME);
+    // if (alertType === AlertType.Confirmation) {
+    //   const self = this;
+    //   window.setTimeout(() => {
+    //     self.removeAlert(idx);
+    //   }, ALERT_ALIVE_TIME);
+    // }
+  }
+
+  removeAlert(idx: number) {
+    this.setState(prevState => {
+      prevState.alerts[idx].shown = false;
+      return prevState;
+    });
   }
 
 
@@ -250,7 +254,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
 
   render() {
-    const { elements, alerts, alertCounter } = this.state;
+    const { elements, alerts } = this.state;
     const chartDivs = elements.map(({
       notebookCellId, dfName, data, encoding, changeStep: chanageStep }, index) => {
       return <MidasElement
@@ -269,16 +273,20 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       />;
     });
     const alertDivs = [];
-    for (let i = alertCounter; i < alerts.length; i++) {
+    for (let i = 0; i < alerts.length; i++) {
       const a = alerts[i];
-      const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-debug";
-      alertDivs.push(<div
-        className={`card midas-alert ${className}`}
-        key={`alert-${a.aId}`}
-      >
-        {a.msg}
-        <button className="notification-btn" onClick={close}>x</button>
-      </div>);
+      if (a.shown) {
+        const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-debug";
+        const newDiv = <div
+          className={`card midas-alert ${className}`}
+          key={`alert-${i}`}
+        >{a.msg}
+          <div style={{"float": "right", "paddingRight": 20}}>
+            <CloseButton onClick={() => this.removeAlert(i)} size={20} color={"white"}/>
+          </div>
+        </div>;
+        alertDivs.push(newDiv);
+      }
     }
     // const content = (chartDivs.length > 0) ?
     //   <MidasSortableContainer

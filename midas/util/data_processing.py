@@ -18,7 +18,6 @@ MAX_BINS = 20
 
 
 def snap_to_nice_number(n: float):
-    # print("Nice nubmer", n)
     if n == np.inf:
         raise InternalLogicalError("Should not have gotten infinity")
     if n <= 0:
@@ -39,8 +38,6 @@ def snap_to_nice_number(n: float):
     return (int(n / zeroes) + 1) * zeroes
 
 
-
-# TODO: we need to test this...
 # taken from ipyvega
 def sanitize_dataframe(df: Table):
     """Sanitize a DataFrame to prepare it for serialization.
