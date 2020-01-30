@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType
 from IPython import get_ipython
-from typing import Optional, List, Dict, Iterator
+from typing import Optional, List, Dict, Iterator, cast
 from datascience import Table
 
 try:
@@ -37,6 +37,9 @@ is_in_ipynb = isnotebook()
 class Midas(object):
     """[summary]
     The Midas object holds the environment that controls different dataframes
+    convention:
+      * a single "_" means that it's accesssed by JS facing features
+      * two "_" means that it's accessed by other Py functions
     """
     magic: MidasMagic
     ui_comm: UiComm
@@ -54,7 +57,7 @@ class Midas(object):
         if assigned_name is None:
             raise UserError("must assign a name")
         self.assigned_name = assigned_name
-        ui_comm = UiComm(is_in_ipynb, assigned_name, self.get_df_info, self.remove_df, self.from_ops, self.add_selection, self.get_filtered_code)
+        ui_comm = UiComm(is_in_ipynb, assigned_name, self.__get_df_info, self.remove_df, self.from_ops, self._add_selection, self._get_filtered_code)
         self.ui_comm = ui_comm
         self.df_info_store = {}
         self.context = Context(self.df_info_store, self.from_ops)
@@ -69,8 +72,8 @@ class Midas(object):
 
         self.rt_funcs = RuntimeFunctions(
             self.add_df,
-            self.show_df,
-            self.show_df_filtered,
+            self._show_df,
+            self._show_df_filtered,
             self.show_profiler,
             self.context.apply_selection,
             self.add_join_info)
@@ -86,21 +89,21 @@ class Midas(object):
         self.ui_comm.create_profile(mdf)
 
 
-    def show_df_filtered(self, mdf: Optional[MidasDataFrame], df_name: DFName):
-        if not self.has_df(df_name):
+    def _show_df_filtered(self, mdf: Optional[MidasDataFrame], df_name: DFName):
+        if not self.__has_df(df_name):
             raise InternalLogicalError("cannot add filter to charts not created")
         self.ui_comm.update_chart_filtered_value(mdf, df_name)
         self.df_info_store[df_name].update_df(mdf)
 
 
-    def show_df(self, mdf: MidasDataFrame, spec: EncodingSpec):
+    def _show_df(self, mdf: MidasDataFrame, spec: EncodingSpec):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         df_name = mdf.df_name
         # if this visualization has existed, we must remove the existing interactions
         # the equivalent of updating the selection with empty
-        if self.has_df_chart(mdf.df_name):
-            self.add_selection([EmptySelection(ColumnRef(spec.x, df_name))])
+        if self.__has_df_chart(mdf.df_name):
+            self._add_selection([EmptySelection(ColumnRef(spec.x, df_name))])
         self.df_info_store[df_name] = VisualizedDFInfo(mdf)
         self.ui_comm.create_chart(mdf, spec)
         # now we need to see if we need to apply selection,
@@ -109,36 +112,27 @@ class Midas(object):
             new_df.filter_chart(df_name)
 
 
-    def has_df_chart(self, df_name: DFName):
+    def __has_df_chart(self, df_name: DFName):
         return df_name in self.df_info_store and isinstance(self.df_info_store[df_name], VisualizedDFInfo)
 
 
-    def has_df(self, df_name: DFName):
+    def __has_df(self, df_name: DFName):
         return df_name in self.df_info_store
 
-
-    def append_df_predicates(self, selection: SelectionEvent) -> DFInfo:
-        df_name = selection.df_name
-        df_info = self.df_info_store.get(df_name)
-        if df_info and isinstance(df_info, VisualizedDFInfo):
-            df_info.predicates.append(selection)
-            return df_info
-        else:
-            raise InternalLogicalError(f"Df ({df_name}) should be defined and be visualized as a chart!")
+    def __get_df_info(self, df_name: str):
+        return self.df_info_store.get(DFName(df_name))
 
 
-    def get_df_info(self, df_name: DFName):
-        return self.df_info_store.get(df_name)
-
-
-    def get_df(self, df_name: DFName):
-        r = self.df_info_store.get(df_name)
+    def __get_df(self, df_name: str):
+        r = self.__get_df_info(df_name)
         if r:
             return r.df
+        return None
 
 
     def remove_df(self, df_name: DFName):
         self.df_info_store.pop(df_name)
+
 
     def from_records(self, records):
         table = Table.from_records(records)
@@ -171,17 +165,9 @@ class Midas(object):
 
     def add_join_info(self, join_info: JoinInfo):
         self.context.add_join_info(join_info)
-            
-
-    def refresh_comm(self):
-        self.ui_comm.set_comm(self.assigned_name)
 
 
-    def get_df_info(self, df_name: DFName) -> Optional[DFInfo]:
-        return self.df_info_store.get(df_name)
-
-
-    def get_df_vis_info(self, df_name: str):
+    def _get_df_vis_info(self, df_name: str):
         return self.ui_comm.vis_spec.get(DFName(df_name))
 
 
@@ -193,9 +179,10 @@ class Midas(object):
     def get_current_selection(self):
         return self.current_selection
 
+
     # this function just modifies the current selection and returns it
     # this currently assume that all the selectionvalue are from one dataframe
-    def add_selection(self, selection: List[SelectionValue]) -> List[SelectionValue]:
+    def _add_selection(self, selection: List[SelectionValue]) -> List[SelectionValue]:
         df_name = DFName(selection[0].column.df_name)
         # date = datetime.now()
         # selection_event = SelectionEvent(date, selection, DFName(df_name))
@@ -207,16 +194,16 @@ class Midas(object):
         return self.current_selection
 
 
-    def tick(self, all_predicate: Optional[List[SelectionValue]]=None):
+    def __tick(self, all_predicate: Optional[List[SelectionValue]]=None):
         if all_predicate is None:
             # reset every df's filter
-            for df_info in self.get_visualized_df_info():
-                self.show_df_filtered(None, df_info.df_name)
+            for df_info in self.__get_visualized_df_info():
+                self._show_df_filtered(None, df_info.df_name)
         else:
             if self.config.linked:
                 # debug_log("here are your predicates")
                 # print(all_predicate)
-                for df_info in self.get_visualized_df_info():
+                for df_info in self.__get_visualized_df_info():
                     s = list(filter(lambda p: p.column.df_name != df_info.df_name, all_predicate))
                     if len(s) > 0:
                         new_df = df_info.original_df.apply_selection(s)
@@ -224,7 +211,7 @@ class Midas(object):
                         new_df.filter_chart(df_info.df_name)
 
 
-    def get_visualized_df_info(self) -> Iterator[VisualizedDFInfo]:
+    def __get_visualized_df_info(self) -> Iterator[VisualizedDFInfo]:
         for df_name in list(self.df_info_store):
             df_info = self.df_info_store[df_name]
             if isinstance(df_info, VisualizedDFInfo):
@@ -243,7 +230,7 @@ class Midas(object):
         if len(current_selections_array) == 0:
             # this is a reset!
             self.current_selection = []
-            self.tick()
+            self.__tick()
         else:
             current_selection = []
             for v in current_selections_array:
@@ -260,18 +247,24 @@ class Midas(object):
                 self.current_selection = current_selection
             else:
                 df_involved = self.last_add_selection_df
-            self.tick(current_selection)
+            self.__tick(current_selection)
 
         self.ui_comm.after_selection(current_selections_array, df_involved, len(self.selection_history))
         self.selection_history.append(self.current_selection)
 
 
-    def get_filtered_code(self, df_name: str):
-        return get_midas_code(self.df_info_store[DFName(df_name)].df.ops)
+    def _get_filtered_code(self, df_name: str):
+        df = self.__get_df(df_name)
+        return get_midas_code(df.ops)
 
 
-    def get_original_code(self, df_name: str):
-        return get_midas_code(self.df_info_store[DFName(df_name)].original_df.ops)
+    def _get_original_code(self, df_name: str):
+        df_info = self.__get_df_info(df_name)
+        if type(df_info) == VisualizedDFInfo:
+            visualized_df_info = cast(VisualizedDFInfo, df_info)
+            return get_midas_code(visualized_df_info.original_df.ops)
+        else:
+            raise InternalLogicalError(f"{df_name} is not visualized")
 
 
 __all__ = ['Midas']

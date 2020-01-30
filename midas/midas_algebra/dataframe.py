@@ -391,7 +391,7 @@ class VisualizedDFInfo(DFInfo):
         self.df_name = df.df_name
         # original df is that which was defined at the beginning
         self.original_df = df
-        self.predicates: List[SelectionEvent] = []
+        # self.predicates: List[SelectionEvent] = []
         
     def update_df(self, df: Optional[MidasDataFrame]) -> bool:
         """

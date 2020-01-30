@@ -1,7 +1,7 @@
 from midas.util.errors import InternalLogicalError
 from midas.state_types import DFName
 
-from typing import Union, NamedTuple, Set
+from typing import Union, cast, Set
 from enum import Enum
 import json
 
@@ -60,31 +60,6 @@ class EmptySelection(SelectionValue):
         raise InternalLogicalError("Should not try to make empty selections into strings")
 
 
-# class SingleValueSelection(SelectionValue):
-#     def __init__(self, column: ColumnRef, val: str):
-#         self.selection_type = SelectionType.single_value
-#         self.column = column
-#         self.val = val
-
-#     def __eq__(self, other: SelectionValue):
-#         if other.selection_type != SelectionType.single_value:
-#             return False
-#         if self.column != other.column:
-#             return False
-#         if self.val != other.val:
-#             return False
-#         return True
-
-    def __repr__(self):
-        return f"\ncolumn:\t{self.column}\n  val:\t{self.val}"
-
-    def __str__(self):
-        return self.__repr__()
-
-    def to_str(self):
-        return f'{{"\n  {self.column.df_name}": {{"\n    {self.column.col_name}": {self.val}}}\n  }}'
-
-
 class NumericRangeSelection(SelectionValue):
     def __init__(self, column: ColumnRef, minVal: float, maxVal: float):
         self.selection_type = SelectionType.numeric_range
@@ -95,11 +70,12 @@ class NumericRangeSelection(SelectionValue):
     def __eq__(self, other: SelectionValue):
         if other.selection_type != SelectionType.numeric_range:
             return False
-        if self.column != other.column:
+        m_other = cast(NumericRangeSelection, other)
+        if self.column != m_other.column:
             return False
-        if self.minVal != other.minVal:
+        if self.minVal != m_other.minVal:
             return False
-        if self.maxVal != other.maxVal:
+        if self.maxVal != m_other.maxVal:
             return False
         return True
 
@@ -125,8 +101,10 @@ class SetSelection(SelectionValue):
             return False
         if self.column != other.column:
             return False
+
+        s_other = cast(SetSelection, other)
         # python has convenient set operations...
-        if self.val != other.val:
+        if self.val != s_other.val:
             return False
         return True
 

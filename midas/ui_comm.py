@@ -138,12 +138,10 @@ class UiComm(object):
             elif command == "add_current_selection":
                 value = json.loads(data["value"])
                 # parse it first!
-                # self.send_debug_msg(f"got add_current_selection message {value}")
                 self.handle_add_current_selection(value)
                 return
             else:
                 m = f"Command {command} not handled!"
-                # self.send_debug_msg(m)
                 raise NotAllCaseHandledError(m)
         else:
             debug_log(f"Got message from JS Comm: {data}")
@@ -156,7 +154,7 @@ class UiComm(object):
         # now turn this into JSON
         param_str = "[]"
         if len(all_predicate) > 0:
-            predicates = ",  \n".join(list(map(lambda v: v.to_str(), all_predicate)))
+            predicates = ",  \n".join(list(map(lambda v: v.to_str() if v.to_str() else "", all_predicate)))
             param_str = f"[\n  {predicates}\n]"
         self.execute_selection(param_str, df_name)
 
@@ -180,7 +178,6 @@ class UiComm(object):
     def set_comm(self, midas_instance_name: str):
         if self.is_in_ipynb:
             self.comm = Comm(target_name = MIDAS_CELL_COMM_NAME)
-            # tell the JS side what the assigned name is
             self.comm.send({
                 "type": "midas_instance_name",
                 "value": midas_instance_name
@@ -473,9 +470,9 @@ class UiComm(object):
             code = f"{new_name} = {df.df_name}.group('{col_name}')"
             return (code, True)
         elif (is_datetime64_any_dtype(col_value)):
-            # TODO temporal bining, @Ryan?
+            # TODO temporal bining
             self.send_error_msg(f'')
-            return[None, False]
+            return (None, False)
         else:
             # we need to write the binning function and then print it out...
             # get the bound
