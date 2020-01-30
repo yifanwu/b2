@@ -13,6 +13,7 @@ type ExecuteCodeLoad = {
   type: string;
   funKind: FunKind;
   code: string;
+  shouldRun: boolean;
 };
 
 type ExecuteSelectionLoad = {
@@ -229,10 +230,10 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         cellManager.executeFunction(executeLoad.funName, executeLoad.params);
         return;
       }
-      case "create_then_execute_cell": {
+      case "create_cell": {
         // const cellId = msg.parent_header.msg_id;
         const cellLoad = load as ExecuteCodeLoad;
-        cellManager.createCellAndExecute(cellLoad.code, cellLoad.funKind);
+        cellManager.createCell(cellLoad.code, cellLoad.funKind, cellLoad.shouldRun);
         return;
       }
       case "navigate_to_vis": {

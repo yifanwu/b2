@@ -122,9 +122,11 @@ export default class CellManager {
     const text = `${this.midasInstanceName}.${funName}(${params})`;
     if ((funName === MIDAS_SELECTION_FUN) && this.prevFocus && this.currentFocus) {
       const cell = this.cellsCreated[this.cellsCreated.length - 1].cell;
-      const old_code = cell.get_text();
-      const commented = commentUncommented(old_code);
-      this.exeucteCell(cell, `${commented}\n${text}`, "interaction");
+      const oldCode = cell.get_text();
+      const commented = commentUncommented(oldCode);
+      const newText = commented + "\n" + text;
+      cell.set_text(newText);
+      this.exeucteCell(cell);
     } else {
       this.createCell(text, "interaction", true);
     }
@@ -158,7 +160,7 @@ export default class CellManager {
       time: new Date()
     });
     if (shouldExecute) {
-      this.exeucteCell(cell, code, funKind);
+      this.exeucteCell(cell);
     }
   }
 
@@ -169,7 +171,10 @@ export default class CellManager {
    *
    * we are going to try with inserting at a fixed place
    */
-  exeucteCell(cell: any, code: string, funKind: FunKind) {
+  exeucteCell(cell: any) {
+    const idx = Jupyter.notebook.find_cell_index(cell);
+    // make sure that the notebook cell is selected
+    Jupyter.notebook.select(idx);
     cell.execute();
     this.currentStep += 1;
     this.lastExecutedCell = cell;

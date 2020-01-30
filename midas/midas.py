@@ -262,7 +262,7 @@ class Midas(object):
                 df_involved = self.last_add_selection_df
             self.tick(current_selection)
 
-        self.ui_comm.after_selection(current_selections_array, df_involved)
+        self.ui_comm.after_selection(current_selections_array, df_involved, len(self.selection_history))
         self.selection_history.append(self.current_selection)
 
 

@@ -115,6 +115,7 @@ class UiComm(object):
                 code = f"{df_name}.show({encoding_arg})"
                 # self.send_debug_msg(f"got code for {df_name}: {code}")
                 copy(code)
+                return
             elif command == "column-selected":
                 # self.send_debug_msg("column-selected called")
                 column = data["column"]
@@ -126,18 +127,20 @@ class UiComm(object):
                         self.create_cell(code, "query", True)
                     else:
                         self.create_cell(code, "query", False)
+                return
             elif command == "remove_dataframe":
                 df_name = data["df_name"]
                 self.remove_df_fun(df_name)
                 # local store
                 del self.vis_spec[df_name]
                 self.remove_df_from_log(df_name)
-
+                return
             elif command == "add_current_selection":
                 value = json.loads(data["value"])
                 # parse it first!
                 # self.send_debug_msg(f"got add_current_selection message {value}")
                 self.handle_add_current_selection(value)
+                return
             else:
                 m = f"Command {command} not handled!"
                 # self.send_debug_msg(m)
@@ -303,16 +306,17 @@ class UiComm(object):
         })
 
     @logged(remove_on_chart_removal=True)
-    def after_selection(self, selections, df_name):
+    def after_selection(self, selections, df_name, tick: int):
         self.comm.send({
             "type": "after_selection",
             "selection": json.dumps(selections),
-            "dfName": df_name
+            "dfName": df_name,
+            "tick": tick
         })
         
-    def create_cell(self, s, fun_kind, should_run):
+    def create_cell(self, s, fun_kind: str, should_run: bool):
         # self.send_debug_msg(f"create_cell_with_text called {s}")
-        # self.send_debug_msg(f"creating cell: {annotated}")
+        # self.send_debug_msg(fcreating cell: {annotated}")
         self.comm.send({
             "type": "create_cell",
             "funKind": fun_kind,

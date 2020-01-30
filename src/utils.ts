@@ -19,22 +19,31 @@ export function LogInternalError(message: string): null {
 }
 
 
-
+/**
+ * Returns true if the two arrays have the same values
+ *         false if different
+ * @param as first array of selection values
+ * @param bs second array of selection values
+ */
 function compareArray(as: SelectionValue, bs: SelectionValue) {
   // REDZONE --- this part has been buggy historically...
   if (as.length !== bs.length) return false;
-  // @ts-ignore, union typing string and number is causing some issues here.
-  for (let a of as) if (bs.indexOf(a) < 0) return false;
+
+  for (let a of as) {
+    // @ts-ignore, union typing string and number is causing some issues here.
+    if (bs.indexOf(a) < 0) {
+      return false;
+    }
+  }
   return true;
 }
 
 
 /**
+ * this is the case when the second selection has more charts specified
+ * returns false if the two values are not the same, and true if the same
  * @param s1 one selection
  * @param s2 another selections
- * note that the first one could contain LESS
- * this seems rather weird as a result of the encoding of the selection...
- * returns false if the two values are not the same, and true if the same
  */
 export function isFristSelectionContainedBySecond(s1?: PerChartSelectionValue, s2?: PerChartSelectionValue) {
   if (s1 && s2) {
