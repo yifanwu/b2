@@ -5,6 +5,7 @@ import arrayMove from "array-move";
 import { EncodingSpec } from "../charts/vegaGen";
 import { AlertType, MidasContainerFunctions, SelectionValue } from "../types";
 import { LogInternalError, LogSteps, getDfId, LogDebug } from "../utils";
+import { SNAPSHOT_BUTTON } from "../constants";
 
 import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
 import MidasElement from "./MidasElement";
@@ -50,6 +51,21 @@ interface ContainerState {
 }
 
 
+function createSnapShotButton(getSnapShot: () => void) {
+  if ($(`#${SNAPSHOT_BUTTON}`).length) {
+    LogInternalError(`Button ${SNAPSHOT_BUTTON} has been created already!`);
+  } else {
+    // also add button to bool bar
+    const newButton = `<div>
+      <button id="${SNAPSHOT_BUTTON}"
+      ></button>
+    </div>`;
+    $("#maintoolbar-container").append(newButton);
+    $(`#${SNAPSHOT_BUTTON}`).click(() => getSnapShot());
+  }
+  return;
+}
+
 // const MidasSortableContainer = SortableContainer(({ children }: { children: any }) => {
 //   return <div>{children}</div>;
 // }, {withRef: true});
@@ -66,6 +82,9 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     this.addAlert = this.addAlert.bind(this);
     this.drawBrush = this.drawBrush.bind(this);
     this.removeAlert = this.removeAlert.bind(this);
+    this.snapShotAll = this.snapShotAll.bind(this);
+
+    createSnapShotButton(this.snapShotAll);
 
     this.state = {
       notebookMetaData: [],
@@ -87,6 +106,10 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     return this.state.idToCell[name];
   }
 
+  snapShotAll() {
+    // go to the uncollapsed children elements, get the svgs and put in one paths
+
+  }
 
   drawBrush(selectionArrayStr: string) {
     const selectionArray = JSON.parse(selectionArrayStr);

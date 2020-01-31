@@ -49,7 +49,6 @@ export function tearDownMidasComponent() {
 
 export function createMidasComponent(
   columnSelectMsg: (col: string, table: string) => void,
-  // makeSelectionFromShelf: (selection: string) => void,
   containerFunctions: MidasContainerFunctions
 ): MidasSidebar {
   if ($(SIDEBAR_SELECTOR).length === 0) {
@@ -74,5 +73,6 @@ export function createMidasComponent(
     syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
   });
   syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
+
   return midasRef;
 }

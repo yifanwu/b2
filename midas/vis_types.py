@@ -53,9 +53,7 @@ class EncodingSpec(object):
 
 
     def __eq__(self, other: 'EncodingSpec'):
-        return self.mark == other.mark and self.selection_type == other.selection_type \
-            and self.x == other.x and self.x_type == other.x_type \
-            and self.y == other.y and self.y_type == other.y_type
+        return self.to_json() == other.to_json()
 
 
     def __ne__(self, other: 'EncodingSpec'):
@@ -64,8 +62,8 @@ class EncodingSpec(object):
 
     def __repr__(self):
         # FIXME: not sure why we have a "!r" here...
-        return f"EncodingSpec({self.mark!r}, {self.x!r}, {self.x_type}, {self.y!r}, {self.y_type}, {self.selection_type!r})"
+        return f"EncodingSpec({self.mark!r}, {self.x!r}, {self.x_type}, {self.y!r}, {self.y_type}, {self.selection_dimensions}, {self.selection_type!r})"
 
 
     def to_json(self):
-        return f'{{"mark": "{self.mark}", "x": "{self.x}", "xType": "{self.x_type}", "y": "{self.y}", "yType": "{self.y_type}", "selectionType": "{self.selection_type}"}}'
+        return f'{{"mark": "{self.mark}", "x": "{self.x}", "xType": "{self.x_type}", "y": "{self.y}", "yType": "{self.y_type}", "selectionDimensions": "{self.selection_dimensions}", "selectionType": "{self.selection_type}"}}'

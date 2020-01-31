@@ -2,7 +2,7 @@ import { IS_OVERVIEW_FIELD_NAME } from "../constants";
 import { LogInternalError } from "../utils";
 
 type SelectionType = "multiclick" | "brush";
-type SelectionDimensions = "" | "x" | "y" | "xy";
+export type SelectionDimensions = "" | "x" | "y" | "xy";
 
 export interface EncodingSpec {
   mark: "bar" | "circle" | "line";
@@ -13,6 +13,13 @@ export interface EncodingSpec {
   selectionType: SelectionType;
   selectionDimensions: SelectionDimensions;
   size?: string;
+}
+
+export function multiSelectedField(e: EncodingSpec) {
+  if ((e.selectionDimensions === "x") || (e.selectionDimensions === "y")) {
+    return e[e.selectionDimensions];
+  }
+  return LogInternalError("cannot call multiSelectedField on such spec");
 }
 
 const colorSpec = {
@@ -48,6 +55,13 @@ function brushSelection(selectionKind: SelectionDimensions) {
   return result;
 }
 
+function getSelectionDimensionsToArray(s: SelectionDimensions) {
+  if (s === "") {
+    LogInternalError("Should only be called if there are selection dimensions");
+  }
+  return s.split("");
+}
+
 function genSelection(selectionType: SelectionType, selectionDimensions: SelectionDimensions) {
   if (selectionDimensions === "") {
     return {
@@ -57,7 +71,7 @@ function genSelection(selectionType: SelectionType, selectionDimensions: Selecti
   if (selectionType === "multiclick") {
     return {
       "zoom": zoomSelection,
-      "select": multiClickSelection
+      "select": {"type": "multi",  "encodings": getSelectionDimensionsToArray(selectionDimensions)}
     };
   }
   if (selectionType === "brush") {
@@ -73,8 +87,6 @@ function genSelection(selectionType: SelectionType, selectionDimensions: Selecti
   };
 }
 
-// for the field "select", under top-level "selection"
-const multiClickSelection = {"type": "multi"};
 
 export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[]) {
   switch (encoding.mark) {

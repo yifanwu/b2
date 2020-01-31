@@ -8,9 +8,9 @@ import React from "react";
 import { View } from "vega";
 import vegaEmbed from "vega-embed";
 
-import { EncodingSpec, genVegaSpec } from "../charts/vegaGen";
+import { EncodingSpec, genVegaSpec, multiSelectedField } from "../charts/vegaGen";
 import { makeElementId } from "../config";
-import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_LOOKUP_KEY, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL } from "../constants";
+import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL } from "../constants";
 import { PerChartSelectionValue, MidasElementFunctions } from "../types";
 import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFristSelectionContainedBySecond, getMultiClickValue } from "../utils";
 
@@ -96,17 +96,15 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const encoding = this.props.encoding;
     let hasModified = false;
     if (this.isMultiSelect()) {
-      // get all the idx's and then select (a little awk due to Vega lite's implementation decisions)
-      const values = selection[encoding.x];
+      const selectedField = multiSelectedField(encoding);
+      const values = selection[selectedField];
       signal(MULTICLICK_TOGGLE, false);
       signal(MULTICLICK_PIXEL_SIGNAL, null);
       signal(MULTICLICK_TOGGLE, true);
       // MAYBE TODO: find diff instead of clearing
       // @ts-ignore ugh this string/number issue is dumb
-      values.map((v: string) => {
-        const idx = this.props.data.findIndex((d) => d[encoding.x] === v);
-        // plus one because vega-lite starts from 1
-        signal(MULTICLICK_PIXEL_SIGNAL, getMultiClickValue(idx + 1));
+      values.map((v: string|number) => {
+        signal(MULTICLICK_PIXEL_SIGNAL, getMultiClickValue(selectedField, v, encoding.selectionDimensions));
         hasModified = true;
       });
       runAsync();
@@ -126,8 +124,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         const y_pixel_min = scale("y")(selection[encoding.y][0]);
         const y_pixel_max = scale("y")(selection[encoding.y][1]);
         signal(BRUSH_Y_SIGNAL, [y_pixel_min, y_pixel_max]);
-        runAsync();
         hasModified = true;
+        runAsync();
       }
     }
     if (!hasModified) {
@@ -155,17 +153,12 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       // also need to call into python state...
       let processedValue = {};
       let cleanValue = {};
+      // const selectedField = multiSelectedField(this.props.encoding);
       if (!this.isMultiSelect()) {
         cleanValue = this.roundIfPossible(value);
       } else {
         // we need to access via the weird key
-        const idxs = value[MULTICLICK_LOOKUP_KEY];
-        let selValue = [];
-        if (idxs) {
-          // then we need to read the data; the index must be minus one because of vega's indexing scheme
-          selValue = idxs.map((idx: number) => this.props.data[idx - 1][this.props.encoding.x]);
-        }
-        cleanValue[this.props.encoding.x] = selValue;
+        cleanValue = value;
       }
       processedValue[dfName] = cleanValue;
       let valueStr = JSON.stringify(processedValue);

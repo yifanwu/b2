@@ -1,4 +1,5 @@
 import { PerChartSelectionValue, SelectionValue } from "./types";
+import { SelectionDimensions } from "./charts/vegaGen";
 
 export const STRICT = true;
 
@@ -159,6 +160,6 @@ export function trimStr(s: string, len: number) {
 
 // very vega specific
 // note that we can only support one valyue at a time otherwis3e vega is going to error out
-export function getMultiClickValue(idx: number) {
-  return {"unit": "", "fields": [{"type": "E", "field": "_vgsid_"}], "values": [idx]};
+export function getMultiClickValue(selName: string, value: string|number, selChannel: SelectionDimensions) {
+  return {"unit": "", "fields": [{"field": selName, "channel": selChannel, "type": "E"}], "values": [value]};
 }

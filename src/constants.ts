@@ -24,6 +24,8 @@ export const BRUSH_Y_SIGNAL = "brush_y";
 export const MIN_BRUSH_PX = 5;
 
 export const MULTICLICK_SIGNAL = "select";
-export const MULTICLICK_LOOKUP_KEY = "_vgsid_";
 export const MULTICLICK_PIXEL_SIGNAL = "select_tuple";
 export const MULTICLICK_TOGGLE = "select_toggle";
+
+// some div ids that we use
+export const SNAPSHOT_BUTTON = "midas-snap-shot-all";
