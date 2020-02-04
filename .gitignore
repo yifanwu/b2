@@ -4,6 +4,8 @@
 midas/scrap/
 *old.py
 midasenv/
+midas/widget/
+midas/midas_algebra/tests/
 sandbox/
 *.json
 notebooks/
