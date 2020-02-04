@@ -258,7 +258,7 @@
 /* float around */
 #profiler-shelf {
   position: absolute;
-  min-height: 200px;
+  /* min-height: 200px; */
   background-color: var(--yellow-vivid-100);
   cursor: grab;
   /* overflow: scroll; */
