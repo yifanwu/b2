@@ -475,12 +475,12 @@ class UiComm(object):
             return (code, True)
         elif (is_datetime64_any_dtype(col_value)):
             # TODO temporal bining
-            self.send_error_msg(f'')
+            self.send_error_msg(f'We do not currently support temporal charts')
             return (None, False)
         else:
             # we need to write the binning function and then print it out...
             # get the bound
-            unique_vals = np.unique(col_value)
+            unique_vals = np.unique(col_value[~np.isnan(col_value)])
             current_max_bins = len(unique_vals)
             if (current_max_bins < MAX_BINS):
                 code = f"{new_name} = {df.df_name}.group('{col_name}')"
@@ -493,12 +493,14 @@ class UiComm(object):
             d_max = unique_vals[-1]
             d_min = unique_vals[0]
             min_bucket_size = (d_max - d_min) / min_bucket_count
+            imports = "import numpy as np"
             def create_code(bound):
                 bin_column_name = f"{col_name}_bin"
-                binning_lambda = f"lambda x: int(x/{bound}) * {bound}"
+                # lambda n: int(n/5) * 5
+                binning_lambda = f"lambda x: 'null' if np.isnan(x) else int(x/{bound}) * {bound}"
                 bin_transform = f"{df.df_name}.append_column('{bin_column_name}', {df.df_name}.apply({binning_lambda}, '{col_name}'))"
                 grouping_transform = f"{new_name} = {df.df_name}.group('{bin_column_name}')"
-                code = f"{bin_transform}\n{grouping_transform}"
+                code = f"{imports}\n{bin_transform}\n{grouping_transform}"
                 return code
             # print(MAX_BINS, current_max_bins, d_max, d_min)
             try:
@@ -507,7 +509,7 @@ class UiComm(object):
             except ValueError as e:
                 # let's still given them a stub code
                 code = create_code(STUB_DISTRIBUTION_BIN)
-                self.send_error_msg(f'We are not able to create a chart for {df_name} due to the following error: "{e}".\nThis is likely a matter of data quality and one solution is to clean the data, and another is to specify how the chart should be made.\nPlease modify the stub code we have created for you.')
-                return (f"# please modify the code for cleaner data\n{code}", False)
+                self.send_error_msg(f'We are not able to create a chart for {df_name} due to the following error: "{e}".\nWe provided some stub code to help you get started.')
+                return (f"# Please fix the following \n{code}", False)
                 
             
