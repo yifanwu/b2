@@ -1,13 +1,7 @@
-import { LogDebug, commentUncommented, LogInternalError, LogSteps } from "./utils";
+import { LogDebug, commentUncommented, LogInternalError, LogSteps, getEmojiEnnotatedComment } from "./utils";
 import { MIDAS_SELECTION_FUN } from "./constants";
+import { FunKind } from "./types";
 
-const CELL_DOT_ANNOTATION = {
-  "chart": "🟠",
-  "query": "🟡",
-  "interaction": "🔵",
-};
-
-export type FunKind = "chart" | "query" | "interaction";
 
 // interface CellMetaData {
 //   funName: string;
@@ -123,8 +117,10 @@ export default class CellManager {
     if ((funName === MIDAS_SELECTION_FUN) && this.prevFocus && this.currentFocus) {
       const cell = this.cellsCreated[this.cellsCreated.length - 1].cell;
       const oldCode = cell.get_text();
+
+      const emojiComment = getEmojiEnnotatedComment("interaction");
       const commented = commentUncommented(oldCode);
-      const newText = commented + "\n" + text;
+      const newText = emojiComment + "\n" + commented + "\n" + text;
       cell.set_text(newText);
       this.exeucteCell(cell);
     } else {
@@ -146,10 +142,7 @@ export default class CellManager {
     } else {
       cell = Jupyter.notebook.insert_cell_below("code");
     }
-    const d = CELL_DOT_ANNOTATION[funKind];
-    if (!d) LogInternalError(`FunKind ${funKind} was not found`);
-    const time = new Date().toLocaleTimeString(navigator.language, {hour: "2-digit", minute: "2-digit"});
-    const comment = `# ${d} ${time} ${d}\n`;
+    const comment = getEmojiEnnotatedComment(funKind);
     cell.set_text(comment + code);
     cell.code_mirror.display.lineDiv.scrollIntoView();
     this.cellsCreated.push({

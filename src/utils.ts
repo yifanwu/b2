@@ -1,4 +1,4 @@
-import { PerChartSelectionValue, SelectionValue } from "./types";
+import { PerChartSelectionValue, SelectionValue, FunKind } from "./types";
 import { SelectionDimensions } from "./charts/vegaGen";
 
 export const STRICT = true;
@@ -10,6 +10,13 @@ const FgMegenta = "\x1b[35m";
 const FgGray = "\x1b[90m";
 export const Reset = "\x1b[0m";
 
+const CELL_DOT_ANNOTATION = {
+  "chart": "🟠",
+  "query": "🟡",
+  "interaction": "🔵",
+};
+
+
 export function LogInternalError(message: string): null {
   console.log(`${FgRed}${message}${Reset}`);
   if (STRICT) {
@@ -19,6 +26,14 @@ export function LogInternalError(message: string): null {
   return null;
 }
 
+export function getEmojiEnnotatedComment(funKind: FunKind) {
+
+  const d = CELL_DOT_ANNOTATION[funKind];
+  if (!d) LogInternalError(`FunKind ${funKind} was not found`);
+  const time = new Date().toLocaleTimeString(navigator.language, {hour: "2-digit", minute: "2-digit"});
+  const comment = `# ${d} ${time} ${d}\n`;
+  return comment;
+}
 
 /**
  * Returns true if the two arrays have the same values

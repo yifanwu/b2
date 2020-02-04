@@ -2,9 +2,9 @@
 import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME, MIDAS_SELECTION_FUN } from "./constants";
 import { LogSteps, LogDebug } from "./utils";
 import { createMidasComponent } from "./setup";
-import { AlertType, MidasContainerFunctions } from "./types";
+import { AlertType, FunKind, MidasContainerFunctions } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
-import CellManager, { FunKind }  from "./CellManager";
+import CellManager from "./CellManager";
 
 type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
