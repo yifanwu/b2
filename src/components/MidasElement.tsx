@@ -10,7 +10,7 @@ import vegaEmbed from "vega-embed";
 
 import { EncodingSpec, genVegaSpec, multiSelectedField } from "../charts/vegaGen";
 import { makeElementId } from "../config";
-import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL } from "../constants";
+import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL, EmbedConfig } from "../constants";
 import { PerChartSelectionValue, MidasElementFunctions } from "../types";
 import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFristSelectionContainedBySecond, getMultiClickValue, copyTextToClipboard } from "../utils";
 
@@ -194,7 +194,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const { dfName, encoding, data } = this.props;
     const vegaSpec = genVegaSpec(encoding, dfName, data);
     // @ts-ignore
-    vegaEmbed(`#${this.state.elementId}`, vegaSpec)
+    vegaEmbed(`#${this.state.elementId}`, vegaSpec, EmbedConfig)
       .then((res: any) => {
         const view = res.view;
         this.setState({

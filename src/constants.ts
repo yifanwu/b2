@@ -1,3 +1,9 @@
+export const IS_DEBUG = true;
+
+export const EmbedConfig = IS_DEBUG
+  ? {actions: true}
+  : {actions: false}
+  ;
 // the following are configurations that affects how the UI behaves
 export const DEBOUNCE_RATE = 100;
 // export const ALERT_ALIVE_TIME = 100000;
