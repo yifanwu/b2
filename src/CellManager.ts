@@ -120,7 +120,7 @@ export default class CellManager {
 
       const emojiComment = getEmojiEnnotatedComment("interaction");
       const commented = commentUncommented(oldCode);
-      const newText = emojiComment + "\n" + commented + "\n" + text;
+      const newText = emojiComment + commented + "\n" + text;
       cell.set_text(newText);
       this.exeucteCell(cell);
     } else {
