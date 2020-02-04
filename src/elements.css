@@ -369,7 +369,7 @@
   position: fixed;
   height: 91%;
   margin: 0 10px 0 10px;
-  overflow: scroll;
+  /* overflow: scroll; */
   /* display: flex; */
 }
 
