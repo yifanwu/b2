@@ -63,8 +63,8 @@ export default class CellManager {
     // LogDebug(`Set focus: ${dfName}`);
   }
 
-  executeCapturedCells(svg: string, comments: string) {
-    this.createCell(`#${comments}\nfrom IPython.display import SVG, display\ndisplay(SVG(data=\'${svg}\'))`, "chart", true);
+  executeCapturedCells(div: string, comments: string) {
+    this.createCell(`#${comments}\nfrom IPython.display import HTML, display\ndisplay(HTML(\'${div}\'))`, "chart", true);
   }
 
   runReactiveCells(dfName: string) {

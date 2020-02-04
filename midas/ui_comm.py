@@ -13,7 +13,7 @@ import ast
 from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS, MIDAS_RECOVERY_COMM_NAME, STUB_DISTRIBUTION_BIN
 from midas.state_types import DFName
 
-from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo
+from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, get_midas_code
 from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import EncodingSpec, FilterLabelOptions
@@ -103,17 +103,16 @@ class UiComm(object):
                     self.process_code(code)
                 return
             elif command == "get_code_clipboard":
-                df_name = data["df_name"]
-                code = self.get_filtered_code(df_name)
-                # self.send_debug_msg(f"got code for {df_name}: {code}")
-                copy(code)
+                # df_name = data["df_name"]
+                # code = self.get_filtered_code(df_name)
+                self.send_debug_msg(f"Should not be calling this!")
+                # copy(code)
                 return
             elif command == "get_visualization_code_clipboard":
                 df_name = data["df_name"]
                 encoding = self.vis_spec[df_name]
                 encoding_arg = f"mark='{encoding.mark}', x='{encoding.x}', y='{encoding.y}'"
                 code = f"{df_name}.show({encoding_arg})"
-                # self.send_debug_msg(f"got code for {df_name}: {code}")
                 copy(code)
                 return
             elif command == "column-selected":
@@ -237,6 +236,7 @@ class UiComm(object):
         self.id_by_df_name[df.df_name] = df.id
 
         records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
+        code = get_midas_code(df.ops)
         # TODO: check if we even need to do the dumping
         data = json.dumps(records)
         message = {
@@ -244,6 +244,7 @@ class UiComm(object):
             "dfName": df.df_name,
             'encoding': encoding.to_json(),
             'data': data,
+            'code': code
         }
         self.comm.send(message)
         return
@@ -280,18 +281,21 @@ class UiComm(object):
         # note that this is alwsays used for updating filtered information
         if df_name not in self.vis_spec:
             raise InternalLogicalError(f"Cannot update df: {df_name}, since it was not visualized before")
+        code = self.get_filtered_code(df_name)
         if df is None or df.table is None:
             self.comm.send({
                 "type": "chart_update_data",
                 "dfName": df_name,
-                "newData": []
+                "newData": [],
+                "code": code
             })
         else:
             new_data = dataframe_to_dict(df, FilterLabelOptions.filtered)
             self.comm.send({
                 "type": "chart_update_data",
                 "dfName": df_name,
-                "newData": new_data
+                "newData": new_data,
+                "code": code
             })
         return
 

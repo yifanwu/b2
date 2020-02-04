@@ -255,7 +255,10 @@ class Midas(object):
 
     def _get_filtered_code(self, df_name: str):
         df = self.__get_df(df_name)
-        return get_midas_code(df.ops)
+        if df is None or df.table is None:
+            return self._get_original_code(df_name)
+        else:
+            return get_midas_code(df.ops)
 
 
     def _get_original_code(self, df_name: str):

@@ -197,6 +197,7 @@
 .midas-header-options {
   margin-left: auto;
   margin: 5pt;
+  cursor: pointer;
 }
 
 .midas-header {

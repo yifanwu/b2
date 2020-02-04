@@ -12,7 +12,7 @@ import { EncodingSpec, genVegaSpec, multiSelectedField } from "../charts/vegaGen
 import { makeElementId } from "../config";
 import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL } from "../constants";
 import { PerChartSelectionValue, MidasElementFunctions } from "../types";
-import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFristSelectionContainedBySecond, getMultiClickValue } from "../utils";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFristSelectionContainedBySecond, getMultiClickValue, copyTextToClipboard } from "../utils";
 
 interface MidasElementProps {
   changeStep: number;
@@ -20,6 +20,7 @@ interface MidasElementProps {
   removeChart: () => void;
   dfName: string;
   title: string;
+  code: string;
   encoding: EncodingSpec;
   data: any[];
   moveElement: (direction: "left" | "right") => void;
@@ -30,6 +31,7 @@ interface MidasElementState {
   elementId: string;
   hidden: boolean;
   view: View;
+  code: string;
   generatedCells: any[];
   currentBrush: PerChartSelectionValue;
 }
@@ -53,11 +55,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.snapToCell = this.snapToCell.bind(this);
     this.moveLeft = this.moveLeft.bind(this);
     this.moveRight = this.moveRight.bind(this);
+    this.getCode = this.getCode.bind(this);
 
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
       hidden: false,
       view: null,
+      code: null,
       elementId,
       generatedCells: [],
       currentBrush: null,
@@ -225,7 +229,20 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 
   getCode() {
-    this.props.functions.getCode(this.props.dfName);
+    const code = this.state.code
+      ? this.state.code
+      : this.props.code;
+    return code;
+  }
+
+  copyCodeToClipboard() {
+    // this.props.functions.getCode(this.props.dfName);
+    // adding a new line because in the cell new line is annoying
+    copyTextToClipboard(this.getCode() + "\n");
+  }
+
+  getSvg(): Promise<string> {
+    return this.state.view.toSVG();
   }
 
   snapToCell() {
@@ -235,13 +252,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const comments = this.props.dfName;
     this.state.view.toSVG()
       .then(function(svg) {
-        executeCapturedCells(svg, comments);
+        executeCapturedCells(`<div>${svg}</div>`, comments);
       })
       .catch(function(err) { console.error(err); });
   }
 
   // FIXME: define type
-  async replaceData(newValues: any) {
+  async replaceData(newValues: any, code: string) {
     if (!this.state.view) {
       LogInternalError(`Vega view should have already been defined by now!`);
     }
@@ -251,6 +268,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       .insert(newValues);
 
     this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
+    this.setState({
+      code
+    });
   }
 
   moveLeft() {
@@ -275,7 +295,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           <span className="midas-header-options" onClick={this.moveRight}>➡️</span>
           <span className="midas-header-options" onClick={() => this.snapToCell()}>📷</span>
           <span className="midas-header-options" onClick={() => this.changeVisual()}>📊</span>
-          <span className="midas-header-options" onClick={() => this.getCode()}>📋</span>
+          <span className="midas-header-options" onClick={() => this.copyCodeToClipboard()}>📋</span>
           <span className="midas-header-options" onClick={() => this.toggleHiddenStatus()}>{this.state.hidden ? "➕" : "➖"}</span>
           <span className={"midas-header-options"} onClick={() => this.props.removeChart()}>❌</span>
         </div>

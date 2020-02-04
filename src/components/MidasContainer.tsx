@@ -25,6 +25,7 @@ interface ContainerElementState {
   encoding: EncodingSpec;
   data: any[];
   changeStep: number;
+  code: string;
 }
 
 interface AlertItem {
@@ -52,17 +53,15 @@ interface ContainerState {
 
 
 function createSnapShotButton(getSnapShot: () => void) {
-  if ($(`#${SNAPSHOT_BUTTON}`).length) {
-    LogInternalError(`Button ${SNAPSHOT_BUTTON} has been created already!`);
-  } else {
-    // also add button to bool bar
-    const newButton = `<div>
+  if (!$(`#${SNAPSHOT_BUTTON}`).length) {
+    // create if does not exist
+    const newButton = `<div class="btn-group">
       <button id="${SNAPSHOT_BUTTON}"
-      ></button>
+      >📷</button>
     </div>`;
     $("#maintoolbar-container").append(newButton);
-    $(`#${SNAPSHOT_BUTTON}`).click(() => getSnapShot());
   }
+  $(`#${SNAPSHOT_BUTTON}`).click(() => getSnapShot());
   return;
 }
 
@@ -106,9 +105,26 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     return this.state.idToCell[name];
   }
 
-  snapShotAll() {
+  async snapShotAll() {
     // go to the uncollapsed children elements, get the svgs and put in one paths
-
+    // iterate through this
+    let allSvgStrs: string[] = [];
+    let allCodeStrs: string[] = [];
+    for (let key in this.refsCollection) {
+      const element = this.refsCollection[key];
+      try {
+        const svg = await element.getSvg();
+        allSvgStrs.push(svg);
+        const code = element.getCode();
+        allCodeStrs.push(`# ${code}`);
+      } catch (err) {
+        LogInternalError(`Cannot create svg for element, with error: ${err}`);
+      }
+    }
+    const combined = allSvgStrs.join("");
+    const comments = "# Current snapshot queries:\n" + allCodeStrs.join("\n");
+    // this bleads the abstraction a little
+    this.props.containerFunctions.elementFunctions.executeCapturedCells(`<div>${combined}<div>`, comments);
   }
 
   drawBrush(selectionArrayStr: string) {
@@ -197,7 +213,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
    * @param id the id of the data frame
    * @param dfName the name of the data frame
    */
-  addDataFrame(dfName: string, encoding: EncodingSpec, data: any[], notebookCellId: string) {
+  addDataFrame(dfName: string, encoding: EncodingSpec, data: any[], notebookCellId: string, code: string) {
     this.setState(prevState => {
       // see if we need to delete the old one first
       const idx = prevState.elements.findIndex((v) => v.dfName === dfName);
@@ -206,7 +222,8 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         dfName,
         encoding,
         data,
-        changeStep: 1
+        changeStep: 1,
+        code,
       };
       if (idx > -1) {
         // here we are replacing the value
@@ -223,8 +240,8 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     this.refsCollection[dfName].addBrush(selection);
   }
 
-  replaceData(dfName: string, data: any[]) {
-    this.refsCollection[dfName].replaceData(data);
+  replaceData(dfName: string, data: any[], code: string) {
+    this.refsCollection[dfName].replaceData(data, code);
   }
 
 
@@ -279,7 +296,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
   render() {
     const { elements, alerts } = this.state;
     const chartDivs = elements.map(({
-      notebookCellId, dfName, data, encoding, changeStep: chanageStep }, index) => {
+      notebookCellId, dfName, data, encoding, changeStep: chanageStep, code }, index) => {
       return <MidasElement
         ref={r => this.refsCollection[dfName] = r}
         // index={index}
@@ -290,6 +307,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         dfName={dfName}
         title={dfName}
         encoding={encoding}
+        code={code}
         data={data}
         changeStep={chanageStep}
         removeChart={() => this.removeDataFrame(dfName)}

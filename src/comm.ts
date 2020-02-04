@@ -44,6 +44,7 @@ type UpdateCommLoad = {
   type: string;
   dfName: string;
   newData: any;
+  code: string;
 };
 
 type ProfilerComm = {
@@ -57,6 +58,7 @@ type ChartRenderComm = {
   dfName: string;
   data: string;
   encoding: string;
+  code: string;
 };
 
 type MidasCommLoad = CommandLoad
@@ -123,12 +125,12 @@ export function makeComm(is_first_time = true) {
             });
           };
 
-          const getCode = (dfName: string) => {
-            comm.send({
-              "command": "get_code_clipboard",
-              "df_name": dfName
-            });
-          };
+          // const getCode = (dfName: string) => {
+          //   comm.send({
+          //     "command": "get_code_clipboard",
+          //     "df_name": dfName
+          //   });
+          // };
 
           const removeDataFrameMsg = (dfName: string) => {
             comm.send({
@@ -145,7 +147,7 @@ export function makeComm(is_first_time = true) {
             removeDataFrameMsg,
             elementFunctions: {
               addCurrentSelectionMsg,
-              getCode,
+              // getCode,
               setUIItxFocus,
               getChartCode,
               executeCapturedCells
@@ -259,12 +261,12 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         const cellId = msg.parent_header.msg_id;
         const encoding = JSON.parse(chartRenderLoad.encoding);
         const data = JSON.parse(chartRenderLoad.data);
-        refToMidas.addDataFrame(chartRenderLoad.dfName, encoding, data, cellId);
+        refToMidas.addDataFrame(chartRenderLoad.dfName, encoding, data, cellId, chartRenderLoad.code);
         return;
       }
       case "chart_update_data": {
         const updateLoad = load as UpdateCommLoad;
-        refToMidas.replaceData(updateLoad.dfName, updateLoad.newData);
+        refToMidas.replaceData(updateLoad.dfName, updateLoad.newData, updateLoad.code);
         refToMidas.navigate(updateLoad.dfName);
         return;
       }
