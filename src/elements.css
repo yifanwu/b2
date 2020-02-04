@@ -179,33 +179,6 @@
   border-radius: 5px;
 } 
 
-.midas-header-button {
-  margin: var(--size-1);
-  border-radius: var(--size-1);
-  background-color: var(--blue-grey-100);
-  color: var(--blue-grey-300);
-  border: 2px solid var(--blue-grey-300);
-}
-
-
-
-.midas-header-button :hover {
-  border: 2px solid var(--blue-grey-500);
-}
-
-
-.midas-header-options {
-  margin-left: auto;
-  margin: 5pt;
-  cursor: pointer;
-}
-
-.midas-header {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  background-color: var(--blue-grey-050);
-}
 
 .editable-text-title, .selection-column-name {
   font-size: 0.9em;
@@ -420,4 +393,133 @@ a.tip:hover span {
   background-color: var(--yellow-vivid-100);
   box-sizing: border-box;
   overflow-y: auto;
+}
+
+/* header */
+.midas-header-button {
+  margin: var(--size-1);
+  border-radius: var(--size-1);
+  background-color: var(--blue-grey-100);
+  color: var(--blue-grey-300);
+  border: 2px solid var(--blue-grey-300);
+}
+
+.midas-header-button :hover {
+  border: 2px solid var(--blue-grey-500);
+}
+
+
+.midas-header-options {
+  margin-left: auto;
+  margin: 5pt;
+  cursor: pointer;
+}
+
+.midas-header {
+  width: 100%;
+  position: relative;
+  align-items: center;
+  background-color: var(--blue-grey-050);
+}
+
+.midas-header details:not([open]) > :not(summary) {
+  display: none !important;
+}
+
+.midas-header summary {
+  list-style: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 6px;
+  z-index: 1000;
+  background: white;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+  color: #1b1e23;
+  border: 1px solid #aaa;
+  border-radius: 999px;
+  opacity: 0.2;
+  transition: opacity 0.4s ease-in;
+  outline: none;
+  cursor: pointer;
+  line-height: 0px;
+}
+
+.midas-header summary::-webkit-details-marker {
+  display: none;
+}
+.midas-header summary:active {
+  box-shadow: #aaa 0px 0px 0px 1px inset;
+}
+.midas-header summary svg {
+  width: 14px;
+  height: 14px;
+}
+.midas-header details[open] summary {
+  opacity: 0.7;
+}
+.midas-header:hover summary, .midas-header:focus summary {
+  opacity: 1 !important;
+  transition: opacity 0.2s ease;
+}
+
+.midas-chart-action {
+  position: absolute;
+  top: 35px;
+  z-index: 100;
+  right: 0px;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 8px;
+  padding-top: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
+  border: 1px solid #d9d9d9;
+  background: white;
+  animation-duration: 0.15s;
+  animation-name: scale-in;
+  animation-timing-function: cubic-bezier(0.2, 0, 0.13, 1.5);
+}
+
+.midas-chart-action a {
+  padding: 3px 8px;
+  font-family: sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #434a56;
+  text-decoration: none;
+}
+
+.midas-chart-action a:hover {
+  background-color: #f7f7f9;
+  color: black;
+}
+
+
+.midas-chart-action::before {
+  content: "";
+  display: inline-block;
+  position: absolute;  
+}
+.midas-chart-action::after {
+  content: "";
+  display: inline-block;
+  position: absolute;
+}
+
+.midas-chart-action::before {
+  left: auto;
+  right: 14px;
+  top: -16px;
+  border: 8px solid #0000;
+  border-bottom-color: #d9d9d9;
+}
+
+.midas-chart-action::after {
+  left: auto;
+  right: 15px;
+  top: -14px;
+  border: 7px solid #0000;
+  border-bottom-color: #fff;
 }

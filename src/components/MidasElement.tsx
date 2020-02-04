@@ -14,6 +14,12 @@ import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X
 import { PerChartSelectionValue, MidasElementFunctions } from "../types";
 import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFristSelectionContainedBySecond, getMultiClickValue, copyTextToClipboard } from "../utils";
 
+const DetailButton = <svg viewBox="0 0 16 16" fill="currentColor" stroke="none" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+  <circle r="2" cy="8" cx="2"></circle>
+  <circle r="2" cy="8" cx="8"></circle>
+  <circle r="2" cy="8" cx="14"></circle>
+</svg>;
+
 interface MidasElementProps {
   changeStep: number;
   cellId: string;
@@ -289,15 +295,25 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
             this.props.functions.setUIItxFocus();
           }}>
         <div className="midas-header">
-          {/* <DragHandle /> */}
-          <span className="midas-title">{this.props.title}</span>
-          <span className="midas-header-options" onClick={this.moveLeft}>⬅️</span>
-          <span className="midas-header-options" onClick={this.moveRight}>➡️</span>
-          <span className="midas-header-options" onClick={() => this.snapToCell()}>📷</span>
-          <span className="midas-header-options" onClick={() => this.changeVisual()}>📊</span>
-          <span className="midas-header-options" onClick={() => this.copyCodeToClipboard()}>📋</span>
-          <span className="midas-header-options" onClick={() => this.toggleHiddenStatus()}>{this.state.hidden ? "➕" : "➖"}</span>
-          <span className={"midas-header-options"} onClick={() => this.props.removeChart()}>❌</span>
+          <span>{this.props.title}</span>
+          <details title="click to see options">
+            <summary>
+              {DetailButton}
+            </summary>
+            <div className="midas-chart-action">
+              <a onMouseDown={(e) => {
+                this.moveLeft();
+                console.log("left clicked");
+                e.preventDefault();
+              }}>⬅️</a>
+              <a onClick={this.moveRight}>➡️</a>
+              <a onClick={() => this.snapToCell()}>📷</a>
+              <a onClick={() => this.changeVisual()}>📊</a>
+              <a onClick={() => this.copyCodeToClipboard()}>📋</a>
+              <a onClick={() => this.toggleHiddenStatus()}>{this.state.hidden ? "➕" : "➖"}</a>
+              <a onClick={() => this.props.removeChart()}>❌</a>
+            </div>
+          </details>
         </div>
         <div
           id={this.state.elementId}
