@@ -78,7 +78,10 @@ export class SelectionShelf extends React.Component<SelectionShelfProps, Selecti
       <button className="reset-button" disabled={this.state.resetDisabled} onClick={this.resetAllSelection}>reset</button>
       {selectionDivs}
     </div>;
-    const content = (selectionDivs.length > 0) ? selectedContent : <SelectionShelfLandingPage/>;
+    const content = (selectionDivs.length > 0)
+      ? selectedContent
+      : <SelectionShelfLandingPage/>
+      ;
     return <div className="shelf" id="selection-shelf">
       {content}
       </div>;

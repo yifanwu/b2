@@ -27,7 +27,6 @@ export function LogInternalError(message: string): null {
 }
 
 export function getEmojiEnnotatedComment(funKind: FunKind) {
-
   const d = CELL_DOT_ANNOTATION[funKind];
   if (!d) LogInternalError(`FunKind ${funKind} was not found`);
   const time = new Date().toLocaleTimeString(navigator.language, {hour: "2-digit", minute: "2-digit"});

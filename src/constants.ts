@@ -4,12 +4,17 @@ export const EmbedConfig = IS_DEBUG
   ? {actions: true}
   : {actions: false}
   ;
+
+// in px
+export const CONTAINER_INIT_WIDTHS = 768; // set via css
+export const PROFILTER_SHELF_WIDTH = 120; // set via css
+export const MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW = 600;
+
 // the following are configurations that affects how the UI behaves
 export const DEBOUNCE_RATE = 100;
 // export const ALERT_ALIVE_TIME = 100000;
 export const SHELF_TEXT_MAX_LEN = 14;
 export const SELECTION_TEXT_MAX_LEN = 13;
-export const MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW = 600;
 
 // The rest of this file is synchronized with the Python scripts
 // need to keep this in sync with the defaults.py file

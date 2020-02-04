@@ -3,6 +3,7 @@ import React from "react";
 import { ColumnItem } from "./ColumnItem";
 import { ProfileShelfLandingPage } from "./ProfileShelfLandingPage";
 import { LogDebug } from "../utils";
+import { PROFILTER_SHELF_WIDTH, CONTAINER_INIT_WIDTHS } from "../constants";
 
 interface ProfilerColumn {
   columnName: string;
@@ -37,7 +38,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
       dragged: false,
       oldX: 0,
       oldY: 0,
-      x: 0,
+      x: CONTAINER_INIT_WIDTHS - PROFILTER_SHELF_WIDTH,
       y: 0,
     };
   }
@@ -115,19 +116,20 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
         {columns}
       </div>;
     });
-    const content = (tableDivs.length > 0) ? tableDivs : <ProfileShelfLandingPage/>;
+    const content = (tableDivs.length > 0)
+      ? tableDivs
+      : <ProfileShelfLandingPage/>
+      ;
     const style = {left: this.state.x, top: this.state.y};
     return (
       <div
         id="profiler-shelf"
         draggable={true}
         onDragStart={this.dragStart}
-        // onDrop={this.drop}
         onDragOver={(event) => event.preventDefault()}
         onDragEnd={this.dragEnd}
         style={style}
       >
-      {/* <div className="midbar-shelf-header">source tables</div> */}
       {content}
       </div>
     );
