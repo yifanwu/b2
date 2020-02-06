@@ -171,7 +171,7 @@ export function makeComm(is_first_time = true) {
             }
           };
 
-          const ref = createMidasComponent(columnSelectMsg,logEntryForResizer, containerFunctions);
+          const ref = createMidasComponent(columnSelectMsg, logEntryForResizer, containerFunctions);
           const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);
 
@@ -181,6 +181,18 @@ export function makeComm(is_first_time = true) {
               const code = data.cell.get_text();
               comm.send({
                 command: "cell-ran",
+                code,
+              });
+            });
+            // this is for logging purposes
+            // also need to instrument markdowncells, using "rendered.MarkdownCell" because
+            // - I cannot find the creation event
+            // - rendered might be a better proxy since they might change the values
+            // the only issue is if the people forget to render it, oh well : /
+            Jupyter.notebook.events.on("rendered.MarkdownCell", function(evt: any, data: any) {
+              const code = data.cell.get_text();
+              comm.send({
+                command: "markdown-cell-rendered",
                 code,
               });
             });

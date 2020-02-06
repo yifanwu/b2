@@ -11,14 +11,17 @@ const SIDE_INSIDE_SELECTOR = "#midas-inside";
 /**
  * Makes the resizer that allows changing the width of the sidebar.
  * @param divToResize the div representing the sidebar.
+ * maybe consider resizable
  */
+let dragging = false;
 function makeResizer(
   onChange: (delta: number) => void,
   logEntryForResizer: (metadata: string) => void) {
   let resizer = $("#midas-resizer");
   resizer.on("mousedown", (e) => {
-    let x = e.clientX;
+    const x = e.clientX;
     let lastTotalMove = 0;
+    dragging = true;
 
     $(window).on("mousemove", (e) => {
       let totalMove = x - e.clientX;
@@ -29,16 +32,19 @@ function makeResizer(
   });
 
   $(window).on("mouseup", () => {
-    $(window).off("mousemove");
-    // check the size of the new div, if it's large enough, change the css
-    const currentWidth = $("#midas-sidebar-wrapper").width();
-    const docWidth = $(window).width();
-    logEntryForResizer(`(${currentWidth}, ${docWidth})`);
-    if (currentWidth > MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW) {
-      $(".midas-element").css({
-        "display": "inline-flex",
-        "flex-direction": "column"
-      });
+    if (dragging) {
+      $(window).off("mousemove");
+      // check the size of the new div, if it's large enough, change the css
+      const currentWidth = $("#midas-sidebar-wrapper").width();
+      const docWidth = $(window).width();
+      logEntryForResizer(`(${currentWidth}, ${docWidth})`);
+      if (currentWidth > MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW) {
+        $(".midas-element").css({
+          "display": "inline-flex",
+          "flex-direction": "column"
+        });
+      }
+      dragging = false;
     }
   });
 }

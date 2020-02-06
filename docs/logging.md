@@ -44,3 +44,4 @@ Note that we will also have `code_selection` calls, note that all `ui_selection`
 
 M3 is pretty straightforward, it's captured as a markdown cell being ran,
 
+- `markdown-rendered`

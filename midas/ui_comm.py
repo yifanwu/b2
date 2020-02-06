@@ -110,14 +110,12 @@ class UiComm(object):
                 if "code" in data:
                     code = data["code"]
                     self.process_code(code)
-                # this is another opportunity for logging code execution
-                self.log_entry("code_execution", json.dumps(code))
+                    self.log_entry("code_execution", json.dumps(code))
                 return
-            elif command == "get_code_clipboard":
-                # df_name = data["df_name"]
-                # code = self.get_filtered_code(df_name)
-                self.send_debug_msg(f"Should not be calling this!")
-                # copy(code)
+            elif command == "markdown-cell-rendered":
+                if "code" in data:
+                    code = data["code"]
+                    self.log_entry("markdown-rendered", json.dumps(code))
                 return
             elif command == "get_visualization_code_clipboard":
                 df_name = data["df_name"]
@@ -152,7 +150,10 @@ class UiComm(object):
                 self.handle_add_current_selection(value)
                 return
             elif command == "log_entry":
-                self.log_entry(data["action"], data["metadata"])
+                try:
+                    self.log_entry(data["action"], data["metadata"])
+                except KeyError as err:
+                    self.send_debug_msg(f"Logging error {json.dumps(data)}")
             else:
                 m = f"Command {command} not handled!"
                 raise NotAllCaseHandledError(m)
