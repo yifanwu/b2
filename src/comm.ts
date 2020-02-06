@@ -104,7 +104,7 @@ export function makeComm(is_first_time = true) {
 
           const columnSelectMsg = (column: string, tableName: string) => {
             const payload = {
-              command: "column-selected",
+              command: "column_selected",
               column,
               df_name: tableName,
             };
@@ -132,6 +132,22 @@ export function makeComm(is_first_time = true) {
           //   });
           // };
 
+          const logEntry = (action: string, metadata: string) => {
+            comm.send({
+              "command": "log_entry",
+              "action": action,
+              "metadata": metadata
+            });
+          };
+
+          const logEntryForResizer = (metadata: string) => {
+            comm.send({
+              "command": "log_entry",
+              "action": "resize_midas_area",
+              "metadata": metadata
+            });
+          };
+
           const removeDataFrameMsg = (dfName: string) => {
             comm.send({
               "command": "remove_dataframe",
@@ -146,6 +162,7 @@ export function makeComm(is_first_time = true) {
           const containerFunctions: MidasContainerFunctions = {
             removeDataFrameMsg,
             elementFunctions: {
+              logEntry,
               addCurrentSelectionMsg,
               // getCode,
               setUIItxFocus,
@@ -154,7 +171,7 @@ export function makeComm(is_first_time = true) {
             }
           };
 
-          const ref = createMidasComponent(columnSelectMsg, containerFunctions);
+          const ref = createMidasComponent(columnSelectMsg,logEntryForResizer, containerFunctions);
           const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);
 

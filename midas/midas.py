@@ -1,8 +1,12 @@
 from __future__ import absolute_import
+from midas.constants import LOG_FILE_HEADER
 from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType
 from IPython import get_ipython
-from typing import Optional, List, Dict, Iterator, cast
+from typing import Optional, List, Dict, Iterator, IO, cast, Any
 from datascience import Table
+from json import dumps
+from datetime import datetime
+import os.path
 
 try:
     from IPython.display import display  # type: ignore
@@ -15,6 +19,7 @@ from typing import Dict, List
 
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
 from .util.errors import InternalLogicalError
+from .util.utils import red_print
 from .vis_types import SelectionEvent, EncodingSpec
 from .state_types import DFName
 from .ui_comm import UiComm
@@ -28,7 +33,7 @@ from .midas_magic import MidasMagic
 from .util.instructions import HELP_INSTRUCTION
 from .util.errors import UserError
 from .util.utils import isnotebook, find_name, diff_selection_value
-from .config import default_midas_config, MidasConfig
+from .config import MidasConfig
 
 
 is_in_ipynb = isnotebook()
@@ -51,18 +56,29 @@ class Midas(object):
     df_info_store: Dict[DFName, DFInfo]
     config: MidasConfig
     last_add_selection_df: str
+    log_file: IO[Any]
+    start_time: datetime
 
-    def __init__(self, config: MidasConfig=default_midas_config):
+    def __init__(self, experiment_id: Optional[str]=None, linked=True):
         assigned_name = find_name(True)
         if assigned_name is None:
             raise UserError("must assign a name")
         self.assigned_name = assigned_name
-        ui_comm = UiComm(is_in_ipynb, assigned_name, self.__get_df_info, self.remove_df, self.from_ops, self._add_selection, self._get_filtered_code)
+        if experiment_id:
+            dt = datetime.now()
+            file_name = f'{experiment_id}_{dt.strftime("%Y%m%d-%H%M%S")}.csv'
+            self.start_time = dt
+            if os.path.isfile(file_name):
+                raise InternalLogicalError(f"File {file_name} already existis, strange!")
+            else:
+                self.log_file = open(f"../experiment_results/{file_name}", 'w+')
+                self.log_file.write(LOG_FILE_HEADER)
+        ui_comm = UiComm(is_in_ipynb, assigned_name, self.__get_df_info, self.remove_df, self.from_ops, self._add_selection, self._get_filtered_code, self.log_entry)
         self.ui_comm = ui_comm
         self.df_info_store = {}
         self.context = Context(self.df_info_store, self.from_ops)
         self.selection_history = []
-        self.config = config
+        self.config = MidasConfig(linked, True if experiment_id else False)
         self.last_add_selection_df = ""
         self.current_selection = []
         if is_in_ipynb:
@@ -70,11 +86,12 @@ class Midas(object):
             magics = MidasMagic(ip, ui_comm)
             ip.register_magics(magics)
 
+
         self.rt_funcs = RuntimeFunctions(
             self.add_df,
             self._show_df,
             self._show_df_filtered,
-            self.show_profiler,
+            self.show_profile,
             self.context.apply_selection,
             self.add_join_info)
 
@@ -85,7 +102,7 @@ class Midas(object):
         self.df_info_store[mdf.df_name] = DFInfo(mdf)
 
 
-    def show_profiler(self, mdf: MidasDataFrame):
+    def show_profile(self, mdf: MidasDataFrame):
         self.ui_comm.create_profile(mdf)
 
 
@@ -97,6 +114,7 @@ class Midas(object):
 
 
     def _show_df(self, mdf: MidasDataFrame, spec: EncodingSpec):
+        self.log_entry("show_df", mdf.df_name)
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         df_name = mdf.df_name
@@ -129,6 +147,27 @@ class Midas(object):
             return r.df
         return None
 
+    def log_entry(self, fun_name: str, optional_metadata: Optional[str]=None):
+        """
+        the structure would be 
+        |  fun_name | call_time | 
+        """
+        if self.config.logging:
+            call_time = datetime.now()
+            diff = (call_time - self.start_time).total_seconds()
+            self.log_file.write(f"{fun_name},{diff},{optional_metadata}\n")
+            # This is important because the participant might restart kernel etc without warning.
+            self.log_file.flush()
+
+    # def download_log(self):
+    #     ui_logs = []
+    #     for item in self.ui_comm.logged_comms:
+    #         # this is extremely brittle
+    #         fun_name = item[4]
+    #         call_time = item[5]
+    #         ui_logs.append(f"{fun_name}, {call_time}")
+    #     return "\n".join(ui_logs)
+
 
     def remove_df(self, df_name: DFName):
         self.df_info_store.pop(df_name)
@@ -137,19 +176,27 @@ class Midas(object):
     def from_records(self, records):
         table = Table.from_records(records)
         df_name = find_name()
+        self.log_entry("load_data", df_name)
         return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
 
     def read_table(self, filepath_or_buffer, *args, **vargs):
-        table = Table.read_table(filepath_or_buffer, *args, **vargs)
-        df_name = find_name()
-        return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
+        try:
+            table = Table.read_table(filepath_or_buffer, *args, **vargs)
+            df_name = find_name()
+            self.log_entry("load_data", df_name)
+            return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
+        except FileNotFoundError:
+            red_print(f"File {filepath_or_buffer} does not exist!")
+        except UserError as err:
+            red_print(err)
 
 
     def from_df(self, df):
         # a pandas df
         table = Table.from_df(df)
         df_name = find_name()
+        self.log_entry("load_data", df_name)
         return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
 
@@ -160,10 +207,12 @@ class Midas(object):
     def with_columns(self, *labels_and_values, **formatter):
         table = Table().with_columns(*labels_and_values, **formatter)
         df_name = find_name()
+        self.log_entry("load_data", df_name)
         return MidasDataFrame.create_with_table(table, df_name, self.rt_funcs)
 
 
     def add_join_info(self, join_info: JoinInfo):
+        self.log_entry("add_join_info")
         self.context.add_join_info(join_info)
 
 
@@ -177,6 +226,7 @@ class Midas(object):
 
 
     def get_current_selection(self):
+        self.log_entry("get_current_selection")
         return self.current_selection
 
 
@@ -226,6 +276,7 @@ class Midas(object):
             current_selections_array {Optional[List[Dict]]} --
             note that the dict is Dict[DFName, SelectionValue] (default: {None})
         """
+        self.log_entry("code_selection", f"'{dumps(current_selections_array)}'")
         df_involved = ""
         if len(current_selections_array) == 0:
             # this is a reset!

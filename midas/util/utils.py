@@ -23,6 +23,8 @@ def isnotebook():
     except NameError:
         return False      # Probably standard Python interpreter
 
+def red_print(m):
+    print(f"\x1b[31m{m}\x1b[0m")
 
 def abs_path(p: str):
     """Make path absolute."""

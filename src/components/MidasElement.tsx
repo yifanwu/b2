@@ -220,6 +220,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   toggleHiddenStatus() {
     this.setState(prevState => {
+      this.props.functions.logEntry("toggle_chart_visibility", this.props.dfName);
       return { hidden: !prevState.hidden };
     });
   }
@@ -238,6 +239,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const code = this.state.code
       ? this.state.code
       : this.props.code;
+    this.props.functions.logEntry("get_code", code);
     return code;
   }
 
@@ -256,6 +258,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     // lame comments for now (maybe: code and selection, for the future)
     const executeCapturedCells = this.props.functions.executeCapturedCells;
     const comments = this.props.dfName;
+    this.props.functions.logEntry("snapshot_single", this.props.dfName);
+
     this.state.view.toSVG()
       .then(function(svg) {
         executeCapturedCells(`<div>${svg}</div>`, comments);
@@ -281,9 +285,12 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   moveLeft() {
     this.props.moveElement("left");
+    this.props.functions.logEntry("move_chart", this.props.dfName);
   }
+
   moveRight() {
     this.props.moveElement("right");
+    this.props.functions.logEntry("move_chart", this.props.dfName);
   }
 
   render() {
@@ -301,11 +308,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
               {DetailButton}
             </summary>
             <div className="midas-chart-action">
-              <a onMouseDown={(e) => {
-                this.moveLeft();
-                console.log("left clicked");
-                e.preventDefault();
-              }}>⬅️</a>
+              <a onMouseDown={this.moveLeft}>⬅️</a>
               <a onClick={this.moveRight}>➡️</a>
               <a onClick={() => this.snapToCell()}>📷</a>
               <a onClick={() => this.changeVisual()}>📊</a>

@@ -1,25 +1,25 @@
-from midas.midas_algebra.data_types import DFId
+from datetime import datetime
 from IPython import get_ipython 
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_any_dtype 
-from midas.midas_algebra.selection import SelectionValue
 from ipykernel.comm import Comm # type: ignore
 import numpy as np
 # from json import loads
-from typing import Dict, Callable, Optional, List, Tuple
+from typing import Dict, Callable, Optional, List, Tuple, cast
 import json
 from pyperclip import copy
 import ast
+import functools
+import inspect
 
+from midas.midas_algebra.data_types import DFId
+from midas.midas_algebra.selection import SelectionValue
 from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS, MIDAS_RECOVERY_COMM_NAME, STUB_DISTRIBUTION_BIN
 from midas.state_types import DFName
-
 from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, get_midas_code
 from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, snap_to_nice_number
-import functools
-import inspect
 from midas.showme import infer_encoding
 
 def logged(remove_on_chart_removal: bool):
@@ -58,7 +58,8 @@ class UiComm(object):
       remove_df_fun: Callable[[DFName], None],
       create_df_from_ops: Callable[[RelationalOp], MidasDataFrame],
       add_selection: Callable[[List[SelectionValue]], List[SelectionValue]],
-      get_filtered_code: Callable[[str], str]):
+      get_filtered_code: Callable[[str], str],
+      log_entry: Callable[[str, Optional[str]], None]):
 
         # functions passed at creation time
         self.is_in_ipynb = is_in_ipynb
@@ -69,7 +70,8 @@ class UiComm(object):
         self.remove_df_fun = remove_df_fun
         self.create_df_from_ops = create_df_from_ops
         self.add_selection = add_selection
-        self.get_filtered_code = get_filtered_code\
+        self.get_filtered_code = get_filtered_code
+        self.log_entry = log_entry
 
         # internal state
         self.next_id = 0
@@ -79,8 +81,15 @@ class UiComm(object):
         self.logged_comms = []
         self.tmp_log = []
 
-    def log(self, function, args, kwargs, associated_df_name):
-        self.logged_comms.append((function, args, kwargs, associated_df_name))
+    def log(self, function, args, kwargs, associated_df_name: str):
+        # , fun_name: str
+        self.logged_comms.append((
+            function,           # 0
+            args,               # 1
+            kwargs,             # 2
+            associated_df_name, # 3
+        ))
+
 
     def run_log(self):
         for f, args, kwargs, _ in self.logged_comms:
@@ -101,6 +110,8 @@ class UiComm(object):
                 if "code" in data:
                     code = data["code"]
                     self.process_code(code)
+                # this is another opportunity for logging code execution
+                self.log_entry("code_execution", json.dumps(code))
                 return
             elif command == "get_code_clipboard":
                 # df_name = data["df_name"]
@@ -115,12 +126,12 @@ class UiComm(object):
                 code = f"{df_name}.show({encoding_arg})"
                 copy(code)
                 return
-            elif command == "column-selected":
-                # self.send_debug_msg("column-selected called")
+            elif command == "column_selected":
                 column = data["column"]
                 df_name = DFName(data["df_name"])
                 self.tmp = f"{column}_{df_name}"
                 code, execute = self.create_distribution_query(column, df_name)
+                self.log_entry("column_click", df_name)
                 if code:
                     if execute:
                         self.create_cell(code, "query", True)
@@ -130,6 +141,7 @@ class UiComm(object):
             elif command == "remove_dataframe":
                 df_name = data["df_name"]
                 self.remove_df_fun(df_name)
+                self.log_entry("remove_df", df_name)
                 # local store
                 del self.vis_spec[df_name]
                 self.remove_df_from_log(df_name)
@@ -139,6 +151,8 @@ class UiComm(object):
                 # parse it first!
                 self.handle_add_current_selection(value)
                 return
+            elif command == "log_entry":
+                self.log_entry(data["action"], data["metadata"])
             else:
                 m = f"Command {command} not handled!"
                 raise NotAllCaseHandledError(m)
@@ -156,6 +170,7 @@ class UiComm(object):
             predicates = ",  \n".join(list(map(lambda v: v.to_str() if v.to_str() else "", all_predicate)))
             param_str = f"[\n  {predicates}\n]"
         self.execute_selection(param_str, df_name)
+        self.log_entry("ui_selection", df_name)
 
 
     def process_code(self, code: str):
@@ -430,37 +445,15 @@ class UiComm(object):
                 raise InternalLogicalError(f"{vis.mark} not handled")
         return result, df_name
 
-    @logged(remove_on_chart_removal=False)
-    def update_selection_shelf_selection_name(self, old_name: str, new_name: str):
-      self.shelf_selections[new_name] = self.shelf_selections[old_name]
-      del self.shelf_selections[old_name]
+    # @logged(remove_on_chart_removal=False, "update_selection_shelf_selection_name")
+    # def update_selection_shelf_selection_name(self, old_name: str, new_name: str):
+    #   self.shelf_selections[new_name] = self.shelf_selections[old_name]
+    #   del self.shelf_selections[old_name]
     
 
-    @logged(remove_on_chart_removal=False)
-    def remove_selection_from_shelf(self, df_name: str):
-      del self.shelf_selections[df_name]
-
-
-    def create_custom_visualization(self, spec):
-        """[summary]
-        
-        Arguments:
-            spec {[type]} -- the spec must contain all but the data information.
-        """
-        return
-
-
-    def custom_message(self, message_type: str, message: str):
-        """[internal] escape hatch for other message types
-        
-        Arguments:
-            type {str} -- the typescript code must know how to handle this "type"
-            message {str} -- propages the "value" of the message sent
-        """
-        self.comm.send({
-            "type": message_type,
-            "value": message
-        })
+    # @logged(remove_on_chart_removal=False)
+    # def remove_selection_from_shelf(self, df_name: str):
+    #   del self.shelf_selections[df_name]
 
     # returns a tuple to indicate if the retured result should be ran
     def create_distribution_query(self, col_name: str, df_name: str) -> Tuple[Optional[str], bool]:

@@ -12,7 +12,9 @@ const SIDE_INSIDE_SELECTOR = "#midas-inside";
  * Makes the resizer that allows changing the width of the sidebar.
  * @param divToResize the div representing the sidebar.
  */
-function makeResizer(onChange: (delta: number) => void) {
+function makeResizer(
+  onChange: (delta: number) => void,
+  logEntryForResizer: (metadata: string) => void) {
   let resizer = $("#midas-resizer");
   resizer.on("mousedown", (e) => {
     let x = e.clientX;
@@ -29,8 +31,14 @@ function makeResizer(onChange: (delta: number) => void) {
   $(window).on("mouseup", () => {
     $(window).off("mousemove");
     // check the size of the new div, if it's large enough, change the css
-    if ($("#midas-sidebar-wrapper").width() > MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW) {
-      $(".midas-element").css({"display": "inline-flex", "flex-direction": "column"});
+    const currentWidth = $("#midas-sidebar-wrapper").width();
+    const docWidth = $(window).width();
+    logEntryForResizer(`(${currentWidth}, ${docWidth})`);
+    if (currentWidth > MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW) {
+      $(".midas-element").css({
+        "display": "inline-flex",
+        "flex-direction": "column"
+      });
     }
   });
 }
@@ -49,6 +57,7 @@ export function tearDownMidasComponent() {
 
 export function createMidasComponent(
   columnSelectMsg: (col: string, table: string) => void,
+  logEntryForResizer: (metadata: string) => void,
   containerFunctions: MidasContainerFunctions
 ): MidasSidebar {
   if ($(SIDEBAR_SELECTOR).length === 0) {
@@ -59,7 +68,7 @@ export function createMidasComponent(
     $("#notebook").append(midasSideBarDiv);
   }
 
-  let midasRef;
+let midasRef;
   ReactDOM.render(<MidasSidebar
     ref={(comp) => midasRef = comp}
     columnSelectMsg={columnSelectMsg}
@@ -67,11 +76,13 @@ export function createMidasComponent(
     // makeSelectionFromShelf={makeSelectionFromShelf}
   />, document.getElementById(SIDEBAR_ID));
 
-  makeResizer((delta) => {
+  const resizeOnChange = (delta: number) => {
     let oldWidth = $(SIDEBAR_SELECTOR).width();
     $(SIDEBAR_SELECTOR).width(oldWidth + delta);
     syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
-  });
+  };
+  makeResizer(resizeOnChange, logEntryForResizer);
+
   syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
 
   return midasRef;

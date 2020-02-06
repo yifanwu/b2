@@ -419,7 +419,7 @@ a.tip:hover span {
   width: 100%;
   position: relative;
   align-items: center;
-  background-color: var(--blue-grey-050);
+  /* background-color: var(--blue-grey-050); */
 }
 
 .midas-header details:not([open]) > :not(summary) {
