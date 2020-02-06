@@ -1,12 +1,11 @@
 from __future__ import absolute_import
-from midas.constants import LOG_FILE_HEADER
+from sqlite3.dbapi2 import Cursor
 from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType
 from IPython import get_ipython
 from typing import Optional, List, Dict, Iterator, IO, cast, Any
 from datascience import Table
 from json import dumps
 from datetime import datetime
-import os.path
 
 try:
     from IPython.display import display  # type: ignore
@@ -19,7 +18,7 @@ from typing import Dict, List
 
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
 from .util.errors import InternalLogicalError
-from .util.utils import red_print
+from .util.utils import red_print, open_sqlite_for_logging
 from .vis_types import SelectionEvent, EncodingSpec
 from .state_types import DFName
 from .ui_comm import UiComm
@@ -56,29 +55,25 @@ class Midas(object):
     df_info_store: Dict[DFName, DFInfo]
     config: MidasConfig
     last_add_selection_df: str
-    log_file: IO[Any]
+    # log_file: IO[Any]
     start_time: datetime
 
-    def __init__(self, experiment_id: Optional[str]=None, linked=True):
+    def __init__(self, user_id: Optional[str]=None, linked=True):
         assigned_name = find_name(True)
         if assigned_name is None:
             raise UserError("must assign a name")
         self.assigned_name = assigned_name
-        if experiment_id:
-            dt = datetime.now()
-            file_name = f'{experiment_id}_{dt.strftime("%Y%m%d-%H%M%S")}.csv'
-            self.start_time = dt
-            if os.path.isfile(file_name):
-                raise InternalLogicalError(f"File {file_name} already existis, strange!")
-            else:
-                self.log_file = open(f"../experiment_results/{file_name}", 'w+')
-                self.log_file.write(LOG_FILE_HEADER)
+        if user_id:
+            self.user_id = user_id
+            self.start_time = datetime.now()
+            time_stamp = self.start_time.strftime("%Y%m%d-%H%M%S")
+            self.log_entry_to_db = open_sqlite_for_logging(user_id, time_stamp)
         ui_comm = UiComm(is_in_ipynb, assigned_name, self.__get_df_info, self.remove_df, self.from_ops, self._add_selection, self._get_filtered_code, self.log_entry)
         self.ui_comm = ui_comm
         self.df_info_store = {}
         self.context = Context(self.df_info_store, self.from_ops)
         self.selection_history = []
-        self.config = MidasConfig(linked, True if experiment_id else False)
+        self.config = MidasConfig(linked, True if user_id else False)
         self.last_add_selection_df = ""
         self.current_selection = []
         if is_in_ipynb:
@@ -155,9 +150,10 @@ class Midas(object):
         if self.config.logging:
             call_time = datetime.now()
             diff = (call_time - self.start_time).total_seconds()
-            self.log_file.write(f"{fun_name},{diff},{optional_metadata}\n")
-            # This is important because the participant might restart kernel etc without warning.
-            self.log_file.flush()
+            meta = optional_metadata if optional_metadata else ''
+            self.log_entry_to_db(fun_name, diff, meta)
+            
+
 
     # def download_log(self):
     #     ui_logs = []
@@ -276,7 +272,7 @@ class Midas(object):
             current_selections_array {Optional[List[Dict]]} --
             note that the dict is Dict[DFName, SelectionValue] (default: {None})
         """
-        self.log_entry("code_selection", f"'{dumps(current_selections_array)}'")
+        self.log_entry("code_selection", dumps(current_selections_array))
         df_involved = ""
         if len(current_selections_array) == 0:
             # this is a reset!

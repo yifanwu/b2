@@ -1,14 +1,19 @@
 import random
 import string
 import codecs
-from midas.midas_algebra.selection import ColumnRef, EmptySelection, SelectionValue
-from midas.util.errors import UserError, InternalLogicalError
 from os import path
 import traceback
 import ast
+import sqlite3
+from datetime import datetime
+from shutil import copyfile, copy
 
 from typing import Tuple, List, Optional
 from IPython import get_ipython  # type: ignore
+
+from midas.midas_algebra.selection import ColumnRef, EmptySelection, SelectionValue
+from midas.util.errors import UserError, InternalLogicalError
+from midas.constants import LOG_DB_PATH, LOG_DB_BACKUP_FOLDER
 
 
 def isnotebook():
@@ -23,8 +28,30 @@ def isnotebook():
     except NameError:
         return False      # Probably standard Python interpreter
 
+
 def red_print(m):
     print(f"\x1b[31m{m}\x1b[0m")
+
+
+def open_sqlite_for_logging(user_id, time_stamp):
+    # paranoia
+    session_id = f'{user_id}_{time_stamp}'
+    copy(LOG_DB_PATH, f'{LOG_DB_BACKUP_FOLDER}{session_id}.sqlite')
+    con = sqlite3.connect(LOG_DB_PATH)
+    cur = con.cursor()
+    cur.execute(f"INSERT INTO session VALUES ('{user_id}','{session_id}', '{time_stamp}')")
+    con.commit()
+    def log_entry_to_db(fun_name: str, diff: float, optional_metadata: str):
+        sql = f"INSERT INTO log VALUES ('{session_id}', '{fun_name}', {diff}, '{optional_metadata}');"
+        try:
+            cur.execute(sql)
+            con.commit()
+        # @type: ignore
+        except sqlite3.OperationalError as error:
+            red_print(f"Tried to execute {sql}, but got {error}")
+
+    return log_entry_to_db
+
 
 def abs_path(p: str):
     """Make path absolute."""

@@ -7,4 +7,5 @@ IS_OVERVIEW_FIELD_NAME = "is_overview"
 COUNT_COL_NAME = "count"
 MAX_BINS = 20
 
-LOG_FILE_HEADER = "action,seconds_since_start,optional_metadata\n"
+LOG_DB_PATH = "../experiment_results/experiment_log.sqlite"
+LOG_DB_BACKUP_FOLDER = "../experiment_results/backups/"
