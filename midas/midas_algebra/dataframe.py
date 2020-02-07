@@ -6,7 +6,7 @@ from datascience import Table, are
 from midas.state_types import DFName
 from midas.vis_types import SelectionEvent, EncodingSpec
 from midas.util.errors import debug_log, InternalLogicalError, UserError, NotAllCaseHandledError
-from midas.util.utils import find_name, get_random_string
+from midas.util.utils import find_name, get_random_string, red_print
 
 from .selection import SelectionType, SelectionValue, NumericRangeSelection, SetSelection
 from .data_types import DFId
@@ -18,7 +18,6 @@ import ast
 import operator
 
 ColumnSelection = Union[str, List[str]]
-
 
 class ColumnType(Enum):
     number = "number"
@@ -122,12 +121,34 @@ class MidasDataFrame(object):
             df_name_raw = find_name()
             if df_name_raw:
                 self.df_name = DFName(df_name_raw)
-        if self.has_df_name():
+        if hasattr(self, "df_name") and (self.df_name is not None):
             self.rt_funcs.add_df(self)
 
-
-    def has_df_name(self):
-        return hasattr(self, "df_name") and (self.df_name is not None)
+    def __getattr__(self, name: str) -> Any:
+        TABLE_LOOK_UP = [
+            # the following are accessors and do NOT return dataframes
+            "row",
+            "labels",
+            "num_columns",
+            "column",
+            "values",
+            "column_index",
+            "plot",
+            "bar",
+            "group_bar",
+            "barh",
+            "group_barh",
+            "scatter",
+            "hist",
+            "hist_of_counts",
+            "boxplot",
+        ]
+        if name in TABLE_LOOK_UP:
+            return getattr(self.table, name)
+        elif name == "df_name":
+            return
+        else:
+            red_print(f"The dataframe function, {name}, does not exist (note that we do not support all methods in the datascience module)")
 
 
     def __repr__(self):
