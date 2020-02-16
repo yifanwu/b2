@@ -134,4 +134,4 @@ def get_min_max_tuple_from_list(values: List[float]) -> Tuple[float, float]:
        returns the modifed array in place
     """
     return (min(values), max(values))
-    
+

@@ -229,14 +229,17 @@
 }
 
 /* float around */
-#profiler-shelf {
+/* #profiler-shelf {
   position: absolute;
-  /* min-height: 200px; */
   background-color: var(--yellow-vivid-100);
   cursor: grab;
-  /* overflow: scroll; */
-}
+} */
 
+#profiler-shelf {
+  overflow: scroll;
+  width: 180px;
+  background-color: var(--yellow-vivid-100);
+}
 
 .code {
   font-family: 'Courier New', Courier, monospace;
@@ -342,8 +345,8 @@
   position: fixed;
   height: 91%;
   margin: 0 10px 0 10px;
+  display: flex;
   /* overflow: scroll; */
-  /* display: flex; */
 }
 
 
@@ -352,10 +355,27 @@
   z-index: 120;
   height: 100%;
   width: var(--size-4);
-  background-color: rgba(0, 0, 255, 0);
   cursor: col-resize;
 }
 
+
+#midas-resizer:hover {
+  background-color: var(--blue-grey-200);
+  transition: 0.3s;
+}
+
+.one-time-animation {
+  animation: one-time-animation 5s forwards 1;
+}
+
+@keyframes one-time-animation {
+  from {
+    background: var(--blue-600);
+  }
+  to {
+    background: transparent;
+  }
+}
 
 .close-chart-btn {
   color: rgba(0, 0, 0, 0.5);

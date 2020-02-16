@@ -217,14 +217,14 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
     // LogSteps("on_msg", JSON.stringify(msg));
     const load = msg.content.data as MidasCommLoad;
     switch (load.type) {
-      case "hide": {
-        refToSidebar.hide();
-        return;
-      }
-      case "show": {
-        refToSidebar.show();
-        return;
-      }
+      // case "hide": {
+      //   refToSidebar.hide();
+      //   return;
+      // }
+      // case "show": {
+      //   refToSidebar.show();
+      //   return;
+      // }
       case "notification": {
         const errorLoad = load as NotificationCommLoad;
         const alertType = AlertType[errorLoad.style];

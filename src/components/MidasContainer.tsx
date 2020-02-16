@@ -56,7 +56,10 @@ function createSnapShotButton(getSnapShot: () => void) {
   if (!$(`#${SNAPSHOT_BUTTON}`).length) {
     // create if does not exist
     const newButton = `<div class="btn-group">
-      <button id="${SNAPSHOT_BUTTON}"
+      <button
+        id="${SNAPSHOT_BUTTON}"
+        class="btn btn-default one-time-animation"
+        title="Take a snapshot of current charts"
       >📷</button>
     </div>`;
     $("#maintoolbar-container").append(newButton);

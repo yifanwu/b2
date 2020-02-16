@@ -144,6 +144,9 @@ export default class CellManager {
     }
     const comment = getEmojiEnnotatedComment(funKind);
     cell.set_text(comment + code);
+    // make sure that the notebook cell is selected
+    const currentIdx = Jupyter.notebook.find_cell_index(cell);
+    Jupyter.notebook.select(currentIdx);
     cell.code_mirror.display.lineDiv.scrollIntoView();
     this.cellsCreated.push({
       code,
@@ -165,9 +168,6 @@ export default class CellManager {
    * we are going to try with inserting at a fixed place
    */
   exeucteCell(cell: any) {
-    const idx = Jupyter.notebook.find_cell_index(cell);
-    // make sure that the notebook cell is selected
-    Jupyter.notebook.select(idx);
     cell.execute();
     this.currentStep += 1;
     this.lastExecutedCell = cell;

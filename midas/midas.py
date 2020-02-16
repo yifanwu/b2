@@ -1,9 +1,10 @@
 from __future__ import absolute_import
-from sqlite3.dbapi2 import Cursor
 from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType
 from IPython import get_ipython
 from typing import Optional, List, Dict, Iterator, IO, cast, Any
 from datascience import Table
+from datascience.predicates import are
+import numpy as np
 from json import dumps
 from datetime import datetime
 
@@ -19,7 +20,7 @@ from typing import Dict, List
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
 from .util.errors import InternalLogicalError
 from .util.utils import red_print, open_sqlite_for_logging
-from .vis_types import SelectionEvent, EncodingSpec
+from .vis_types import EncodingSpec
 from .state_types import DFName
 from .ui_comm import UiComm
 from midas.midas_algebra.dataframe import MidasDataFrame, DFInfo, JoinInfo, RuntimeFunctions, RelationalOp, VisualizedDFInfo
@@ -59,6 +60,9 @@ class Midas(object):
     start_time: datetime
 
     def __init__(self, user_id: Optional[str]=None, linked=True):
+        # wrap around the data science library so we can use it
+        self.are = are
+        self.np = np
         assigned_name = find_name(True)
         if assigned_name is None:
             raise UserError("must assign a name")

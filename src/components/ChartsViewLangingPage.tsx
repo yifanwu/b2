@@ -1,10 +1,9 @@
 import React from "react";
-import { CONTAINER_INIT_WIDTHS, PROFILTER_SHELF_WIDTH } from "../constants";
 
 export const ChartsViewLandingPage: React.StatelessComponent<{}> = () => {
   return <>
     <div className="card landing-card">
-      <div style={{width: CONTAINER_INIT_WIDTHS - PROFILTER_SHELF_WIDTH - 100}}>
+      <div>
         <b><b>charts</b> will be shown here.</b>
         <br></br>
         <p>

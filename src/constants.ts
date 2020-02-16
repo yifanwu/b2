@@ -42,3 +42,5 @@ export const MULTICLICK_TOGGLE = "select_toggle";
 
 // some div ids that we use
 export const SNAPSHOT_BUTTON = "midas-snap-shot-all";
+export const TOGGLE_PANNEL_BUTTON = "midas-toggle-pannel";
+export const TOGGLE_MIDAS_BUTTON = "midas-toggle-all";

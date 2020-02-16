@@ -15,11 +15,11 @@ from midas.midas_algebra.data_types import DFId
 from midas.midas_algebra.selection import SelectionValue
 from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS, MIDAS_RECOVERY_COMM_NAME, STUB_DISTRIBUTION_BIN
 from midas.state_types import DFName
-from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, get_midas_code
+from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, VisualizedDFInfo, get_midas_code
 from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .vis_types import EncodingSpec, FilterLabelOptions
-from .util.data_processing import dataframe_to_dict, snap_to_nice_number
+from .util.data_processing import dataframe_to_dict, get_numeric_distribution_code, get_datetime_distribution_code
 from midas.showme import infer_encoding
 
 def logged(remove_on_chart_removal: bool):
@@ -134,7 +134,8 @@ class UiComm(object):
                     if execute:
                         self.create_cell(code, "query", True)
                     else:
-                        self.create_cell(code, "query", False)
+                        self.send_error_msg(f'We are not able to create a chart for {df_name}--{code}')
+                        # self.create_cell(code, "query", False)
                 return
             elif command == "remove_dataframe":
                 df_name = data["df_name"]
@@ -239,6 +240,7 @@ class UiComm(object):
         self.comm.send(message)
         return
 
+
     @logged(remove_on_chart_removal=True)
     def create_chart(self, df: MidasDataFrame, encoding: EncodingSpec):
         if df.df_name is None:
@@ -270,8 +272,11 @@ class UiComm(object):
         assignments = []
         class CustomNodeTransformer(ast.NodeTransformer):
             def visit_Assign(self, node):
-                assignments.append(node.targets[0].id)
-                return node
+                try:
+                    assignments.append(node.targets[0].id)
+                    return node
+                except AttributeError:
+                    return None
         # there are some magics that we should not parse
         # if they do have magics it should start in the first line
         if len(code) > 0 and code[0] == "%":
@@ -463,14 +468,22 @@ class UiComm(object):
             raise InternalLogicalError("Should not be getting distribution on unregistered dataframes and columns")
         df = df_info.df
         col_value = df.table.column(col_name)
-        new_name = f"{col_name}_distribution"
+        new_name = f"{col_name}_distribution".replace(" ", "_")
         if (is_string_dtype(col_value)):
-            code = f"{new_name} = {df.df_name}.group('{col_name}')"
-            return (code, True)
-        elif (is_datetime64_any_dtype(col_value)):
-            # TODO temporal bining
-            self.send_error_msg(f'We do not currently support temporal charts')
-            return (None, False)
+            # we need to check the cardinarily
+            unique_vals = np.unique(col_value)
+            current_max_bins = len(unique_vals)
+            if current_max_bins < MAX_BINS:
+                code = f"{new_name} = {df.df_name}.group('{col_name}')"
+                return (code, True)
+            else:
+                # try parsing a value
+                try:
+                    parsed = col_value.astype('datetime64')
+                    return get_datetime_distribution_code(col_name, df)
+                except ValueError:
+                    # too many columns
+                    return (f"Too many columns to display for column {col_name}!", False)
         else:
             # we need to write the binning function and then print it out...
             # get the bound
@@ -479,31 +492,8 @@ class UiComm(object):
             if (current_max_bins < MAX_BINS):
                 code = f"{new_name} = {df.df_name}.group('{col_name}')"
                 return (code, True)
+            else:
+                return get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df.df_name, new_name, self.midas_instance_name)
+            
 
-            # TODO(: the distribution is a little too coarse grained
-            #           with data like this: s = np.random.normal(0, 0.1, 20)
-
-            min_bucket_count = round(current_max_bins/MAX_BINS)
-            d_max = unique_vals[-1]
-            d_min = unique_vals[0]
-            min_bucket_size = (d_max - d_min) / min_bucket_count
-            imports = "import numpy as np"
-            def create_code(bound):
-                bin_column_name = f"{col_name}_bin"
-                # lambda n: int(n/5) * 5
-                binning_lambda = f"lambda x: 'null' if np.isnan(x) else int(x/{bound}) * {bound}"
-                bin_transform = f"{df.df_name}.append_column('{bin_column_name}', {df.df_name}.apply({binning_lambda}, '{col_name}'))"
-                grouping_transform = f"{new_name} = {df.df_name}.group('{bin_column_name}')"
-                code = f"{imports}\n{bin_transform}\n{grouping_transform}"
-                return code
-            # print(MAX_BINS, current_max_bins, d_max, d_min)
-            try:
-                bound = snap_to_nice_number(min_bucket_size)
-                return (create_code(bound), True)
-            except ValueError as e:
-                # let's still given them a stub code
-                code = create_code(STUB_DISTRIBUTION_BIN)
-                self.send_error_msg(f'We are not able to create a chart for {df_name} due to the following error: "{e}".\nWe provided some stub code to help you get started.')
-                return (f"# Please fix the following \n{code}", False)
-                
             

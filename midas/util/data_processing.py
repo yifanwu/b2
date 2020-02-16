@@ -3,9 +3,8 @@ from datascience import Table
 import numpy as np
 from math import log10, pow
 from pandas import notnull
-
 from .errors import InternalLogicalError
-from midas.constants import IS_OVERVIEW_FIELD_NAME
+from midas.constants import IS_OVERVIEW_FIELD_NAME, MAX_BINS, STUB_DISTRIBUTION_BIN
 from midas.vis_types import FilterLabelOptions
 
 
@@ -14,7 +13,67 @@ def get_chart_title(df_name: str):
     return df_name
 
 
-MAX_BINS = 20
+DATE_HIERARCHY = [
+    ("Y", "year"),
+    ("M", "month"),
+    ("D", "day")
+]
+
+def try_parsing_date_time_level(ref, col_value, col_name, df_name):
+    parsed = col_value.astype(f'datetime64[{ref[0]}]')
+    count = len(np.unique(parsed))
+    new_col_name = f"{col_name}_{ref[1]}".replace(" ", "_")
+    if count > 1:
+        new_column = f"{df_name}['{col_name}_{ref[1]}'] = {df_name}['{col_name}'].astype('datetime64[{ref[0]}]')"
+        if count > MAX_BINS:
+            bound = snap_to_nice_number(count/MAX_BINS)
+            binning_lambda = f"lambda x: 'null' if np.isnan(x) else int(x/{bound}) * {bound}"
+            bin_column_name = f"{new_col_name}_bin"
+            bin_transform =  f"{df_name}.append_column('{bin_column_name}', {df_name}.apply({binning_lambda}, '{col_name}'))"
+            grouping = f"{df_name}_{new_col_name}_dist = {df_name}.group('{new_col_name}')"
+            code = f"{new_column}\n{bin_transform}\n{grouping}"
+            return code
+        else:
+            grouping = f"{df_name}_{new_col_name}_dist = {df_name}.group('{new_col_name}')"
+            code = f"{new_column}\n{grouping}"
+            return code
+    else:
+        return None
+
+
+def get_datetime_distribution_code(col_name, df: MidasDataFrame):
+    col_value = df.table.column(col_name)
+    for h in DATE_HIERARCHY:
+        r = try_parsing_date_time_level(h, col_value, col_name, df.df_name)
+        if r:
+            return (r, True)
+    return ("", False)
+
+
+# TODO: the distribution is a little too coarse grained
+#       with data like this: s = np.random.normal(0, 0.1, 20)            
+def get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df_name, new_name, midas_reference_name):
+    min_bucket_count = round(current_max_bins/MAX_BINS)
+    d_max = unique_vals[-1]
+    d_min = unique_vals[0]
+    min_bucket_size = (d_max - d_min) / min_bucket_count
+    # imports = "import numpy as np"
+    def create_code(bound):
+        bin_column_name = f"{col_name}_bin"
+        # lambda n: int(n/5) * 5
+        binning_lambda = f"lambda x: 'null' if {midas_reference_name}.np.isnan(x) else int(x/{bound}) * {bound}"
+        bin_transform = f"{df_name}.append_column('{bin_column_name}', {df_name}.apply({binning_lambda}, '{col_name}'))"
+        grouping_transform = f"{new_name} = {df_name}.group('{bin_column_name}')"
+        # {imports}\n
+        code = f"{bin_transform}\n{grouping_transform}"
+        return code
+    try:
+        bound = snap_to_nice_number(min_bucket_size)
+        return (create_code(bound), True)
+    except ValueError as e:
+        # let's still given them a stub code
+        code = create_code(STUB_DISTRIBUTION_BIN)
+        return (f"# Please fix the following \n{code}", False)
 
 
 def snap_to_nice_number(n: float):

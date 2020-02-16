@@ -3,7 +3,7 @@ import React from "react";
 import { ColumnItem } from "./ColumnItem";
 import { ProfileShelfLandingPage } from "./ProfileShelfLandingPage";
 import { LogDebug } from "../utils";
-import { PROFILTER_SHELF_WIDTH, CONTAINER_INIT_WIDTHS } from "../constants";
+import { TOGGLE_PANNEL_BUTTON, PROFILTER_SHELF_WIDTH, CONTAINER_INIT_WIDTHS } from "../constants";
 
 interface ProfilerColumn {
   columnName: string;
@@ -13,35 +13,57 @@ interface ProfilerColumn {
 interface ProfilerShelfState {
   tables: { [index: string]: ProfilerColumn[] };
   isShown: { [index: string]: boolean; };
-  dragged: boolean;
-  oldX: number;
-  oldY: number;
-  x: number;
-  y: number;
+  isShownAll: boolean;
+  // dragged: boolean;
+  // oldX: number;
+  // oldY: number;
+  // x: number;
+  // y: number;
 }
 
 interface ProfilerShelfProps {
   columnSelectMsg: (columnName: string, tableName: string) => void;
 }
 
+
+function createTogglePannelButton(togglePannel: () => void) {
+  if (!$(`#${TOGGLE_PANNEL_BUTTON}`).length) {
+    // create if does not exist
+    const newButton = `<div class="btn-group">
+      <button
+        id="${TOGGLE_PANNEL_BUTTON}"
+        class="btn btn-default one-time-animation"
+        title="Toggle the column pannel in the middle"
+      >🗂️</button>
+    </div>`;
+    $("#maintoolbar-container").append(newButton);
+  }
+  $(`#${TOGGLE_PANNEL_BUTTON}`).click(() => togglePannel());
+  return;
+}
+
 export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerShelfState> {
   constructor(props: ProfilerShelfProps) {
     super(props);
     this.columnClicked  = this.columnClicked.bind(this);
-    this.toggleView = this.toggleView.bind(this);
+    this.toggleTable = this.toggleTable.bind(this);
+    this.togglePannel = this.togglePannel.bind(this);
     // this.drop = this.drop.bind(this);
-    this.dragEnd = this.dragEnd.bind(this);
-    this.dragStart = this.dragStart.bind(this);
+    // this.dragEnd = this.dragEnd.bind(this);
+    // this.dragStart = this.dragStart.bind(this);
+    createTogglePannelButton(this.togglePannel);
     this.state = {
       tables: {},
       isShown: {},
-      dragged: false,
-      oldX: 0,
-      oldY: 0,
-      x: CONTAINER_INIT_WIDTHS - PROFILTER_SHELF_WIDTH,
-      y: 0,
+      isShownAll: true,
+      // dragged: false,
+      // oldX: 0,
+      // oldY: 0,
+      // x: CONTAINER_INIT_WIDTHS - PROFILTER_SHELF_WIDTH,
+      // y: 0,
     };
   }
+
 
   addOrReplaceTableItem(tableName: string, columnItems: ProfilerColumn[], cellId: number) {
     // just do nothing with the cellId for now
@@ -63,7 +85,13 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
     });
   }
 
-  toggleView(tableName: string) {
+  togglePannel() {
+    this.setState(prevState => {
+      return { isShownAll: !prevState.isShownAll};
+    });
+  }
+
+  toggleTable(tableName: string) {
     return () => {
       LogDebug("toggle view", tableName);
       this.setState(prevState => {
@@ -73,31 +101,31 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
     };
   }
 
-  dragEnd(event: any) {
-    const currentX = event.clientX;
-    const currentY = event.clientY;
-    this.setState(prevState => {
-      const x = (currentX - prevState.oldX) + prevState.x;
-      const y = (currentY - prevState.oldY) + prevState.y;
-      LogDebug(`DragEnd positions: ${currentX}, ${currentY}, ${prevState.oldX}, ${prevState.oldY}, with new values ${x}, ${y}]`);
-      return {
-        x,
-        y,
-        dragged: true
-      };
-    });
-    event.preventDefault();
-  }
+  // dragEnd(event: any) {
+  //   const currentX = event.clientX;
+  //   const currentY = event.clientY;
+  //   this.setState(prevState => {
+  //     const x = (currentX - prevState.oldX) + prevState.x;
+  //     const y = (currentY - prevState.oldY) + prevState.y;
+  //     LogDebug(`DragEnd positions: ${currentX}, ${currentY}, ${prevState.oldX}, ${prevState.oldY}, with new values ${x}, ${y}]`);
+  //     return {
+  //       x,
+  //       y,
+  //       dragged: true
+  //     };
+  //   });
+  //   event.preventDefault();
+  // }
 
-  dragStart(event: any) {
-    const oldX = event.clientX;
-    const oldY = event.clientY;
-    LogDebug(`DragStart positions: ${oldX}, ${oldY}`);
-    this.setState({
-      oldX,
-      oldY
-    });
-  }
+  // dragStart(event: any) {
+  //   const oldX = event.clientX;
+  //   const oldY = event.clientY;
+  //   LogDebug(`DragStart positions: ${oldX}, ${oldY}`);
+  //   this.setState({
+  //     oldX,
+  //     oldY
+  //   });
+  // }
 
   render() {
     const tableDivs = Object.keys(this.state.tables).map((tableName) => {
@@ -112,7 +140,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
         />)
         : [];
       return <div className="profiler-table" key={`table-${tableName}`}>
-        <div className="profiler-table-name" onClick={this.toggleView(tableName)}>{tableName}</div>
+        <div className="profiler-table-name" onClick={this.toggleTable(tableName)}>{tableName}</div>
         {columns}
       </div>;
     });
@@ -120,15 +148,22 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
       ? tableDivs
       : <ProfileShelfLandingPage/>
       ;
-    const style = {left: this.state.x, top: this.state.y};
+    // const style = {left: this.state.x, top: this.state.y};
+    const style = this.state.isShownAll
+      ? {}
+      : {"display": "none"}
+      ;
     return (
       <div
+        className="shelf"
         id="profiler-shelf"
-        draggable={true}
-        onDragStart={this.dragStart}
-        onDragOver={(event) => event.preventDefault()}
-        onDragEnd={this.dragEnd}
         style={style}
+        // ok this dragging thing is annoying
+        // draggable={true}
+        // onDragStart={this.dragStart}
+        // onDragOver={(event) => event.preventDefault()}
+        // onDragEnd={this.dragEnd}
+        // style={style}
       >
       {content}
       </div>

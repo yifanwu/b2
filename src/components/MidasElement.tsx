@@ -85,7 +85,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   updateSelectionMarks(selection: PerChartSelectionValue) {
     if (isFristSelectionContainedBySecond(selection, this.state.currentBrush) ) {
-      LogDebug("BRUSH NOOP", [selection, this.state.currentBrush]);
+      // LogDebug("BRUSH NOOP", [selection, this.state.currentBrush]);
       return;
     }
     const signal = this.state.view.signal.bind(this.state.view);

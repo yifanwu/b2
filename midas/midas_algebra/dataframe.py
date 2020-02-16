@@ -124,6 +124,17 @@ class MidasDataFrame(object):
         if hasattr(self, "df_name") and (self.df_name is not None):
             self.rt_funcs.add_df(self)
 
+    #################
+    # Magic Methods #
+    #################
+    #  extended from the datascience module
+
+    def __getitem__(self, index_or_label):
+        return self.table.column(index_or_label)
+
+    def __setitem__(self, index_or_label, values):
+        self.append_column(index_or_label, values)
+
     def __getattr__(self, name: str) -> Any:
         TABLE_LOOK_UP = [
             # the following are accessors and do NOT return dataframes
@@ -145,10 +156,15 @@ class MidasDataFrame(object):
         ]
         if name in TABLE_LOOK_UP:
             return getattr(self.table, name)
+        elif name == "_repr_html_":
+            return self.table._repr_html_
         elif name == "df_name":
             return
+        elif name[0] == "_":
+            # "_ipython_canary_method_should_not_exist_", "_repr_markdown_", "_repr_pdf_", "_ipython_display_", "_repr_jpeg_"
+            return
         else:
-            red_print(f"The dataframe function, {name}, does not exist (note that we do not support all methods in the datascience module)")
+            red_print(f"The dataframe function, {name}, does not exist--note that we do not support all methods in the datascience module. If you want to access the columns, please use `df_name['column_name']` to access, instead of attribute.")
 
 
     def __repr__(self):
@@ -276,14 +292,17 @@ class MidasDataFrame(object):
                 raise UserError(f"You should specify `mark`, `x`, ```y`, and if you have 3 columns, `size` is also supported for circles (note that color is already used). However, your provided the following arguments {kwargs}")
 
     
-    def can_join(self, other_df: 'MidasDataFrame', col_name: str):
+    def can_join(self, other_df: 'MidasDataFrame', col_name: str,col_name_other: Optional[str]=None):
         # assume that the joins are the same name!
         if self.df_name and other_df.df_name:
-            columns = [JoinPredicate(ColumnRef(col_name, self.df_name), ColumnRef(col_name, other_df.df_name))]
+            if col_name_other:
+                columns = [JoinPredicate(ColumnRef(col_name, self.df_name), ColumnRef(col_name_other, other_df.df_name))]
+            else:
+                columns = [JoinPredicate(ColumnRef(col_name, self.df_name), ColumnRef(col_name, other_df.df_name))]
             join_info = JoinInfo(self, other_df, columns)
             self.rt_funcs.add_join_info(join_info)
         else:
-            raise UserError("")
+            raise UserError("DF not defined")
 
 
     @property

@@ -153,10 +153,10 @@ export function commentUncommented(code: string) {
       // check if starts with "#"
       if (!l.includes("🔵")) {
         if (l[0] !== "#") {
-          LogDebug("adding with #", l);
+          // LogDebug("adding with #", l);
           newCode.push(`# ${l}`);
         } else {
-          LogDebug("adding", l);
+          // LogDebug("adding", l);
           newCode.push(l);
         }
       }
