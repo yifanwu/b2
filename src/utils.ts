@@ -131,7 +131,7 @@ export function executeCellId(cellId: string) {
   Jupyter.notebook.select(idx);
   const cell = Jupyter.notebook.get_cell(idx);
   if (!cell) throw LogInternalError(`Was not able to find cell ${cellId}`);
-  cell.code_mirror.display.lineDiv.scrollIntoView();
+  // cell.code_mirror.display.lineDiv.scrollIntoView();
   cell.execute();
 }
 

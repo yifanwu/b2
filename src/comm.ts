@@ -296,7 +296,8 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
       case "chart_update_data": {
         const updateLoad = load as UpdateCommLoad;
         refToMidas.replaceData(updateLoad.dfName, updateLoad.newData, updateLoad.code);
-        refToMidas.navigate(updateLoad.dfName);
+        // really bad idea here to scroll: causes instability of viewing!
+        // refToMidas.navigate(updateLoad.dfName);
         return;
       }
     }
