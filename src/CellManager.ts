@@ -1,4 +1,4 @@
-import { LogDebug, commentUncommented, LogInternalError, LogSteps, getEmojiEnnotatedComment } from "./utils";
+import { LogDebug, commentUncommented, LogSteps, getEmojiEnnotatedComment, foldCode } from "./utils";
 import { MIDAS_SELECTION_FUN } from "./constants";
 import { FunKind } from "./types";
 
@@ -19,7 +19,6 @@ interface SingleCell {
 }
 
 export default class CellManager {
-
   /**
    * there is a mini state machine w.r.t how the brushes are fired on the boolean value of shouldDrawBrush
    * true ---> (itx) false
@@ -119,10 +118,14 @@ export default class CellManager {
       const oldCode = cell.get_text();
 
       const emojiComment = getEmojiEnnotatedComment("interaction");
-      const commented = commentUncommented(oldCode);
-      const newText = emojiComment + commented + "\n" + text;
+      const newCode = commentUncommented(oldCode, text);
+      // now make sure the code is foled!
+      const newText = emojiComment + "\n" + newCode.join("\n");
       cell.set_text(newText);
       this.exeucteCell(cell);
+      // 1 because we want to leave the emoji
+      // -1 because the last line is the line that executes
+      foldCode(cell.code_mirror, 1, newCode.length - 1);
     } else {
       this.createCell(text, "interaction", true);
     }
@@ -143,11 +146,11 @@ export default class CellManager {
       cell = Jupyter.notebook.insert_cell_below("code");
     }
     const comment = getEmojiEnnotatedComment(funKind);
-    cell.set_text(comment + code);
+    cell.set_text(comment + "\n" + code);
     // make sure that the notebook cell is selected
     const currentIdx = Jupyter.notebook.find_cell_index(cell);
     Jupyter.notebook.select(currentIdx);
-    cell.code_mirror.display.lineDiv.scrollIntoView();
+    // cell.code_mirror.display.lineDiv.scrollIntoView();
     this.cellsCreated.push({
       code,
       funKind,

@@ -34,7 +34,7 @@ function createTogglePannelButton(togglePannel: () => void) {
         id="${TOGGLE_PANNEL_BUTTON}"
         class="btn btn-default one-time-animation"
         title="Toggle the column pannel in the middle"
-      >🗂️</button>
+      >Toggle Column Shelf</button>
     </div>`;
     $("#maintoolbar-container").append(newButton);
   }

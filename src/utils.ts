@@ -30,7 +30,7 @@ export function getEmojiEnnotatedComment(funKind: FunKind) {
   const d = CELL_DOT_ANNOTATION[funKind];
   if (!d) LogInternalError(`FunKind ${funKind} was not found`);
   const time = new Date().toLocaleTimeString(navigator.language, {hour: "2-digit", minute: "2-digit"});
-  const comment = `# ${d} ${time} ${d}\n`;
+  const comment = `# ${d} ${time} ${d}`;
   return comment;
 }
 
@@ -145,24 +145,43 @@ export function navigateToNotebookCell(cellId: string) {
   cell.code_mirror.display.lineDiv.scrollIntoView();
 }
 
-export function commentUncommented(code: string) {
+/**
+ * @param cm code_mirror field of the notebook cell
+ * @param from line number to fold from
+ * @param to line number to fold to
+ */
+export function foldCode(cm: any, from: number, to: number) {
+  // const cm = Jupyter.notebook.get_selected_cell().code_mirror;
+  const unFoldRangeFinder = (a: any, b: any) => {return {from: CodeMirror.Pos(from, 0), to: CodeMirror.Pos(from, 0)}; };
+  cm.foldCode(CodeMirror.Pos(from, 0), unFoldRangeFinder, "unfold");
+  const rangeFinder = (a: any, b: any) => {return {from: CodeMirror.Pos(from, 0), to: CodeMirror.Pos(to, 0)}; };
+  cm.foldCode(CodeMirror.Pos(from, 0), rangeFinder, "fold");
+}
+
+
+function commentIfNot(l: string) {
+  if (l[0] !== "#") {
+    return `# ${l}`;
+  }
+  return l;
+}
+
+/**
+ * 
+ * @param code
+ * @param newLine
+ */
+export function commentUncommented(code: string, newLine: string) {
   const newCode: string[] = [];
   for (let l of code.split("\n")) {
-    LogDebug("code", l);
-    if (l.length > 0) {
-      // check if starts with "#"
-      if (!l.includes("🔵")) {
-        if (l[0] !== "#") {
-          // LogDebug("adding with #", l);
-          newCode.push(`# ${l}`);
-        } else {
-          // LogDebug("adding", l);
-          newCode.push(l);
-        }
-      }
+    if (!((l.length === 0) || l.includes("🔵") || l.includes(newLine))) {
+      newCode.push(commentIfNot(l));
+    } else {
+      debugger;
     }
   }
-  return newCode.join("\n");
+  newCode.push(newLine);
+  return newCode;
 }
 
 export function LogSteps(func: string, message?: string) {

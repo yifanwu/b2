@@ -1,21 +1,25 @@
 from enum import Enum
+from functools import reduce
+from midas.constants import MAX_BINS, MAX_DOTS
 from typing import List, Union, Optional, NamedTuple, Dict, cast, Callable, Any
 from datetime import datetime
+import inspect
+import asttokens
+import ast
+import operator
+
 from datascience import Table, are
 
 from midas.state_types import DFName
 from midas.vis_types import SelectionEvent, EncodingSpec
 from midas.util.errors import debug_log, InternalLogicalError, UserError, NotAllCaseHandledError
 from midas.util.utils import find_name, get_random_string, red_print
+from midas.util.errors import type_check_with_warning, InternalLogicalError
+from midas.vis_types import EncodingSpec
+from midas.showme import infer_encoding_helper
 
-from .selection import SelectionType, SelectionValue, NumericRangeSelection, SetSelection
+from .selection import SelectionType, SelectionValue, NumericRangeSelection, SetSelection, ColumnRef
 from .data_types import DFId
-from .selection import ColumnRef
-
-import inspect
-import asttokens
-import ast
-import operator
 
 ColumnSelection = Union[str, List[str]]
 
@@ -136,14 +140,16 @@ class MidasDataFrame(object):
         self.append_column(index_or_label, values)
 
     def __getattr__(self, name: str) -> Any:
-        TABLE_LOOK_UP = [
+        DATA_SCIENCE_MODULE_FUNS = [
             # the following are accessors and do NOT return dataframes
+            "num_rows",
             "row",
             "labels",
             "num_columns",
             "column",
             "values",
             "column_index",
+            # plotting
             "plot",
             "bar",
             "group_bar",
@@ -153,8 +159,23 @@ class MidasDataFrame(object):
             "hist",
             "hist_of_counts",
             "boxplot",
+            # exporting
+            "to_csv",
+            "to_df",
+            # mutations
+            "sort",
+            "drop",
+            "relabel",
+            "append_column",
+            "append",
+            "set_format",
+            "move_to_start",
+            "move_to_end",
+            "remove",
+            # returns a df but is no longer managed by midas
+            "copy"
         ]
-        if name in TABLE_LOOK_UP:
+        if name in DATA_SCIENCE_MODULE_FUNS:
             return getattr(self.table, name)
         elif name == "_repr_html_":
             return self.table._repr_html_
@@ -181,8 +202,9 @@ class MidasDataFrame(object):
         df_name = DFName(df_name_raw)
         df_id = DFId(get_random_string(5))
         ops = BaseOp(df_name, df_id, table)
-        return cls(ops, midas_ref, table, df_name, df_id, is_base=True)
-
+        df = cls(ops, midas_ref, table, df_name, df_id, is_base=True)
+        df.show_profile()
+        return df
 
     def new_df_from_ops(self, ops: 'RelationalOp', table: Optional[Table]=None, df_name: Optional[str] = None):
         return MidasDataFrame(ops, self.rt_funcs, table, df_name)
@@ -219,6 +241,7 @@ class MidasDataFrame(object):
     # IDEA: some memorized functions to access the DF's statistics
     # e.g., https://dbader.org/blog/python-memoization
 
+
     def rows(self, idx: int):
         return self.table.rows(idx)
 
@@ -254,13 +277,6 @@ class MidasDataFrame(object):
         return self.new_df_from_ops(new_ops, new_table, df_name)
 
 
-    # HIGHPRI FIXME
-    #   need to somehow store this in OPS.
-    #   this might make reasoning about the algebra
-    #   this can be maps, ops wise, to another selection
-    def append_column(self, label, values, formatter=None):
-        return self.table.append_column(label, values, formatter)
-
 
     def apply(self, fn, *column_or_columns):
         return self.table.apply(fn, *column_or_columns)
@@ -282,12 +298,23 @@ class MidasDataFrame(object):
         Raises:
             UserError: wehen the keyword arguments do not match the expected EncodingSpec
         """
+        # add some checks and balances for too many items and too many rows
         if len(kwargs) == 0:
-            raise UserError("Must provide endoings")
+            encoding = infer_encoding(self).__dict__
+            return self.show(**encoding)
         else:
             try:
                 spec = EncodingSpec(**kwargs)
+                num_rows = self.num_rows
+                if spec.mark == "bar":
+                    if num_rows > MAX_BINS:
+                        raise UserError("Too many categories for bar chart to plot. Please consider grouping.")
+                else:
+                    if num_rows > MAX_DOTS:
+                        raise UserError("Too many points to plot")
                 self.rt_funcs.show_df(self, spec)
+                # so that we can chain
+                return self
             except:
                 raise UserError(f"You should specify `mark`, `x`, ```y`, and if you have 3 columns, `size` is also supported for circles (note that color is already used). However, your provided the following arguments {kwargs}")
 
@@ -596,3 +623,34 @@ def create_predicate(s: SelectionValue) -> Predicate:
     else:
         raise NotAllCaseHandledError(f"Got {s.selection_type}, and we only support {SelectionType.string_set}, {SelectionType.numeric_range}, and {SelectionType.single_value}")
 
+# helper tables placed here due to import issues
+
+def get_selectable_column(mdf: MidasDataFrame):
+    # if anything is the result of groupby aggregation
+    columns_grouped = []
+    def walk(ops: RelationalOp):
+        if ops.op_type == RelationalOpType.groupby:
+            g_op = cast(GroupBy, ops)
+            # g_op.columns is a union type of str and array of strings (for developer convenience)
+            # FIXME: maybe just make everything array of strings instead...
+            if isinstance(g_op.columns, str):
+                columns_grouped.append(set([g_op.columns]))
+            else:
+                columns_grouped.append(set(g_op.columns))
+        if ops.has_child():
+            walk(ops.child)
+        else:
+            return
+    walk(mdf.ops)
+    original_columns = reduce(lambda a, b: a.intersection(b), columns_grouped)
+    final_columns = mdf.table.labels
+    result = original_columns.intersection(set(final_columns))
+    return result
+
+
+def infer_encoding(mdf: MidasDataFrame) -> Optional[EncodingSpec]:
+    """Implements basic show me like feature"""
+    df = mdf.table
+    type_check_with_warning(df, Table)
+    selectable = get_selectable_column(mdf)
+    return infer_encoding_helper(df, selectable)

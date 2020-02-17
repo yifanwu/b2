@@ -18,9 +18,9 @@ from midas.state_types import DFName
 from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, VisualizedDFInfo, get_midas_code
 from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
+from .util.utils import sanitize_string_for_var_name
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, get_numeric_distribution_code, get_datetime_distribution_code
-from midas.showme import infer_encoding
 
 def logged(remove_on_chart_removal: bool):
     def wrapper_factory(f):
@@ -109,7 +109,7 @@ class UiComm(object):
             if command == "cell-ran":
                 if "code" in data:
                     code = data["code"]
-                    self.process_code(code)
+                    # self.process_code(code)
                     self.log_entry("code_execution", json.dumps(code))
                 return
             elif command == "markdown-cell-rendered":
@@ -169,26 +169,26 @@ class UiComm(object):
         # now turn this into JSON
         param_str = "[]"
         if len(all_predicate) > 0:
-            predicates = ",  \n".join(list(map(lambda v: v.to_str() if v.to_str() else "", all_predicate)))
-            param_str = f"[\n  {predicates}\n]"
+            predicates = ", ".join(list(map(lambda v: v.to_str() if v.to_str() else "", all_predicate)))
+            param_str = f"[{predicates}]"
         self.execute_selection(param_str, df_name)
         self.log_entry("ui_selection", df_name)
 
 
-    def process_code(self, code: str):
-        assigned_dfs = self.get_dfs_from_code_str(code)
-        if len(assigned_dfs) == 0:
-            # do nothing
-            debug_log("no df to process")
-            return
-        # code_lines = []
-        for df in assigned_dfs:
-            if df.is_base_df:
-                # just execute it! since there is no configuration
-                df.show_profile()
-            else:
-                encoding = infer_encoding(df).__dict__
-                df.show(**encoding)
+    # def process_code(self, code: str):
+    #     assigned_dfs = self.get_dfs_from_code_str(code)
+    #     if len(assigned_dfs) == 0:
+    #         # do nothing
+    #         debug_log("no df to process")
+    #         return
+    #     # code_lines = []
+    #     for df in assigned_dfs:
+    #         if df.is_base_df:
+    #             # just execute it! since there is no configuration
+    #             df.show_profile()
+    #         else:
+    #             encoding = infer_encoding(df).__dict__
+    #             df.show(**encoding)
 
 
     def set_comm(self, midas_instance_name: str):
@@ -468,13 +468,13 @@ class UiComm(object):
             raise InternalLogicalError("Should not be getting distribution on unregistered dataframes and columns")
         df = df_info.df
         col_value = df.table.column(col_name)
-        new_name = f"{col_name}_distribution".replace(" ", "_")
+        new_name = sanitize_string_for_var_name(f"{col_name}_distribution")
         if (is_string_dtype(col_value)):
             # we need to check the cardinarily
             unique_vals = np.unique(col_value)
             current_max_bins = len(unique_vals)
             if current_max_bins < MAX_BINS:
-                code = f"{new_name} = {df.df_name}.group('{col_name}')"
+                code = f"{new_name} = {df.df_name}.group('{col_name}').show()"
                 return (code, True)
             else:
                 # try parsing a value
@@ -490,7 +490,7 @@ class UiComm(object):
             unique_vals = np.unique(col_value[~np.isnan(col_value)])
             current_max_bins = len(unique_vals)
             if (current_max_bins < MAX_BINS):
-                code = f"{new_name} = {df.df_name}.group('{col_name}')"
+                code = f"{new_name} = {df.df_name}.group('{col_name}').show()"
                 return (code, True)
             else:
                 return get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df.df_name, new_name, self.midas_instance_name)

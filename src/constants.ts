@@ -1,5 +1,5 @@
 // CONFIG
-export const IS_DEBUG = true;
+export const IS_DEBUG = false;
 
 // derived from config
 export const EmbedConfig = IS_DEBUG
@@ -23,7 +23,7 @@ export const SELECTION_TEXT_MAX_LEN = 13;
 // TODO:  maybe consider changing this to a JSON file for better synchronization
 export const MIDAS_CELL_COMM_NAME = "midas-cell-comm";
 export const MIDAS_RECOVERY_COMM_NAME = "midas-recovery-comm";
-export const MIDAS_SELECTION_FUN = "make_selections";
+export const MIDAS_SELECTION_FUN = "sel";
 
 // some weird name because we are using vega-lite generated code
 export const DEFAULT_DATA_SOURCE = "source_0";

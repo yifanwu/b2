@@ -7,6 +7,7 @@ import ast
 import sqlite3
 from datetime import datetime
 from shutil import copyfile, copy
+from re import sub
 
 from typing import Tuple, List, Optional
 from IPython import get_ipython  # type: ignore
@@ -63,6 +64,10 @@ def check_path(p: str):
         raise UserWarning(f"The path you provided, {p} does not exists")
 
 
+def sanitize_string_for_var_name(p: str):
+    return sub('[^0-9a-zA-Z]+', '_', p)
+
+
 def get_content(path):
     """Get content of file."""
     with codecs.open(abs_path(path), encoding='utf-8') as f:
@@ -76,17 +81,20 @@ def get_random_string(stringLength=10):
 
 
 def find_name(throw_error=False) -> Optional[str]:
-    prev_line = traceback.format_stack()[-3]
-    code = prev_line.splitlines()[1]
-    body = ast.parse(code.strip()).body[0]
-    if hasattr(body, 'targets'):
-        a = body.targets[0].id # type: ignore
-        if throw_error and (a is None):
-            raise InternalLogicalError("We did not get a name when expected!")
-        return a
-    elif throw_error:
-        raise UserError("We expect you to assing this compute to a variable")
-    return None
+    try:
+        prev_line = traceback.format_stack()[-3]
+        code = prev_line.splitlines()[1]
+        body = ast.parse(code.strip()).body[0]
+        if hasattr(body, 'targets'):
+            a = body.targets[0].id # type: ignore
+            if throw_error and (a is None):
+                raise InternalLogicalError("We did not get a name when expected!")
+            return a
+        elif throw_error:
+            raise UserError("We expect you to assign this compute to a variable")
+        return None
+    except:
+        return None
 
 ifnone = lambda a, b: b if a is None else a
 

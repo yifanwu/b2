@@ -269,12 +269,11 @@ class Midas(object):
 
 
     # PUBLIC
-    def make_selections(self, current_selections_array: List[Dict]):
-        """this function is executed via python cells
-        this function makes idempotentn modifications to state
-        Keyword Arguments:
-            current_selections_array {Optional[List[Dict]]} --
-            note that the dict is Dict[DFName, SelectionValue] (default: {None})
+    def sel(self, current_selections_array: List[Dict]):
+        """makes a selection to current visualizations
+        
+        Arguments:
+            a list of dictionaries that describes the chart of the selection and the selection
         """
         self.log_entry("code_selection", dumps(current_selections_array))
         df_involved = ""
