@@ -62,7 +62,7 @@ export default class CellManager {
   }
 
   executeCapturedCells(div: string, comments: string) {
-    this.createCell(`#${comments}\nfrom IPython.display import HTML, display\ndisplay(HTML(\'${div}\'))`, "chart", true);
+    this.createCell(`#${comments}\nfrom IPython.display import HTML, display\ndisplay(HTML("""${div}"""))`, "chart", true);
   }
 
   runReactiveCells(dfName: string) {

@@ -38,6 +38,7 @@ interface MidasElementState {
   hidden: boolean;
   view: View;
   code: string;
+  isBaseShown: boolean;
   generatedCells: any[];
   currentBrush: PerChartSelectionValue;
 }
@@ -62,7 +63,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.moveLeft = this.moveLeft.bind(this);
     this.moveRight = this.moveRight.bind(this);
     this.getCode = this.getCode.bind(this);
-
+    this.toggleBaseData = this.toggleBaseData.bind(this);
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
       hidden: false,
@@ -71,6 +72,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       elementId,
       generatedCells: [],
       currentBrush: null,
+      isBaseShown: true,
     };
   }
 
@@ -225,6 +227,25 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     });
   }
 
+  toggleBaseData() {
+    this.setState(prevState => {
+      if (prevState.isBaseShown) {
+        // remove it
+        const changeSet = this.state.view
+          .changeset()
+          .remove((datum: any) => { return datum.is_overview === true; });
+        this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
+        return {isBaseShown: false};
+      } else {
+        const changeSet = this.state.view
+          .changeset()
+          .insert(this.props.data);
+        this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
+        return {isBaseShown: true};
+      }
+    });
+  }
+
   /**
    * Selects the cell in the notebook where the data frame was defined.
    * Note that currently if the output was generated and then the page
@@ -303,6 +324,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           }}>
         <div className="midas-header">
           <span>{this.props.title}</span>
+          <a onClick={() => this.toggleBaseData()}> toggle summary</a>
           <details title="click to see options">
             <summary>
               {DetailButton}

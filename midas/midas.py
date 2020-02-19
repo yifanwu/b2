@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType
+from warnings import filterwarnings
 from IPython import get_ipython
 from typing import Optional, List, Dict, Iterator, IO, cast, Any
 from datascience import Table
@@ -7,6 +7,8 @@ from datascience.predicates import are
 import numpy as np
 from json import dumps
 from datetime import datetime
+from typing import Dict, List
+
 
 try:
     from IPython.display import display  # type: ignore
@@ -15,8 +17,7 @@ except ImportError as err:
     display = lambda x: None
     logging = lambda x, y: None
 
-from typing import Dict, List
-
+from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
 from .util.errors import InternalLogicalError, debug_log
 from .util.utils import red_print, open_sqlite_for_logging
@@ -26,7 +27,6 @@ from .ui_comm import UiComm
 from midas.midas_algebra.dataframe import MidasDataFrame, DFInfo, JoinInfo, RuntimeFunctions, RelationalOp, VisualizedDFInfo
 from midas.midas_algebra.context import Context
 
-from midas.vis_types import SelectionEvent
 from midas.state_types import DFName
 from .ui_comm import UiComm
 from .midas_magic import MidasMagic
@@ -63,6 +63,8 @@ class Midas(object):
         # wrap around the data science library so we can use it
         self.are = are
         self.np = np
+        # deepcopy triggers 
+        filterwarnings("ignore")
         assigned_name = find_name(True)
         if assigned_name is None:
             raise UserError("must assign a name")
@@ -262,7 +264,7 @@ class Midas(object):
                 for df_info in self.__get_visualized_df_info():
                     s = list(filter(lambda p: p.column.df_name != df_info.df_name, all_predicate))
                     if len(s) > 0:
-                        debug_log(f"Filtering df {df_info.original_df.df_name} with selections {s}")
+                        # debug_log(f"Filtering df {df_info.original_df.df_name} with selections {s}")
                         new_df = df_info.original_df.apply_selection(s)
                         new_df.filter_chart(df_info.df_name)
 

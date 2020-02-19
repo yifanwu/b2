@@ -54,7 +54,8 @@ def get_datetime_distribution_code(col_name, df: MidasDataFrame):
 # TODO: the distribution is a little too coarse grained
 #       with data like this: s = np.random.normal(0, 0.1, 20)            
 def get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df_name, new_name, midas_reference_name):
-    min_bucket_count = round(current_max_bins/MAX_BINS)
+    # adding an additional 5 to make it more fine grained
+    min_bucket_count = round(current_max_bins/MAX_BINS/5)
     d_max = unique_vals[-1]
     d_min = unique_vals[0]
     min_bucket_size = (d_max - d_min) / min_bucket_count
