@@ -20,7 +20,7 @@ class ColumnRef(object):
         return True
 
     def __repr__(self):
-        return f"{{col_name: {self.df_name},  df_name: {self.col_name} }}"
+        return f"{{col_name: '{self.df_name}',  df_name: '{self.col_name}'}}"
 
 
 class SelectionType(Enum):
@@ -80,7 +80,7 @@ class NumericRangeSelection(SelectionValue):
         return True
 
     def __repr__(self):
-        return f"\ncolumn:\t{self.column}\n  minVal:\t{self.minVal}\n  maxVal:\t{self.maxVal}"
+        return f"{{column: {self.column}, minVal: {self.minVal}, maxVal: {self.maxVal}}}"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -109,7 +109,7 @@ class SetSelection(SelectionValue):
         return True
 
     def __repr__(self):
-        return f"\ncolumn:\t{self.column}\n  val:\t{self.val}"
+        return f"{{column: {self.column}, val: {self.val}}}"
 
     def __str__(self) -> str:
         return self.__repr__()

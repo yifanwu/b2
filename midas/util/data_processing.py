@@ -31,11 +31,11 @@ def try_parsing_date_time_level(ref, col_value, col_name, df_name):
             binning_lambda = f"lambda x: 'null' if np.isnan(x) else int(x/{bound}) * {bound}"
             bin_column_name = f"{new_col_name}_bin"
             bin_transform =  f"{df_name}.append_column('{bin_column_name}', {df_name}.apply({binning_lambda}, '{col_name}'))"
-            grouping = f"{df_name}_{new_col_name}_dist = {df_name}.group('{new_col_name}').show()"
+            grouping = f"{df_name}_{new_col_name}_dist = {df_name}.group('{new_col_name}').vis()"
             code = f"{new_column}\n{bin_transform}\n{grouping}"
             return code
         else:
-            grouping = f"{df_name}_{new_col_name}_dist = {df_name}.group('{new_col_name}').show()"
+            grouping = f"{df_name}_{new_col_name}_dist = {df_name}.group('{new_col_name}').vis()"
             code = f"{new_column}\n{grouping}"
             return code
     else:
@@ -64,7 +64,7 @@ def get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df_na
         # lambda n: int(n/5) * 5
         binning_lambda = f"lambda x: 'null' if {midas_reference_name}.np.isnan(x) else int(x/{bound}) * {bound}"
         bin_transform = f"{df_name}.append_column('{bin_column_name}', {df_name}.apply({binning_lambda}, '{col_name}'))"
-        grouping_transform = f"{new_name} = {df_name}.group('{bin_column_name}').show()"
+        grouping_transform = f"{new_name} = {df_name}.group('{bin_column_name}').vis()"
         # {imports}\n
         code = f"{bin_transform}\n{grouping_transform}"
         return code

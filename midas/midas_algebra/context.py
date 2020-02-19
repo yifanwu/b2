@@ -179,7 +179,7 @@ class Context(object):
 
         # 2. apply the replacement
         if replacement_op and local_base_df_name:
-            return set_if_eq(copy(ops), replacement_op, local_base_df_name)
+            return set_if_eq(deepcopy(ops), replacement_op, local_base_df_name)
         raise InternalLogicalError("Replacement Op is not set or the df_name is not set")
 
 

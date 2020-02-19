@@ -18,6 +18,11 @@ interface SingleCell {
   // metadata?: CellMetaData;
 }
 
+// interface ReactiveCell {
+//   cellPos: number;
+//   appendFlag: boolean;
+// }
+
 export default class CellManager {
   /**
    * there is a mini state machine w.r.t how the brushes are fired on the boolean value of shouldDrawBrush
@@ -39,7 +44,7 @@ export default class CellManager {
   reactiveCells: Map<string, number[]>;
 
   constructor(midasInstanceName: string) {
-    this.captureCell = this.captureCell.bind(this);
+    this.recordReactiveCell = this.recordReactiveCell.bind(this);
 
     this.currentStep = 0;
     this.cellsCreated = [];
@@ -97,7 +102,7 @@ export default class CellManager {
   }
 
 
-  captureCell(dfName: string, cellId: number) {
+  recordReactiveCell(dfName: string, cellId: number) {
     if (this.reactiveCells.has(dfName)) {
       this.reactiveCells.get(dfName).push(cellId);
     } else {
@@ -143,6 +148,7 @@ export default class CellManager {
       const idx = Jupyter.notebook.find_cell_index(this.lastExecutedCell);
       cell = Jupyter.notebook.insert_cell_at_index("code", idx + 1);
     } else {
+      LogDebug("Last executed cell not found!");
       cell = Jupyter.notebook.insert_cell_below("code");
     }
     const comment = getEmojiEnnotatedComment(funKind);

@@ -15,7 +15,7 @@ from midas.vis_types import SelectionEvent, EncodingSpec
 from midas.util.errors import debug_log, InternalLogicalError, UserError, NotAllCaseHandledError
 from midas.util.utils import find_name, get_random_string, red_print
 from midas.util.errors import type_check_with_warning, InternalLogicalError
-from midas.vis_types import EncodingSpec
+from midas.vis_types import EncodingSpec, ENCODING_COUNT
 from midas.showme import infer_encoding_helper
 
 from .selection import SelectionType, SelectionValue, NumericRangeSelection, SetSelection, ColumnRef
@@ -102,6 +102,7 @@ class MidasDataFrame(object):
     chart_config: Optional[ChartConfig]
     # the following is used for code gen
     suggested_df_name: Optional[str]
+    current_filtered_data: Optional['MidasDataFrame']
 
     def __init__(self,
       ops: 'RelationalOp',
@@ -286,22 +287,29 @@ class MidasDataFrame(object):
         self.rt_funcs.show_profiler(self)
 
 
+    def _set_current_filtered_data(self, mdf: Optional['MidasDataFrame']):
+        self.current_filtered_data = mdf
+    
+
     def filter_chart(self, df_name: DFName):
         # doesn't need to have 
         self.rt_funcs.show_df_filtered(self, df_name)
 
 
     # TODO: add some constrains for bad configurations
-    def show(self, **kwargs):
+    def vis(self, **kwargs):
         """Note that this whole transformation into and out of EncodingSpec is to make the argument object free but the cobe base somewhat typed, based on the object.
         
         Raises:
             UserError: wehen the keyword arguments do not match the expected EncodingSpec
         """
         # add some checks and balances for too many items and too many rows
-        if len(kwargs) == 0:
+        if len(kwargs) < ENCODING_COUNT:
             encoding = infer_encoding(self).__dict__
-            return self.show(**encoding)
+            for k in kwargs:
+                encoding[k] = kwargs[k]
+            # print("encodings", encoding)
+            return self.vis(**encoding)
         else:
             try:
                 spec = EncodingSpec(**kwargs)
@@ -315,8 +323,10 @@ class MidasDataFrame(object):
                 self.rt_funcs.show_df(self, spec)
                 # so that we can chain
                 return self
-            except:
-                raise UserError(f"You should specify `mark`, `x`, ```y`, and if you have 3 columns, `size` is also supported for circles (note that color is already used). However, your provided the following arguments {kwargs}")
+            except TypeError as error:
+                e = f"{error}"[11:]
+                raise UserError(f"Arguments expected: {e}, and you gave {kwargs}")
+                # f"You should specify `mark`, `x`, `x_type`, `y`, `y_type`, `selection` and and if you have 3 columns, `size` is also supported for circles (note that color is already used). However, your provided the following arguments {kwargs}")
 
     
     def can_join(self, other_df: 'MidasDataFrame', col_name: str,col_name_other: Optional[str]=None):
@@ -445,8 +455,8 @@ class DFInfo(object):
         self.df = df
         self.created_on = datetime.now()
 
-    def update_df(self, df: Optional[MidasDataFrame]) -> bool:
-        raise InternalLogicalError("Should not attempt to update base dataframes")
+    # def update_df(self, df: Optional[MidasDataFrame]) -> bool:
+    #     raise InternalLogicalError("Should not attempt to update base dataframes")
 
 
 class VisualizedDFInfo(DFInfo):
@@ -557,7 +567,7 @@ def convert_value_or_predicate(val_or_pred) -> str:
         # within the correct predicate function)
         f = max(function_nodes, key=operator.attrgetter("lineno")).name # type: ignore
 
-        return f"are.{f}({assignments})"
+        return f"m.are.{f}({assignments})"
     elif inspect.isfunction(val_or_pred):
         return get_lambda_declaration_or_fn_name(val_or_pred)
     else:
@@ -642,10 +652,14 @@ def get_selectable_column(mdf: MidasDataFrame):
         else:
             return
     walk(mdf.ops)
-    original_columns = reduce(lambda a, b: a.intersection(b), columns_grouped)
     final_columns = mdf.table.labels
-    result = original_columns.intersection(set(final_columns))
-    return result
+    if len(columns_grouped) > 0:
+        original_columns = reduce(lambda a, b: a.intersection(b), columns_grouped)
+        result = original_columns.intersection(set(final_columns))
+        return result
+    else:
+        # no groupby, great, all the things are fine
+        return final_columns
 
 
 def infer_encoding(mdf: MidasDataFrame) -> Optional[EncodingSpec]:

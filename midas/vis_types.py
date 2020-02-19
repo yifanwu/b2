@@ -40,6 +40,7 @@ class SelectionEvent(object):
 # basic stub for Vega typing
 VegaSpecType = Dict[str, Any]
 
+ENCODING_COUNT = 7
 
 class EncodingSpec(object):
     def __init__(self, mark: str, x: str, x_type: str, y: str, y_type: str, selection_type: str, selection_dimensions: str):

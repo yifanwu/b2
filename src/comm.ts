@@ -47,6 +47,11 @@ type UpdateCommLoad = {
   code: string;
 };
 
+type AddReactiveCell = {
+  type: string;
+  dfName: string;
+};
+
 type ProfilerComm = {
   type: string;
   dfName: string;
@@ -63,6 +68,7 @@ type ChartRenderComm = {
 
 type MidasCommLoad = CommandLoad
                      | BasicLoad
+                     | AddReactiveCell
                      | ExecuteFunCallLoad
                      | ExecuteCodeLoad
                      | NotificationCommLoad
@@ -245,9 +251,9 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
       // }
       case "reactive": {
         const cellId = msg.parent_header.msg_id;
-        const reactiveLoad = load as BasicLoad;
-        cellManager.captureCell(reactiveLoad.value, cellId);
-        LogDebug(`Success adding cell to ${reactiveLoad.value} for cell ${cellId}`);
+        const reactiveLoad = load as AddReactiveCell;
+        cellManager.recordReactiveCell(reactiveLoad.dfName, cellId);
+        LogDebug(`Success adding cell to ${reactiveLoad.dfName} for cell ${cellId}`);
         return;
       }
       case "execute_selection": {

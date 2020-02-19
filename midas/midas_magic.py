@@ -14,12 +14,16 @@ class MidasMagic(Magics):
     @cell_magic
     @magic_arguments()
     @argument('-df', action='store', help='the name of the df, do not set this flag if you wish the cell to be ran for all interactions')
+    # add another argument such that they can use append based
+    # @argument('--append', action="store")
     def reactive(self, line: str, cell: str):
         args = parse_argstring(self.reactive, line)
+        # do_append = "append" in args
         if args.df:
             # self.ui_comm.send_debug_msg(f"NEW cell magic with shell: {args.df} with cell: {cell}")
             self.ui_comm.add_reactive_cell(args.df)
         else:
             self.ui_comm.add_reactive_cell("")
+            
         shell = get_ipython().get_ipython()
         shell.run_cell(cell)

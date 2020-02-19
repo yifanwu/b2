@@ -349,9 +349,11 @@ class UiComm(object):
     # note that we do not need to provide the cellid
     #   that's information to be captured on the JS end.
     def add_reactive_cell(self, df_name: str):
+    # , do_append: bool):
         self.comm.send({
             "type": "reactive",
-            "value": df_name
+            "dfName": df_name,
+            # "appendFlag": 1 if do_append else 0
         })
 
     def execute_selection(self, params: str, df_name: str):
@@ -474,7 +476,7 @@ class UiComm(object):
             unique_vals = np.unique(col_value)
             current_max_bins = len(unique_vals)
             if current_max_bins < MAX_BINS:
-                code = f"{new_name} = {df.df_name}.group('{col_name}').show()"
+                code = f"{new_name} = {df.df_name}.group('{col_name}').vis()"
                 return (code, True)
             else:
                 # try parsing a value
@@ -490,7 +492,7 @@ class UiComm(object):
             unique_vals = np.unique(col_value[~np.isnan(col_value)])
             current_max_bins = len(unique_vals)
             if (current_max_bins < MAX_BINS):
-                code = f"{new_name} = {df.df_name}.group('{col_name}').show()"
+                code = f"{new_name} = {df.df_name}.group('{col_name}').vis()"
                 return (code, True)
             else:
                 return get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df.df_name, new_name, self.midas_instance_name)
