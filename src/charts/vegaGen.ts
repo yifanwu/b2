@@ -158,9 +158,9 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
         "mark": "line",
         "encoding": {
             "x": {"field": encoding.x, "type": encoding.xType},
-            "y": {"field": encoding.y, "type": encoding.yType}
+            "y": {"field": encoding.y, "type": encoding.yType},
+            "color": colorSpec,
         },
-        "color": colorSpec,
         "opacity": {"value": 0.5}
       };
     default:
