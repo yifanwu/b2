@@ -1,4 +1,5 @@
 from datetime import datetime
+from midas.config import IS_DEBUG
 from IPython import get_ipython 
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_any_dtype 
 from ipykernel.comm import Comm # type: ignore
@@ -10,6 +11,9 @@ from pyperclip import copy
 import ast
 import functools
 import inspect
+
+# for development
+from IPython.core.debugger import set_trace
 
 from midas.midas_algebra.data_types import DFId
 from midas.midas_algebra.selection import SelectionValue

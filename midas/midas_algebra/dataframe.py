@@ -197,6 +197,9 @@ class MidasDataFrame(object):
         elif name[0] == "_":
             # "_ipython_canary_method_should_not_exist_", "_repr_markdown_", "_repr_pdf_", "_ipython_display_", "_repr_jpeg_"
             return
+        elif name == "items":
+            # this appears also to be another one of the python things?
+            return
         else:
             red_print(f"The dataframe function, {name}, does not exist--note that we do not support all methods in the datascience module. If you want to access the columns, please use `df_name['column_name']` to access, instead of attribute.")
 

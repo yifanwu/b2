@@ -10,6 +10,8 @@ from datetime import datetime
 from typing import Dict, List
 
 
+from IPython.core.debugger import set_trace
+
 try:
     from IPython.display import display  # type: ignore
 except ImportError as err:
@@ -110,12 +112,13 @@ class Midas(object):
     def _show_df_filtered(self, mdf: Optional[MidasDataFrame], df_name: DFName):
         if not self._i_has_df(df_name):
             raise InternalLogicalError("cannot add filter to charts not created")
-        self.ui_comm.update_chart_filtered_value(mdf, df_name)
         df_info = self.df_info_store[df_name]
         if isinstance(df_info, VisualizedDFInfo):
             di = cast(VisualizedDFInfo, df_info)
             di.update_df(mdf)
             di.original_df._set_current_filtered_data(mdf)
+            # ntoe that this MUST HAPPEN AFTER the state has been set...
+            self.ui_comm.update_chart_filtered_value(mdf, df_name)
         else:
             raise InternalLogicalError("should not show filtered on df not visualized!")
 

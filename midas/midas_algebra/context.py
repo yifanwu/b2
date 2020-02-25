@@ -71,7 +71,7 @@ class Context(object):
         Returns:
             RelationalOp -- [description]
         """
-        if ISDEBUG: set_trace()
+        # if ISDEBUG: set_trace()
         # we know that join info must base baseop
         new_ops = cast(BaseOp, deepcopy(join_info.right_df.ops))
         filtered_join_df = apply_non_join_selection(new_ops, selections)
@@ -87,7 +87,7 @@ class Context(object):
         # TODO: better to do the "in" operations        
         new_base = deepcopy(join_info.left_df.ops)
         final_ops = Join(base_col, index_column_df, join_col, new_base)
-        if ISDEBUG: set_trace()
+        # if ISDEBUG: set_trace()
         return final_ops
 
     # get a bunch of bases and decide where the column comes from 
@@ -151,10 +151,8 @@ class Context(object):
         note that the current_base is left_df, and the base to join with is right_df
         """
         for b in current_bases:
-            if ISDEBUG: set_trace()
             r = self.join_info.get((b.df_name, selection_base_df))
             if r is not None:
-                if ISDEBUG: set_trace()
                 return r
         return None
 
@@ -174,7 +172,6 @@ class Context(object):
             if r:
                 # it's always the right one (by construct)
                 local_base_df_name = r.left_df.df_name
-                if ISDEBUG: set_trace()
                 replacement_op = self.apply_join_selection(r, selections)
             else:
                 # NO OP
