@@ -56,12 +56,6 @@ class JoinPredicate(object):
         self.right_col = right_col
 
 
-class JoinInfo(object):
-    def __init__(self, left_df: 'MidasDataFrame', right_df: 'MidasDataFrame', columns: List[JoinPredicate]):
-        self.left_df = left_df
-        self.right_df = right_df
-        self.columns = columns
-
 
 class Predicate(object):
     def __init__(self, column_or_label, value_or_predicate, other=None):
@@ -78,7 +72,25 @@ class ChartConfig(object):
     def __init__(self, is_base_df: bool):
         self.is_base_df = is_base_df
         
+
+class JoinInfo(object):
+    # left_df: 'MidasDataFrame'
+    # right_df: 'MidasDataFrame'
+    columns: List[JoinPredicate]
+    def __init__(self, left_df: 'MidasDataFrame', right_df: 'MidasDataFrame', columns: List[JoinPredicate]):
+        self.left_df = left_df
+        self.right_df = right_df
+        self.columns = columns
     
+    def swap_left_right(self):
+        columns = []
+        for c in self.columns:
+            columns.append(JoinPredicate(c.right_col, c.left_col))
+        return JoinInfo(self.right_df, self.left_df, columns)
+        
+
+
+
 
 # FIXME: think about how to make this less clunky --- seems that this has to be constantly passed around
 class RuntimeFunctions(NamedTuple):
@@ -391,7 +403,7 @@ class BaseOp(RelationalOp):
         self.table = table
     
     def __repr__(self):
-        return f"{{{self.op_type.value}: {self.df_name}}}"
+        return f"{{{self.op_type.value}: '{self.df_name}'}}"
     def __str__(self):
         return self.__repr__()
 
@@ -402,7 +414,7 @@ class Select(RelationalOp):
         self.child = child
     
     def __repr__(self):
-        return f"{{{self.op_type.value}:\n- columns:{self.columns}\n- of: {self.child}}}"
+        return f"{{{self.op_type.value}: {{columns:{self.columns}, of: {self.child}}}}}"
 
 
 class GroupBy(RelationalOp):
@@ -413,7 +425,7 @@ class GroupBy(RelationalOp):
         self.child = child
 
     def __repr__(self):
-        return f"{{{self.op_type.value}:\ncolumns:{self.columns}\ncollect:{self.collect}\nchild: {self.child}\n}}"
+        return f"{{{self.op_type.value}: {{columns:{self.columns}, collect:{self.collect}, child: {self.child}}}}}"
 
 class Where(RelationalOp):
     def __init__(self, predicate: Predicate, child: RelationalOp):
@@ -422,7 +434,7 @@ class Where(RelationalOp):
         self.child = child
     
     def __repr__(self):
-        return f"{{{self.op_type.value}:\n- predicate:{self.predicate}\n- of: {self.child}}}"
+        return f"{{{self.op_type.value}: {{predicate:{self.predicate}, of: {self.child}}}}}"
 
 
 
@@ -446,7 +458,7 @@ class Join(RelationalOp):
 
 
     def __repr__(self):
-        return f"{self.op_type.value}:\n- left: {self.child}\n- right: {self.other.ops}\n- on:\n -{self.self_columns}\n -{self.other_columns}"
+        return f"{{{self.op_type.value}: {{left: {self.child}, right: {self.other.ops}, on: {self.self_columns},{self.other_columns}}}}}"
 
 # Note, place here because of cyclic imports : (
 class DFInfo(object):
@@ -526,7 +538,7 @@ def get_midas_code(op: RelationalOp) -> str:
             if j_op.other.df_name is not None:
                 other_df_name = j_op.other.df_name
             else:
-                if "suggested_df_name" not in j_op.other or j_op.other.suggested_df_name is None:
+                if not(hasattr(j_op.other, "suggested_df_name") or hasattr(j_op.other.suggested_df_name, "suggested_df_name")):
                     raise InternalLogicalError("the join df should have a suggested name")
                 ops_code = get_midas_code(j_op.other.ops)
                 join_prep_code = f"{j_op.other.suggested_df_name} = {ops_code}"

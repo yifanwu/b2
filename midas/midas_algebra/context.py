@@ -1,13 +1,16 @@
 from copy import deepcopy, copy
 from typing import List,  Dict, Optional, cast, Tuple
 from collections import defaultdict
+# for development
+from IPython.core.debugger import set_trace
 
-from midas.util.errors import InternalLogicalError, NotAllCaseHandledError, debug_log
+from midas.util.errors import InternalLogicalError, debug_log
 from midas.util.errors import InternalLogicalError
 from midas.state_types import DFName
 
-from .dataframe import RelationalOpType, JoinPredicate, MidasDataFrame, BaseOp, RelationalOp, DFInfo, RuntimeFunctions, VisualizedDFInfo, Where, JoinInfo, Predicate, Select, create_predicate, Join
+from .dataframe import RelationalOpType, MidasDataFrame, BaseOp, RelationalOp, DFInfo, VisualizedDFInfo, Where, JoinInfo, Select, create_predicate, Join
 from .selection import SelectionValue
+from midas.constants import ISDEBUG
 
 class Context(object):
     # dfs: Dict[DFName, DFInfo]
@@ -43,9 +46,9 @@ class Context(object):
         right_df = joins.right_df
         if left_df.df_name is not None and right_df.df_name is not None:
             self.join_info[(left_df.df_name, right_df.df_name)] = joins
-            self.join_info[(right_df.df_name, left_df.df_name)] = joins
+            self.join_info[(right_df.df_name, left_df.df_name)] = joins.swap_left_right()
         else:
-            raise InternalLogicalError("should have df_names")
+            raise InternalLogicalError("The DFs with join info should have df_names")
     
     
     # takes in a left_df and right_df, and returns all possible column names for them to be joined on
@@ -56,7 +59,7 @@ class Context(object):
     #         raise InternalLogicalError("should have df_names")
 
 
-    def apply_join_selection(self, join_info: JoinInfo,selections: List[SelectionValue]) -> RelationalOp:
+    def apply_join_selection(self, join_info: JoinInfo, selections: List[SelectionValue]) -> RelationalOp:
         """
         Arguments:
             join_info {JoinInfo} -- Note that the left one is the "original base" and the right is the one joined
@@ -68,11 +71,9 @@ class Context(object):
         Returns:
             RelationalOp -- [description]
         """
-
+        if ISDEBUG: set_trace()
         # we know that join info must base baseop
-        new_ops = cast(BaseOp, copy(join_info.right_df.ops))
-        # debug_log("new_ops")
-        # print(new_ops)
+        new_ops = cast(BaseOp, deepcopy(join_info.right_df.ops))
         filtered_join_df = apply_non_join_selection(new_ops, selections)
         if len(join_info.columns) > 1:
             raise NotImplementedError("Currently not supported")
@@ -84,8 +85,9 @@ class Context(object):
         index_column_df.suggested_df_name = f"{new_ops.df_name}_filtered_{selection_columns}"
         # then do the join
         # TODO: better to do the "in" operations        
-        new_base = copy(join_info.left_df.ops)
+        new_base = deepcopy(join_info.left_df.ops)
         final_ops = Join(base_col, index_column_df, join_col, new_base)
+        if ISDEBUG: set_trace()
         return final_ops
 
     # get a bunch of bases and decide where the column comes from 
@@ -139,21 +141,21 @@ class Context(object):
         new_ops = target_df.ops
         # it doesn't really matter what order we apply these in
         for df_name in selections_by_df.keys():
-            new_ops = self.apply_selection_from_single_df(new_ops, df_name, selections_by_df[df_name])
-        
-        # debug
-        # selects = ",".join(map(lambda s: str(s), selections))
-        # debug_log(f"apply_selection of\n {selects} \n\non {target_df.df_name} is:\n\n{new_ops}")
+            new_ops = self.apply_selection_from_single_df(new_ops, df_name, selections_by_df[df_name])        
         new_df = target_df.new_df_from_ops(new_ops)
         return new_df
 
 
     def find_joinable_base(self, current_bases: List[BaseOp], selection_base_df: DFName) -> Optional[JoinInfo]:
+        """
+        note that the current_base is left_df, and the base to join with is right_df
+        """
         for b in current_bases:
+            if ISDEBUG: set_trace()
             r = self.join_info.get((b.df_name, selection_base_df))
             if r is not None:
+                if ISDEBUG: set_trace()
                 return r
-        # debug_log("Cannot find join info for ")
         return None
 
 
@@ -170,7 +172,9 @@ class Context(object):
             # search for which one we can actually join with 
             r = self.find_joinable_base(bases, df_name)
             if r:
+                # it's always the right one (by construct)
                 local_base_df_name = r.left_df.df_name
+                if ISDEBUG: set_trace()
                 replacement_op = self.apply_join_selection(r, selections)
             else:
                 # NO OP
