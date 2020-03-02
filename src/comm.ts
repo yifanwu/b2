@@ -110,7 +110,7 @@ export function makeComm(is_first_time = true) {
 
           const columnSelectMsg = (column: string, tableName: string) => {
             const payload = {
-              command: "column_selected",
+              command: "column-selected",
               column,
               df_name: tableName,
             };
@@ -126,7 +126,7 @@ export function makeComm(is_first_time = true) {
 
           const getChartCode = (dfName: string) => {
             comm.send({
-              "command": "get_visualization_code_clipboard",
+              "command": "get-visualization-code-clipboard",
               "df_name": dfName
             });
           };

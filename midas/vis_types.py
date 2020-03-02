@@ -86,6 +86,8 @@ class EncodingSpec(object):
         # FIXME: not sure why we have a "!r" here...
         return f"EncodingSpec({self.mark!r}, {self.x!r}, {self.x_type}, {self.y!r}, {self.y_type}, {self.selection_dimensions}, {self.selection_type!r})"
 
+    def to_args(self):
+        return f'{{"mark"="{self.mark}", "x"="{self.x}", "xType"="{self.x_type}", "y"="{self.y}", "yType"="{self.y_type}", "selectionDimensions"="{self.selection_dimensions}", "selectionType"="{self.selection_type}"}}'
 
     def to_json(self):
         return f'{{"mark": "{self.mark}", "x": "{self.x}", "xType": "{self.x_type}", "y": "{self.y}", "yType": "{self.y_type}", "selectionDimensions": "{self.selection_dimensions}", "selectionType": "{self.selection_type}"}}'

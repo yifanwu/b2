@@ -320,7 +320,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   render() {
     // note that the handlers are in the form  () => fun(), because of scoping issues in javascript
-    let className = "card midas-element transition-class";
+    let className = "card midas-element";
     if (this.hasSelection()) {
       className += " selected-card";
     }

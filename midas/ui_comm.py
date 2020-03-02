@@ -121,14 +121,13 @@ class UiComm(object):
                     code = data["code"]
                     self.log_entry("markdown-rendered", json.dumps(code))
                 return
-            elif command == "get_visualization_code_clipboard":
+            elif command == "get-visualization-code-clipboard":
                 df_name = data["df_name"]
                 encoding = self.vis_spec[df_name]
-                encoding_arg = f"mark='{encoding.mark}', x='{encoding.x}', y='{encoding.y}'"
-                code = f"{df_name}.show({encoding_arg})"
+                code = f"{df_name}.vis({encoding.to_args})"
                 copy(code)
                 return
-            elif command == "column_selected":
+            elif command == "column-selected":
                 column = data["column"]
                 df_name = DFName(data["df_name"])
                 self.tmp = f"{column}_{df_name}"

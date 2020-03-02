@@ -30,6 +30,13 @@ const colorSpec = {
   "legend": null
 };
 
+const selectedColorSpec = {
+  "field": IS_OVERVIEW_FIELD_NAME, "type": "nominal",
+  "scale": {"range": ["#fd8d3c", "#fdae6b"], "domain": [false, true]},
+  // @ts-ignore
+  "legend": null
+};
+
 // for the field "zoom", under top-level "selection"
 const zoomSelection = {
   "type": "interval",
@@ -111,26 +118,45 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
               // @ts-ignore
               "stack": null
           },
-          "color": colorSpec,
+          // "color": colorSpec,
           "opacity": {
             "value": 0.5
           },
-          "stroke": {"value": "#F0B429"},
-          "strokeWidth": {
-            "condition": [
-              {
-                "test": {
-                  "and": [
-                    {"selection": "select"},
-                    "length(data(\"select_store\"))"
-                  ]
-                },
-                "value": 3
-              }
-            ],
-            "value": 0
+          // "stroke": {"value": "#F0B429"},
+          // "strokeWidth": {
+          //   "condition": [
+          //     {
+          //       "test": {
+          //         "and": [
+          //           {"selection": "select"},
+          //           "length(data(\"select_store\"))"
+          //         ]
+          //       },
+          //       "value": 3
+          //     }
+          //   ],
+          //   "value": 0
+          // }
+        },
+        "layer": [
+          {
+            "mark": "bar",
+            "encoding": {
+              "color": colorSpec
+            },
+            "selection": {
+              "select": {"type": "multi", "encodings": ["x"], "empty": "none"}
+            }
+          },
+          {
+            "mark": "bar",
+            "transform": [{"filter": {"selection": "select"}}],
+            "encoding": {
+              "color": selectedColorSpec
+            }
           }
-        }
+        ],
+        "resolve": {"scale": {"color": "independent"}}
       };
     case "circle":
       return {
