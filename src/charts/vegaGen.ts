@@ -1,9 +1,10 @@
 import { IS_OVERVIEW_FIELD_NAME } from "../constants";
 import { LogInternalError } from "../utils";
 
-type SelectionType = "multiclick" | "brush";
+type SelectionType = "multiclick" | "brush" | "none";
 export type SelectionDimensions = "" | "x" | "y" | "xy";
 
+// note that this is synced with the vis_types.py file
 export interface EncodingSpec {
   mark: "bar" | "circle" | "line";
   x: string;

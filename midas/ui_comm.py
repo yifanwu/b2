@@ -251,14 +251,14 @@ class UiComm(object):
             raise InternalLogicalError("df should have a name to be updated")
         # first check if the encodings has changed
         if df.df_name in self.vis_spec:
-            if self.vis_spec[df.df_name] == encoding and self.id_by_df_name[df.df_name] == df.id:
+            if self.vis_spec[df.df_name] == encoding and self.id_by_df_name[df.df_name] == df._id:
                 return
 
         self.vis_spec[df.df_name] = encoding
-        self.id_by_df_name[df.df_name] = df.id
+        self.id_by_df_name[df.df_name] = df._id
 
         records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
-        code = get_midas_code(df.ops)
+        code = get_midas_code(df._ops)
         # TODO: check if we even need to do the dumping
         data = json.dumps(records)
         message = {

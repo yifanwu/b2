@@ -11,8 +11,8 @@ import operator
 from datascience import Table, are
 
 from midas.state_types import DFName
-from midas.vis_types import SelectionEvent, EncodingSpec
-from midas.util.errors import debug_log, InternalLogicalError, UserError, NotAllCaseHandledError
+from midas.vis_types import EncodingSpec
+from midas.util.errors import InternalLogicalError, UserError, NotAllCaseHandledError
 from midas.util.utils import find_name, get_random_string, red_print
 from midas.util.errors import type_check_with_warning, InternalLogicalError
 from midas.vis_types import EncodingSpec, ENCODING_COUNT
@@ -68,11 +68,6 @@ class Predicate(object):
         return f"column_or_label: {self.column_or_label}, value_or_predicate: {self.value_or_predicate}{other}"
 
 
-class ChartConfig(object):
-    def __init__(self, is_base_df: bool):
-        self.is_base_df = is_base_df
-        
-
 class JoinInfo(object):
     # left_df: 'MidasDataFrame'
     # right_df: 'MidasDataFrame'
@@ -95,25 +90,25 @@ class JoinInfo(object):
 # FIXME: think about how to make this less clunky --- seems that this has to be constantly passed around
 class RuntimeFunctions(NamedTuple):
     add_df: Callable[['MidasDataFrame'], None]
-    show_df: Callable[['MidasDataFrame', EncodingSpec], None]
+    show_df: Callable[['MidasDataFrame', EncodingSpec, Optional[bool]], None]
     show_df_filtered: Callable[['MidasDataFrame', DFName], None]
     show_profiler: Callable[['MidasDataFrame'], None]
     # get_stream: Callable[[DFName], MidasSelectionStream] 
     apply_other_selection: Callable[['MidasDataFrame', List[SelectionValue]], Optional['MidasDataFrame']]
     add_join_info: Callable[[JoinInfo], None]
 
+
 class NotInRuntime():
     pass
 
 
 class MidasDataFrame(object):
-    id: DFId
-    df_name: Optional[DFName]
-    rt_funcs: RuntimeFunctions
-    ops: 'RelationalOp'
-    chart_config: Optional[ChartConfig]
+    _id: DFId
+    _df_name: Optional[DFName]
+    _rt_funcs: RuntimeFunctions
+    _ops: 'RelationalOp' # type: ignore
     # the following is used for code gen
-    suggested_df_name: Optional[str]
+    _suggested_df_name: Optional[str]
     current_filtered_data: Optional['MidasDataFrame']
 
     def __init__(self,
@@ -124,14 +119,13 @@ class MidasDataFrame(object):
       df_id: DFId = None,
       is_base: bool = False,
       ):
-        self.chart_config = None
-        self.ops = ops
+        self._ops = ops
         self._table = table
-        self.rt_funcs = rt_funcs
+        self._rt_funcs = rt_funcs
         if df_id:
-            self.id = df_id
+            self._id = df_id
         else:
-            self.id = DFId(get_random_string(5))
+            self._id = DFId(get_random_string(5))
         if df_name is not None:
             self.df_name = DFName(df_name)
         else:
@@ -139,7 +133,7 @@ class MidasDataFrame(object):
             if df_name_raw:
                 self.df_name = DFName(df_name_raw)
         if hasattr(self, "df_name") and (self.df_name is not None):
-            self.rt_funcs.add_df(self)
+            self._rt_funcs.add_df(self)
 
     #################
     # Magic Methods #
@@ -223,7 +217,7 @@ class MidasDataFrame(object):
         return df
 
     def new_df_from_ops(self, ops: 'RelationalOp', table: Optional[Table]=None, df_name: Optional[str] = None):
-        return MidasDataFrame(ops, self.rt_funcs, table, df_name)
+        return MidasDataFrame(ops, self._rt_funcs, table, df_name)
 
 
     @property
@@ -231,7 +225,7 @@ class MidasDataFrame(object):
         if hasattr(self, "_table") and (self._table is not None):
             return self._table
         else:
-            table = eval_op(self.ops)
+            table = eval_op(self._ops)
             self._table = table
             return table
 
@@ -266,7 +260,7 @@ class MidasDataFrame(object):
 
     def select(self, columns: List[str]) -> 'MidasDataFrame':
         new_table = self.table.select(columns)
-        new_ops = Select(columns, self.ops)
+        new_ops = Select(columns, self._ops)
         df_name = find_name(False)
         return self.new_df_from_ops(new_ops, new_table, df_name)
 
@@ -274,21 +268,21 @@ class MidasDataFrame(object):
     def where(self, column_or_label, value_or_predicate=None, other=None):
         new_table = self.table.where(column_or_label, value_or_predicate, other)
         predicate = Predicate(column_or_label, value_or_predicate, other)
-        new_ops = Where(predicate, self.ops)
+        new_ops = Where(predicate, self._ops)
         df_name = find_name(False)
         return self.new_df_from_ops(new_ops, new_table, df_name)
 
 
     def join(self, column_label, other: 'MidasDataFrame', other_label):
         new_table = self.table.join(column_label, other.table, other_label)
-        new_ops = Join(column_label, other, other_label, self.ops)
+        new_ops = Join(column_label, other, other_label, self._ops)
         df_name = find_name(False)
         return self.new_df_from_ops(new_ops, new_table, df_name)
     
 
     def group(self, column_or_label: ColumnSelection, collect=None):
         new_table = self.table.groups(column_or_label, collect)
-        new_ops = GroupBy(column_or_label, collect, self.ops)
+        new_ops = GroupBy(column_or_label, collect, self._ops)
         df_name = find_name(False)
         return self.new_df_from_ops(new_ops, new_table, df_name)
 
@@ -299,7 +293,7 @@ class MidasDataFrame(object):
 
 
     def show_profile(self):
-        self.rt_funcs.show_profiler(self)
+        self._rt_funcs.show_profiler(self)
 
 
     def _set_current_filtered_data(self, mdf: Optional['MidasDataFrame']):
@@ -308,40 +302,39 @@ class MidasDataFrame(object):
 
     def filter_chart(self, df_name: DFName):
         # doesn't need to have 
-        self.rt_funcs.show_df_filtered(self, df_name)
-
-
-    # TODO: add some constrains for bad configurations
-    def vis(self, **kwargs):
-        """Note that this whole transformation into and out of EncodingSpec is to make the argument object free but the cobe base somewhat typed, based on the object.
+        self._rt_funcs.show_df_filtered(self, df_name)
         
+
+    def vis(self, **kwargs):
+        """Shows the visualization in the Midas pannel
+        Arguments:
+            mark {str} -- "bar" | "circle" | "line"
+            x {str} -- column for x axis
+            x_type {str} -- "ordinal" | "quantitative" | "temporal"
+            y {str} -- column for y axis
+            y_type {str} -- "ordinal" | "quantitative" | "temporal"
+            selection_type {str} -- "none", "multiclick", "brush"
+            selection_dimensions {str} -- "none", "multiclick", "brush"
+           
+        Returns:
+            DataFrame (so you can chain your functions)
         Raises:
             UserError: wehen the keyword arguments do not match the expected EncodingSpec
         """
-        # add some checks and balances for too many items and too many rows
-        if len(kwargs) < ENCODING_COUNT:
-            encoding = infer_encoding(self).__dict__
-            for k in kwargs:
-                encoding[k] = kwargs[k]
-            # print("encodings", encoding)
-            return self.vis(**encoding)
-        else:
-            try:
-                spec = EncodingSpec(**kwargs)
-                num_rows = self.num_rows
-                if spec.mark == "bar":
-                    if num_rows > MAX_BINS:
-                        raise UserError("Too many categories for bar chart to plot. Please consider grouping.")
-                else:
-                    if num_rows > MAX_DOTS:
-                        raise UserError("Too many points to plot")
-                self.rt_funcs.show_df(self, spec)
-                # so that we can chain
-                return self
-            except TypeError as error:
-                e = f"{error}"[11:]
-                raise UserError(f"Arguments expected: {e}, and you gave {kwargs}")
-                # f"You should specify `mark`, `x`, `x_type`, `y`, `y_type`, `selection` and and if you have 3 columns, `size` is also supported for circles (note that color is already used). However, your provided the following arguments {kwargs}")
+        spec = parse_encoding(kwargs, self)
+        if spec:
+            sanity_check_spec_with_data(spec, self)
+            self._rt_funcs.show_df(self, spec, True)
+        return self
+
+    def reactive_vis(self, **kwargs):
+        """[summary]
+        """
+        spec = parse_encoding(kwargs, self)
+        if spec:
+            sanity_check_spec_with_data(spec, self)
+            self._rt_funcs.show_df(self, spec, False)
+        return self
 
     
     def can_join(self, other_df: 'MidasDataFrame', col_name: str,col_name_other: Optional[str]=None):
@@ -352,21 +345,21 @@ class MidasDataFrame(object):
             else:
                 columns = [JoinPredicate(ColumnRef(col_name, self.df_name), ColumnRef(col_name, other_df.df_name))]
             join_info = JoinInfo(self, other_df, columns)
-            self.rt_funcs.add_join_info(join_info)
+            self._rt_funcs.add_join_info(join_info)
         else:
             raise UserError("DF not defined")
 
 
     @property
     def is_base_df(self) -> bool:
-        return self.ops.op_type == RelationalOpType.base
+        return self._ops.op_type == RelationalOpType.base # type: ignore
 
 
     def apply_selection(self, all_predicates: List[SelectionValue]):
         # if all the selections are null then reply nothing
         if len(all_predicates) == 0:
             return None
-        return self.rt_funcs.apply_other_selection(self, all_predicates)
+        return self._rt_funcs.apply_other_selection(self, all_predicates)
 
 
     def apply_self_selection_value(self, predicates: List[SelectionValue]):
@@ -382,14 +375,14 @@ class MidasDataFrame(object):
 
 
     def get_code(self):
-      return get_midas_code(self.ops)
+      return get_midas_code(self._ops)
         
 
 
 class RelationalOp(object):
     # chilren
     op_type: RelationalOpType
-    child: 'RelationalOp'
+    child: 'RelationalOp'  # type: ignore
 
     def has_child(self):
         if hasattr(self, "child") and (self.child is not None):
@@ -461,7 +454,7 @@ class Join(RelationalOp):
 
 
     def __repr__(self):
-        return f"{{{self.op_type.value}: {{left: {self.child}, right: {self.other.ops}, on: {self.self_columns},{self.other_columns}}}}}"
+        return f"{{{self.op_type.value}: {{left: {self.child}, right: {self.other._ops}, on: {self.self_columns},{self.other_columns}}}}}"
 
 # Note, place here because of cyclic imports : (
 class DFInfo(object):
@@ -492,7 +485,7 @@ class VisualizedDFInfo(DFInfo):
         Returns:
             bool -- whether the dataframe has changed
         """
-        if df is not None and self.df is not None and self.df.id == df.id:
+        if df is not None and self.df is not None and self.df._id == df._id:
             return False
         
         self.df = df
@@ -541,11 +534,11 @@ def get_midas_code(op: RelationalOp) -> str:
             if j_op.other.df_name is not None:
                 other_df_name = j_op.other.df_name
             else:
-                if not(hasattr(j_op.other, "suggested_df_name") or hasattr(j_op.other.suggested_df_name, "suggested_df_name")):
+                if not(hasattr(j_op.other, "_suggested_df_name") or hasattr(j_op.other._suggested_df_name, "_suggested_df_name")):
                     raise InternalLogicalError("the join df should have a suggested name")
-                ops_code = get_midas_code(j_op.other.ops)
-                join_prep_code = f"{j_op.other.suggested_df_name} = {ops_code}"
-                other_df_name = j_op.other.suggested_df_name
+                ops_code = get_midas_code(j_op.other._ops)
+                join_prep_code = f"{j_op.other._suggested_df_name} = {ops_code}"
+                other_df_name = j_op.other._suggested_df_name
             new_table = f"{join_prep_code}\n{prev_table}.join({j_op.self_columns!r}, {other_df_name}, {j_op.other_columns!r})"
             return new_table
         else:
@@ -666,7 +659,7 @@ def get_selectable_column(mdf: MidasDataFrame):
             walk(ops.child)
         else:
             return
-    walk(mdf.ops)
+    walk(mdf._ops)
     final_columns = mdf.table.labels
     if len(columns_grouped) > 0:
         original_columns = reduce(lambda a, b: a.intersection(b), columns_grouped)
@@ -676,7 +669,32 @@ def get_selectable_column(mdf: MidasDataFrame):
         # no groupby, great, all the things are fine
         return final_columns
 
+def sanity_check_spec_with_data(spec, df):
+    # TODO: add some constrains for bad configurations
+    num_rows = df.num_rows
+    if spec.mark == "bar" and num_rows > MAX_BINS:
+        raise UserError("Too many categories for bar chart to plot. Please consider grouping.")
+    elif num_rows > MAX_DOTS:
+        raise UserError("Too many points to plot")
+    return
 
+
+def parse_encoding(kwargs, df):
+    if len(kwargs) == 0:
+        return infer_encoding(df)
+    elif len(kwargs) < ENCODING_COUNT:
+        encoding = infer_encoding(df).__dict__
+        for k in kwargs:
+            encoding[k] = kwargs[k]
+        # print("encodings", encoding)
+        return EncodingSpec(**kwargs)
+    else:
+        try:
+            spec = EncodingSpec(**kwargs)
+        except TypeError as error:
+            e = f"{error}"[11:]
+            raise UserError(f"Arguments expected: {e}, and you gave {kwargs}")
+    
 def infer_encoding(mdf: MidasDataFrame) -> Optional[EncodingSpec]:
     """Implements basic show me like feature"""
     df = mdf.table

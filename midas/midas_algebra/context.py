@@ -44,9 +44,9 @@ class Context(object):
     def add_join_info(self, joins: JoinInfo):
         left_df = joins.left_df
         right_df = joins.right_df
-        if left_df.df_name is not None and right_df.df_name is not None:
-            self.join_info[(left_df.df_name, right_df.df_name)] = joins
-            self.join_info[(right_df.df_name, left_df.df_name)] = joins.swap_left_right()
+        if left_df.df_name is not None and right_df.df_name is not None: # type: ignore
+            self.join_info[(left_df.df_name, right_df.df_name)] = joins # type: ignore
+            self.join_info[(right_df.df_name, left_df.df_name)] = joins.swap_left_right() # type: ignore
         else:
             raise InternalLogicalError("The DFs with join info should have df_names")
     
@@ -73,7 +73,7 @@ class Context(object):
         """
         # if ISDEBUG: set_trace()
         # we know that join info must base baseop
-        new_ops = cast(BaseOp, deepcopy(join_info.right_df.ops))
+        new_ops = cast(BaseOp, deepcopy(join_info.right_df._ops)) # type: ignore
         filtered_join_df = apply_non_join_selection(new_ops, selections)
         if len(join_info.columns) > 1:
             raise NotImplementedError("Currently not supported")
@@ -82,10 +82,10 @@ class Context(object):
         index_column_df = self.new_df_from_ops(Select(join_col, filtered_join_df))
         # we must assign something
         selection_columns = "_".join([s.column.col_name for s in selections])
-        index_column_df.suggested_df_name = f"{new_ops.df_name}_filtered_{selection_columns}"
+        index_column_df._suggested_df_name = f"{new_ops.df_name}_filtered_{selection_columns}"
         # then do the join
         # TODO: better to do the "in" operations        
-        new_base = deepcopy(join_info.left_df.ops)
+        new_base = deepcopy(join_info.left_df._ops) # type: ignore
         final_ops = Join(base_col, index_column_df, join_col, new_base)
         # if ISDEBUG: set_trace()
         return final_ops
@@ -99,7 +99,7 @@ class Context(object):
     def get_base_df_selection(self, s: SelectionValue) -> Optional[SelectionValue]:
         # look up df
         df = self.get_df(s.column.df_name)
-        bases = find_all_baseops(df.ops)
+        bases = find_all_baseops(df._ops)
 
         def find_base_with_column(bases: List[BaseOp]):
             for b in bases:
@@ -138,11 +138,11 @@ class Context(object):
         if target_df.df_name in selections_by_df:
             raise InternalLogicalError(f"Shouldn't be using context to do the filter if the two DFs are the same, we got {target_df.df_name} as target, which is in {selections_by_df.keys()}")
 
-        new_ops = target_df.ops
+        new_ops = target_df._ops
         # it doesn't really matter what order we apply these in
         for df_name in selections_by_df.keys():
-            new_ops = self.apply_selection_from_single_df(new_ops, df_name, selections_by_df[df_name])        
-        new_df = target_df.new_df_from_ops(new_ops)
+            new_ops = self.apply_selection_from_single_df(new_ops, df_name, selections_by_df[df_name])  # type: ignore
+        new_df = target_df.new_df_from_ops(new_ops) # type: ignore
         return new_df
 
 
@@ -233,8 +233,8 @@ def find_all_baseops(op: RelationalOp) -> List[BaseOp]:
     if (op.op_type == RelationalOpType.join):
         join_op = cast(Join, op)
         b1 = find_all_baseops(op.child)
-        b2 = find_all_baseops(join_op.other.ops)
-        return b1 + b1
+        b2 = find_all_baseops(join_op.other._ops)
+        return b1 + b2
     if (op.has_child()):
         return find_all_baseops(op.child)
     else:

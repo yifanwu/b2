@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import List, Any, Dict
+from typing_extensions import Literal
 
 from midas.midas_algebra.selection import SelectionValue
 from midas.state_types import DFName
@@ -43,8 +44,28 @@ VegaSpecType = Dict[str, Any]
 ENCODING_COUNT = 7
 
 class EncodingSpec(object):
-    def __init__(self, mark: str, x: str, x_type: str, y: str, y_type: str, selection_type: str, selection_dimensions: str):
-        self.mark = mark # bar, circle, line
+    # note that this is synced with the vegaGen.ts file
+    def __init__(self,
+        mark: Literal["bar", "circle", "line"],
+        x: str,
+        x_type: Literal["ordinal", "quantitative", "temporal"],
+        y: str,
+        y_type: Literal["ordinal", "quantitative", "temporal"],
+        selection_type: Literal["none", "multiclick", "brush"],
+        selection_dimensions: Literal["none", "multiclick", "brush"]
+    ):
+        """EncodingSpec object used for Midas to generate Vega-Lite specifications
+        
+        Arguments:
+            mark {str} -- "bar" | "circle" | "line"
+            x {str} -- column for x axis
+            x_type {str} -- "ordinal" | "quantitative" | "temporal"
+            y {str} -- column for y axis
+            y_type {str} -- "ordinal" | "quantitative" | "temporal"
+            selection_type {str} -- "none", "multiclick", "brush"
+            selection_dimensions {str} -- "none", "multiclick", "brush"
+        """
+        self.mark = mark 
         self.x = x
         self.x_type = x_type
         self.y = y

@@ -55,6 +55,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   constructor(props: any) {
     super(props);
     this.embed = this.embed.bind(this);
+    this.hasSelection = this.hasSelection.bind(this);
     this.updateSelectionMarks = this.updateSelectionMarks.bind(this);
     this.getDebouncedFunction = this.getDebouncedFunction.bind(this);
     this.changeVisual = this.changeVisual.bind(this);
@@ -169,7 +170,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       if (!this.isMultiSelect()) {
         cleanValue = this.roundIfPossible(value);
       } else {
-        // we need to access via the weird key
         cleanValue = value;
       }
       processedValue[dfName] = cleanValue;
@@ -314,10 +314,18 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.props.functions.logEntry("move_chart", this.props.dfName);
   }
 
+  hasSelection() {
+    return (this.state.currentBrush) && (Object.keys(this.state.currentBrush).length > 0);
+  }
+
   render() {
     // note that the handlers are in the form  () => fun(), because of scoping issues in javascript
+    let className = "card midas-element transition-class";
+    if (this.hasSelection()) {
+      className += " selected-card";
+    }
     return (
-      <div className="card midas-element" id={getDfId(this.props.dfName)}
+      <div className={className} id={getDfId(this.props.dfName)}
         tabIndex={-1}
         onBlur={() => {
             this.props.functions.setUIItxFocus();

@@ -16,7 +16,6 @@ const CELL_DOT_ANNOTATION = {
   "interaction": "🔵",
 };
 
-
 export function LogInternalError(message: string): null {
   console.log(`${FgRed}${message}${Reset}`);
   if (STRICT) {
@@ -176,9 +175,10 @@ export function commentUncommented(code: string, newLine: string) {
   for (let l of code.split("\n")) {
     if (!((l.length === 0) || l.includes("🔵") || l.includes(newLine))) {
       newCode.push(commentIfNot(l));
-    } else {
-      debugger;
     }
+    //  else {
+    //   debugger;
+    // }
   }
   newCode.push(newLine);
   return newCode;

@@ -1,4 +1,4 @@
-ISDEBUG = True
+ISDEBUG = False
 STUB_DISTRIBUTION_BIN = "10"
 MIDAS_CELL_COMM_NAME = "midas-cell-comm"
 MIDAS_RECOVERY_COMM_NAME = "midas-recovery-comm"

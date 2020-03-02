@@ -257,6 +257,19 @@
   max-width: fit-content;
 }
 
+/* this class is create to faciliate  */
+.transition-class {
+  -webkit-transition: all 1s linear;
+  -moz-transition: all 1s linear;
+  -o-transition: all 1s linear;
+  transition: all 1s linear;
+}
+
+/* this is used to indicate that there is a selection */
+.selected-card {
+  border: 2px solid var(--red-500) !important;
+}
+
 .shelf {
   padding: var(--size-1);
 }

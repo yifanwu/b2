@@ -68,6 +68,8 @@ def sanitize_string_for_var_name(p: str):
     return sub('[^0-9a-zA-Z]+', '_', p)
 
 
+
+
 def get_content(path):
     """Get content of file."""
     with codecs.open(abs_path(path), encoding='utf-8') as f:
