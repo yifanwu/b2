@@ -27,15 +27,15 @@ class Channel(Enum):
     color = "color"
 
 
-class SelectionEvent(object):
-    def __init__(self, interaction_time: datetime, predicate: List[SelectionValue], df_name: DFName):
-        self.interaction_time = interaction_time
-        self.predicate = predicate
-        self.df_name = df_name
-        self.id = get_random_string(5)
+# class SelectionEvent(object):
+#     def __init__(self, interaction_time: datetime, predicate: List[SelectionValue], df_name: DFName):
+#         self.interaction_time = interaction_time
+#         self.predicate = predicate
+#         self.df_name = df_name
+#         self.id = get_random_string(5)
 
-    def __repr__(self):
-        return f"df: {self.df_name}\n  predicates: {self.predicate}"
+#     def __repr__(self):
+#         return f"df: {self.df_name}\n  predicates: {self.predicate}"
 
 
 # basic stub for Vega typing

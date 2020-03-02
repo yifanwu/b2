@@ -145,3 +145,9 @@ def get_min_max_tuple_from_list(values: List[float]) -> Tuple[float, float]:
     """
     return (min(values), max(values))
 
+def find_selections_with_df_name(current_selection: List[SelectionValue], df_name):
+    r = []
+    for s in current_selection:
+        if s.column.df_name == df_name:
+            r.append(s.column)
+    return r

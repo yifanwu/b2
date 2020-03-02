@@ -23,7 +23,7 @@ except ImportError as err:
 from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
 from .util.errors import InternalLogicalError, debug_log
-from .util.utils import red_print, open_sqlite_for_logging
+from .util.utils import find_selections_with_df_name, red_print, open_sqlite_for_logging
 from .vis_types import EncodingSpec
 from .state_types import DFName
 from .ui_comm import UiComm
@@ -173,7 +173,6 @@ class Midas(object):
             diff = (call_time - self._start_time).total_seconds()
             meta = optional_metadata if optional_metadata else ''
             self.log_entry_to_db(fun_name, diff, meta)
-            
 
 
     # def download_log(self):
@@ -187,6 +186,16 @@ class Midas(object):
 
 
     def remove_df(self, df_name: DFName):
+        # we need to remove the selection as well
+        # and also doing a tick
+        # maybe also send a notificaition?
+        # see if there is a selection
+        selected_columns = find_selections_with_df_name(self.current_selection, df_name)
+        if len(selected_columns) > 0:
+            # then make a selection to remove things
+            # make empty selection
+            empty_sel = [EmptySelection(c) for c in selected_columns]            
+            self._ui_comm.internal_current_selection(empty_sel, df_name) # type: ignore
         self.df_info_store.pop(df_name)
 
 

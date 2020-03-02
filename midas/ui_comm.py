@@ -165,10 +165,7 @@ class UiComm(object):
         else:
             debug_log(f"Got message from JS Comm: {data}")
 
-
-    # note that this is extracted out for better debugging.
-    def handle_add_current_selection(self, value: Dict):
-        selections, df_name = self.get_predicate_info(value)
+    def internal_current_selection(self, selections: List[SelectionValue], df_name):
         all_predicate = self.add_selection(selections)
         # now turn this into JSON
         param_str = "[]"
@@ -178,6 +175,12 @@ class UiComm(object):
         self.execute_selection(param_str, df_name)
         self.log_entry("ui_selection", df_name)
 
+
+    # note that this is extracted out for better debugging.
+    def handle_add_current_selection(self, value: Dict):
+        selections, df_name = self.get_predicate_info(value)
+        self.internal_current_selection(selections, df_name)
+        
 
     # def process_code(self, code: str):
     #     assigned_dfs = self.get_dfs_from_code_str(code)
