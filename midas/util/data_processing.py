@@ -1,8 +1,12 @@
-from midas.midas_algebra.dataframe import MidasDataFrame
 from datascience import Table
 import numpy as np
 from math import log10, pow
 from pandas import notnull
+from bdb import BdbQuit
+from IPython.core.debugger import set_trace
+
+from midas.midas_algebra.dataframe import MidasDataFrame
+from midas.constants import ISDEBUG
 from .errors import InternalLogicalError
 from midas.constants import IS_OVERVIEW_FIELD_NAME, MAX_BINS, STUB_DISTRIBUTION_BIN
 from midas.vis_types import FilterLabelOptions
@@ -30,7 +34,7 @@ def try_parsing_date_time_level(ref, col_value, col_name, df_name):
             bound = snap_to_nice_number(count/MAX_BINS)
             binning_lambda = f"lambda x: 'null' if np.isnan(x) else int(x/{bound}) * {bound}"
             bin_column_name = f"{new_col_name}_bin"
-            bin_transform =  f"{df_name}.append_column('{bin_column_name}', {df_name}.apply({binning_lambda}, '{col_name}'))"
+            bin_transform =  f"{df_name}['{bin_column_name}'] = {df_name}.apply({binning_lambda}, '{col_name}')"
             grouping = f"{df_name}_{new_col_name}_dist = {df_name}.group('{new_col_name}').vis()"
             code = f"{new_column}\n{bin_transform}\n{grouping}"
             return code
@@ -55,16 +59,21 @@ def get_datetime_distribution_code(col_name, df: MidasDataFrame):
 #       with data like this: s = np.random.normal(0, 0.1, 20)            
 def get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df_name, new_name, midas_reference_name):
     # adding an additional 5 to make it more fine grained
-    min_bucket_count = round(current_max_bins/MAX_BINS/5)
+    # try:
+    #     if ISDEBUG: 
+    # except BdbQuit:
+    #     print("Should not try to break when invoked by javascript")
+    # min_bucket_count = round(current_max_bins/MAX_BINS)
     d_max = unique_vals[-1]
     d_min = unique_vals[0]
-    min_bucket_size = (d_max - d_min) / min_bucket_count
+    min_bucket_size = round((d_max - d_min) / MAX_BINS)
+    # set_trace()
     # imports = "import numpy as np"
     def create_code(bound):
         bin_column_name = f"{col_name}_bin"
         # lambda n: int(n/5) * 5
         binning_lambda = f"lambda x: 'null' if {midas_reference_name}.np.isnan(x) else int(x/{bound}) * {bound}"
-        bin_transform = f"{df_name}.append_column('{bin_column_name}', {df_name}.apply({binning_lambda}, '{col_name}'))"
+        bin_transform = f"{df_name}['{bin_column_name}'] = {df_name}.apply({binning_lambda}, '{col_name}')"
         grouping_transform = f"{new_name} = {df_name}.group('{bin_column_name}').vis()"
         # {imports}\n
         code = f"{bin_transform}\n{grouping_transform}"
@@ -72,13 +81,14 @@ def get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df_na
     try:
         bound = snap_to_nice_number(min_bucket_size)
         return (create_code(bound), True)
-    except ValueError as e:
+    except InternalLogicalError as e:
         # let's still given them a stub code
         code = create_code(STUB_DISTRIBUTION_BIN)
         return (f"# Please fix the following \n{code}", False)
-
+    
 
 def snap_to_nice_number(n: float):
+    # set_trace()
     if n == np.inf:
         raise InternalLogicalError("Should not have gotten infinity")
     if n <= 0:

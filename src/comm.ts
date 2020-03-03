@@ -64,6 +64,7 @@ type ChartRenderComm = {
   data: string;
   encoding: string;
   code: string;
+  hashVal: string;
 };
 
 type MidasCommLoad = CommandLoad
@@ -296,7 +297,13 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         const cellId = msg.parent_header.msg_id;
         const encoding = JSON.parse(chartRenderLoad.encoding);
         const data = JSON.parse(chartRenderLoad.data);
-        refToMidas.addDataFrame(chartRenderLoad.dfName, encoding, data, cellId, chartRenderLoad.code);
+        refToMidas.addDataFrame(
+          chartRenderLoad.dfName,
+          encoding,
+          data,
+          cellId,
+          chartRenderLoad.code,
+          chartRenderLoad.hashVal);
         return;
       }
       case "chart_update_data": {

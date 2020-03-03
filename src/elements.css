@@ -313,11 +313,13 @@
 .midas-alerts-error {
   background-color: var(--red-400);
   color: var(--red-050);
+  display: flex;
 }
 
 .midas-alerts-confirm {
   background-color: var(--yellow-vivid-300);
   color: var(--yellow-vivid-050);
+  display: flex;
 }
 
 .midas-sortable-list {
@@ -331,7 +333,7 @@
 
 .close-btn {
   cursor: pointer;
-  padding-left: 5px;
+  /* padding-left: 5px; */
 }
 
 .notification-btn {

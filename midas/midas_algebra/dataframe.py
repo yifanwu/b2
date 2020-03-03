@@ -1,14 +1,16 @@
 from enum import Enum
 from functools import reduce
-from midas.constants import MAX_BINS, MAX_DOTS
 from typing import List, Union, Optional, NamedTuple, Dict, cast, Callable, Any
 from datetime import datetime
 import inspect
 import asttokens
 import ast
 import operator
-
 from datascience import Table, are
+
+# for development
+from IPython.core.debugger import set_trace
+from midas.constants import MAX_BINS, MAX_DOTS, ISDEBUG
 
 from midas.state_types import DFName
 from midas.vis_types import EncodingSpec
@@ -207,7 +209,7 @@ class MidasDataFrame(object):
     @classmethod
     def create_with_table(cls, table: Table, df_name_raw: Optional[str], midas_ref):
         if df_name_raw is None:
-            raise UserError("Please assign a variable!")
+            raise UserError("Please assign a variable to the table returned!")
         
         df_name = DFName(df_name_raw)
         df_id = DFId(get_random_string(5))
@@ -321,6 +323,7 @@ class MidasDataFrame(object):
         Raises:
             UserError: wehen the keyword arguments do not match the expected EncodingSpec
         """
+        if ISDEBUG: set_trace()
         spec = parse_encoding(kwargs, self)
         if spec:
             sanity_check_spec_with_data(spec, self)
@@ -687,7 +690,7 @@ def parse_encoding(kwargs, df):
         for k in kwargs:
             encoding[k] = kwargs[k]
         # print("encodings", encoding)
-        return EncodingSpec(**kwargs)
+        return EncodingSpec(**encoding)
     else:
         try:
             spec = EncodingSpec(**kwargs)

@@ -26,6 +26,7 @@ interface ContainerElementState {
   data: any[];
   changeStep: number;
   code: string;
+  hashVal: string;
 }
 
 interface AlertItem {
@@ -217,8 +218,9 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
    * Adds the visualization of the given data frame to this container
    * @param id the id of the data frame
    * @param dfName the name of the data frame
+   * @param hashVal python side generated parameter for hashing
    */
-  addDataFrame(dfName: string, encoding: EncodingSpec, data: any[], notebookCellId: string, code: string) {
+  addDataFrame(dfName: string, encoding: EncodingSpec, data: any[], notebookCellId: string, code: string, hashVal: string) {
     this.setState(prevState => {
       // see if we need to delete the old one first
       const idx = prevState.elements.findIndex((v) => v.dfName === dfName);
@@ -229,6 +231,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         data,
         changeStep: 1,
         code,
+        hashVal
       };
       if (idx > -1) {
         // here we are replacing the value
@@ -294,27 +297,26 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         };
       });
     };
-
   }
 
 
   render() {
     const { elements, alerts } = this.state;
     const chartDivs = elements.map(({
-      notebookCellId, dfName, data, encoding, changeStep: chanageStep, code }, index) => {
+      notebookCellId, dfName, data, encoding, changeStep, code, hashVal }, index) => {
       return <MidasElement
         ref={r => this.refsCollection[dfName] = r}
         // index={index}
         moveElement={this.moveElement(index)}
         functions={this.props.containerFunctions.elementFunctions}
         cellId={notebookCellId}
-        key={`${dfName}-${encoding.mark}-${encoding.x}-${encoding.y}`}
+        key={`${dfName}-${hashVal}`}
         dfName={dfName}
         title={dfName}
         encoding={encoding}
         code={code}
         data={data}
-        changeStep={chanageStep}
+        changeStep={changeStep}
         removeChart={() => this.removeDataFrame(dfName)}
       />;
     });
@@ -326,10 +328,11 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         const newDiv = <div
           className={`card midas-alert ${className}`}
           key={`alert-${i}`}
-        >{a.msg}
-          <div style={{"float": "right", "paddingRight": 20}}>
-            <CloseButton onClick={() => this.removeAlert(i)} size={20} color={"white"}/>
-          </div>
+        >
+          <CloseButton onClick={() => this.removeAlert(i)} size={20} color={"white"}/>
+          {a.msg}
+          {/* <div style={{"float": "right", "paddingRight": 20}}> */}
+          {/* </div> */}
         </div>;
         alertDivs.push(newDiv);
       }

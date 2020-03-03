@@ -10,7 +10,6 @@ from json import dumps
 from datetime import datetime
 from typing import Dict, List
 
-
 from IPython.core.debugger import set_trace
 
 try:
@@ -121,7 +120,7 @@ class Midas(object):
             di.update_df(mdf)
             di.original_df._set_current_filtered_data(mdf)
             # ntoe that this MUST HAPPEN AFTER the state has been set...
-            if ISDEBUG: set_trace()
+            # if ISDEBUG: set_trace()
             self._ui_comm.update_chart_filtered_value(mdf, df_name)
         else:
             raise InternalLogicalError("should not show filtered on df not visualized!")
@@ -135,9 +134,10 @@ class Midas(object):
         # if this visualization has existed, we must remove the existing interactions
         # the equivalent of updating the selection with empty
         if self._i_has_df_chart(mdf.df_name):
+            # FIXMENOW & shoud share logic with the remove_df
             self._add_selection([EmptySelection(ColumnRef(spec.x, df_name))])
         self.df_info_store[df_name] = VisualizedDFInfo(mdf)
-        if ISDEBUG: set_trace()
+        # if ISDEBUG: set_trace()
         self._ui_comm.create_chart(mdf, spec)
         # now we need to see if we need to apply selection,
         # need to know if this came from a reactive cell

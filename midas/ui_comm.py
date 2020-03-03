@@ -14,6 +14,7 @@ import inspect
 
 # for development
 from IPython.core.debugger import set_trace
+from midas.constants import ISDEBUG
 
 from midas.midas_algebra.data_types import DFId
 from midas.midas_algebra.selection import SelectionValue
@@ -251,7 +252,7 @@ class UiComm(object):
     def create_chart(self, df: MidasDataFrame, encoding: EncodingSpec):
         if df.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
-        # first check if the encodings has changed
+        # first check if the encodings has changed, or if the data has changed.
         if df.df_name in self.vis_spec:
             if self.vis_spec[df.df_name] == encoding and self.id_by_df_name[df.df_name] == df._id:
                 return
@@ -259,16 +260,19 @@ class UiComm(object):
         self.vis_spec[df.df_name] = encoding
         self.id_by_df_name[df.df_name] = df._id
 
+        if ISDEBUG: set_trace()
         records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
         code = get_midas_code(df._ops)
         # TODO: check if we even need to do the dumping
         data = json.dumps(records)
+        hash_val = df._id + "_" + encoding.to_hash()
         message = {
             'type': 'chart_render',
             "dfName": df.df_name,
             'encoding': encoding.to_json(),
             'data': data,
-            'code': code
+            'code': code,
+            'hashVal': hash_val
         }
         self.comm.send(message)
         return
