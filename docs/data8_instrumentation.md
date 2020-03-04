@@ -6,7 +6,7 @@ These are fine
 
 - `from_rows`
 - `from_records`
-- `read_table`
+- `from_file`
 - `from_df`
 - `from_array`
 

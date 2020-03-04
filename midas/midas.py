@@ -95,8 +95,9 @@ class Midas(object):
         self._rt_funcs = RuntimeFunctions(
             self.add_df,
             self._show_df,
-            self._show_df_filtered,
-            self.show_profile,
+            # self._show_df_filtered,
+            # self.show_profile,
+            self._i_get_df,
             self._context.apply_selection,
             self.add_join_info)
 
@@ -143,7 +144,7 @@ class Midas(object):
         # need to know if this came from a reactive cell
         if trigger_filter and len(self.current_selection) > 0:
             new_df = mdf.apply_selection(self.current_selection)
-            new_df.filter_chart(df_name)
+            self._show_df_filtered(new_df, df_name)
 
 
     def _i_has_df_chart(self, df_name: DFName):
@@ -198,20 +199,24 @@ class Midas(object):
             self._ui_comm.internal_current_selection(empty_sel, df_name) # type: ignore
         self.df_info_store.pop(df_name)
 
+    def create_with_table_wrap(self, table, df_name):
+        self.log_entry("load_data", df_name)
+        df = MidasDataFrame.create_with_table(table, df_name, self._rt_funcs)
+        self.show_profile(df)
+        return df
+
 
     def from_records(self, records):
         table = Table.from_records(records)
         df_name = find_name()
-        self.log_entry("load_data", df_name)
-        return MidasDataFrame.create_with_table(table, df_name, self._rt_funcs)
+        return self.create_with_table_wrap(table, df_name)
+        
 
-
-    def read_table(self, filepath_or_buffer, *args, **vargs):
+    def from_file(self, filepath_or_buffer, *args, **vargs):
         try:
             table = Table.read_table(filepath_or_buffer, *args, **vargs)
             df_name = find_name()
-            self.log_entry("load_data", df_name)
-            return MidasDataFrame.create_with_table(table, df_name, self._rt_funcs)
+            return self.create_with_table_wrap(table, df_name)
         except FileNotFoundError:
             red_print(f"File {filepath_or_buffer} does not exist!")
         except UserError as err:
@@ -222,8 +227,7 @@ class Midas(object):
         # a pandas df
         table = Table.from_df(df)
         df_name = find_name()
-        self.log_entry("load_data", df_name)
-        return MidasDataFrame.create_with_table(table, df_name, self._rt_funcs)
+        return self.create_with_table_wrap(table, df_name)
 
 
     def from_ops(self, ops: RelationalOp):
@@ -233,8 +237,7 @@ class Midas(object):
     def with_columns(self, *labels_and_values, **formatter):
         table = Table().with_columns(*labels_and_values, **formatter)
         df_name = find_name()
-        self.log_entry("load_data", df_name)
-        return MidasDataFrame.create_with_table(table, df_name, self._rt_funcs)
+        return self.create_with_table_wrap(table, df_name)
 
 
     def add_join_info(self, join_info: JoinInfo):
@@ -286,7 +289,7 @@ class Midas(object):
                 if len(s) > 0:
                     new_df = df_info.original_df.apply_selection(s)
                     if df_info.df_name:
-                        new_df.filter_chart(df_info.df_name)
+                        self._show_df_filtered(new_df, df_info.df_name)
                     else:
                         raise InternalLogicalError("df must be named")
 
@@ -349,6 +352,7 @@ class Midas(object):
         else:
             return get_midas_code(df._ops)
 
+        
 
     def _get_original_code(self, df_name: str):
         df_info = self._i_get_df_info(df_name)

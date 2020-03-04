@@ -93,8 +93,9 @@ class JoinInfo(object):
 class RuntimeFunctions(NamedTuple):
     add_df: Callable[['MidasDataFrame'], None]
     show_df: Callable[['MidasDataFrame', EncodingSpec, Optional[bool]], None]
-    show_df_filtered: Callable[['MidasDataFrame', DFName], None]
-    show_profiler: Callable[['MidasDataFrame'], None]
+    # show_df_filtered: Callable[['MidasDataFrame', DFName], None]
+    # show_profiler: Callable[['MidasDataFrame'], None]
+    get_filtered_df: Callable[[str], Optional['MidasDataFrame']]
     # get_stream: Callable[[DFName], MidasSelectionStream] 
     apply_other_selection: Callable[['MidasDataFrame', List[SelectionValue]], Optional['MidasDataFrame']]
     add_join_info: Callable[[JoinInfo], None]
@@ -105,6 +106,11 @@ class NotInRuntime():
 
 
 class MidasDataFrame(object):
+    """A Midas dataframe is a 
+
+    Here is a list of useful functions
+    >> 
+    """
     _id: DFId
     _df_name: Optional[DFName]
     _rt_funcs: RuntimeFunctions
@@ -215,7 +221,7 @@ class MidasDataFrame(object):
         df_id = DFId(get_random_string(5))
         ops = BaseOp(df_name, df_id, table)
         df = cls(ops, midas_ref, table, df_name, df_id, is_base=True)
-        df.show_profile()
+        # df.show_profile()
         return df
 
     def new_df_from_ops(self, ops: 'RelationalOp', table: Optional[Table]=None, df_name: Optional[str] = None):
@@ -294,18 +300,19 @@ class MidasDataFrame(object):
         return self.table.apply(fn, *column_or_columns)
 
 
-    def show_profile(self):
-        self._rt_funcs.show_profiler(self)
+    # def show_profile(self):
+    #     self._rt_funcs.show_profiler(self)
 
 
-    def _set_current_filtered_data(self, mdf: Optional['MidasDataFrame']):
-        self.current_filtered_data = mdf
-    
+    def get_filtered_data(self):
+        """returns the currently filtered data
+        """
+        return self._rt_funcs.get_filtered_df(self.df_name)
 
-    def filter_chart(self, df_name: DFName):
-        # doesn't need to have 
-        self._rt_funcs.show_df_filtered(self, df_name)
-        
+
+    def get_code(self):
+      return get_midas_code(self._ops)
+
 
     def vis(self, **kwargs):
         """Shows the visualization in the Midas pannel
@@ -330,8 +337,9 @@ class MidasDataFrame(object):
             self._rt_funcs.show_df(self, spec, True)
         return self
 
+
     def reactive_vis(self, **kwargs):
-        """[summary]
+        """This function is called inplace of `vis` for reactive cells, whose participation in the event loop is different from the others.
         """
         spec = parse_encoding(kwargs, self)
         if spec:
@@ -353,10 +361,6 @@ class MidasDataFrame(object):
             raise UserError("DF not defined")
 
 
-    @property
-    def is_base_df(self) -> bool:
-        return self._ops.op_type == RelationalOpType.base # type: ignore
-
 
     def apply_selection(self, all_predicates: List[SelectionValue]):
         # if all the selections are null then reply nothing
@@ -375,11 +379,14 @@ class MidasDataFrame(object):
         for p in predicates:
             new_df = new_df.where(p.column_or_label, p.value_or_predicate, p.other)
         return new_df
-
-
-    def get_code(self):
-      return get_midas_code(self._ops)
         
+    def _set_current_filtered_data(self, mdf: Optional['MidasDataFrame']):
+        self.current_filtered_data = mdf
+
+    # not currently used, but might be helpful in the future
+    # @property
+    # def is_base_df(self) -> bool:
+    #     return self._ops.op_type == RelationalOpType.base # type: ignore
 
 
 class RelationalOp(object):
