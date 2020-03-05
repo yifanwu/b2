@@ -366,13 +366,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
               {DetailButton}
             </summary>
             <div className="midas-chart-action">
-              <a onMouseDown={this.moveLeft}>⬅️</a>
-              <a onClick={this.moveRight}>➡️</a>
-              <a onClick={() => this.snapToCell()}>📷</a>
-              <a onClick={() => this.changeVisual()}>📊</a>
-              <a onClick={() => this.copyCodeToClipboard()}>📋</a>
-              <a onClick={() => this.toggleHiddenStatus()}>{this.state.hidden ? "➕" : "➖"}</a>
-              <a onClick={() => this.props.removeChart()}>❌</a>
+              <a title="Move chart left" onClick={this.moveLeft}>⬅️</a>
+              <a title="Move chart right" onClick={this.moveRight}>➡️</a>
+              <a title="Snap an image of chat to notebook" onClick={() => this.snapToCell()}>📷</a>
+              <a title="Copy visual code definitions to clippboard" onClick={() => this.changeVisual()}>📊</a>
+              <a title="Copy data query code to clopboard" onClick={() => this.copyCodeToClipboard()}>📋</a>
+              <a title={this.state.hidden ? "Open the chart" : "Fold the chart"} onClick={() => this.toggleHiddenStatus()}>{this.state.hidden ? "➕" : "➖"}</a>
+              <a title="Remove the chart" onClick={() => this.props.removeChart()}>❌</a>
             </div>
           </details>
         </div>
