@@ -62,7 +62,8 @@ export default class CellManager {
   }
 
   executeCapturedCells(div: string, comments: string) {
-    this.createCell(`#${comments}\nfrom IPython.display import HTML, display\ndisplay(HTML("""${div}"""))`, "chart", true);
+    const cell = this.createCell(`#${comments}\nfrom IPython.display import HTML, display\ndisplay(HTML("""${div}"""))`, "chart", true);
+    cell.code_mirror.display.lineDiv.scrollIntoView();
   }
 
   runReactiveCells(dfName: string) {
@@ -167,6 +168,7 @@ export default class CellManager {
     if (shouldExecute) {
       this.exeucteCell(cell);
     }
+    return cell;
   }
 
   /**
