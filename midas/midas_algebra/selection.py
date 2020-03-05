@@ -59,6 +59,9 @@ class EmptySelection(SelectionValue):
     def to_str(self):
         raise InternalLogicalError("Should not try to make empty selections into strings")
 
+    def __repr__(self):
+        return f"{{column: {self.column}, val: None, minVal: None, maxVal: None}}"
+
 
 class NumericRangeSelection(SelectionValue):
     def __init__(self, column: ColumnRef, minVal: float, maxVal: float):

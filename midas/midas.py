@@ -266,6 +266,7 @@ class Midas(object):
         # date = datetime.now()
         # selection_event = SelectionEvent(date, selection, DFName(df_name))
         # self.append_df_predicates(selection_event)
+        self.immediate_selection = selection
         new_selection = list(filter(lambda v: v.column.df_name != df_name, self.current_selection))
         none_empty = list(filter(lambda s: s.selection_type != SelectionType.empty , selection))
         new_selection.extend(none_empty)
