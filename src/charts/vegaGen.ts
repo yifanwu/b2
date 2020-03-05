@@ -79,7 +79,12 @@ function genSelection(selectionType: SelectionType, selectionDimensions: Selecti
   if (selectionType === "multiclick") {
     return {
       "zoom": zoomSelection,
-      "select": {"type": "multi",  "encodings": getSelectionDimensionsToArray(selectionDimensions)}
+      "select": {
+        "type": "multi",
+        "encodings": getSelectionDimensionsToArray(selectionDimensions),
+        // note that this empty is important for the selections to work
+        "empty": "none"
+      }
     };
   }
   if (selectionType === "brush") {
@@ -95,18 +100,23 @@ function genSelection(selectionType: SelectionType, selectionDimensions: Selecti
   };
 }
 
+function genSelectionReference(selectionType: SelectionType) {
+  if (selectionType === "multiclick") {
+    return "select";
+  }
+  return "brush";
+}
+
 
 export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[]) {
   switch (encoding.mark) {
     case "bar":
-      return {
+      let barSpec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": `Midas Generated Visualization of dataframe ${dfName}`,
-        "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
         "data": {
           "values": data
         },
-        "mark": "bar",
         "encoding": {
           "x": {
               "field": encoding.x,
@@ -138,26 +148,37 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
           //   "value": 0
           // }
         },
-        "layer": [
+      };
+      if (encoding.selectionDimensions === "") {
+        // no selection
+        barSpec["mark"] = "bar";
+        barSpec["encoding"]["color"] = colorSpec;
+      } else {
+        barSpec["layer"] = [
           {
             "mark": "bar",
             "encoding": {
               "color": colorSpec
             },
-            "selection": {
-              "select": {"type": "multi", "encodings": ["x"], "empty": "none"}
-            }
+            "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
           },
           {
             "mark": "bar",
-            "transform": [{"filter": {"selection": "select"}}],
+            "transform": [
+              {
+                "filter": {
+                  "selection": genSelectionReference(encoding.selectionType)
+                }
+              }
+            ],
             "encoding": {
               "color": selectedColorSpec
             }
           }
-        ],
-        "resolve": {"scale": {"color": "independent"}}
-      };
+        ];
+        barSpec["resolve"] = {"scale": {"color": "independent"}};
+      }
+      return barSpec;
     case "circle":
       return {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",

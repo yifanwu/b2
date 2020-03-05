@@ -83,7 +83,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   }
 
   isMultiSelect() {
-    return this.props.encoding.mark === "bar";
+    return this.props.encoding.selectionType === "multiclick";
   }
 
   updateSelectionMarks(selection: PerChartSelectionValue) {
