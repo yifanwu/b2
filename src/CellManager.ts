@@ -150,7 +150,13 @@ export default class CellManager {
       cell = Jupyter.notebook.insert_cell_at_index("code", idx + 1);
     } else {
       LogDebug("Last executed cell not found!");
-      cell = Jupyter.notebook.insert_cell_below("code");
+      // when last executed is not found, this is often the case of a refresh
+      // if we are currently at the top, move to bottom
+      // if we are somewhere in the middle, then do that
+      const allCells = Jupyter.notebook.get_cells();
+      const insertIdx = allCells.length;
+      // cell = Jupyter.notebook.insert_cell_below("code");
+      cell = Jupyter.notebook.insert_cell_at_index("code", insertIdx);
     }
     const comment = getEmojiEnnotatedComment(funKind);
     cell.set_text(comment + "\n" + code);

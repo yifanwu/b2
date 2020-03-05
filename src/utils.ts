@@ -100,7 +100,7 @@ export function copyTextToClipboard(text: string) {
  * @param s1 one selection
  * @param s2 another selections
  */
-export function isFristSelectionContainedBySecond(s1?: PerChartSelectionValue, s2?: PerChartSelectionValue) {
+export function isFirstSelectionContainedBySecond(s1?: PerChartSelectionValue, s2?: PerChartSelectionValue) {
   if (s1 && s2) {
     // iternate
     if (Object.keys(s1).length > Object.keys(s2).length) {

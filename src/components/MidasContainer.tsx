@@ -145,6 +145,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     }
 
     const dfNames = selectionArray.map((s: any) => Object.keys(s)[0]) as string[];
+    // FIXME: iterate through dfNames as opposed elements
     for (let e of this.state.elements) {
       const idx = dfNames.findIndex((v) => v === e.dfName);
       if (idx > -1) {

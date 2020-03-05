@@ -12,7 +12,7 @@ import { EncodingSpec, genVegaSpec, multiSelectedField } from "../charts/vegaGen
 import { makeElementId } from "../config";
 import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL, EmbedConfig } from "../constants";
 import { PerChartSelectionValue, MidasElementFunctions } from "../types";
-import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFristSelectionContainedBySecond, getMultiClickValue, copyTextToClipboard } from "../utils";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFirstSelectionContainedBySecond, getMultiClickValue, copyTextToClipboard } from "../utils";
 
 const DetailButton = <svg viewBox="0 0 16 16" fill="currentColor" stroke="none" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
   <circle r="2" cy="8" cx="2"></circle>
@@ -52,6 +52,9 @@ interface MidasElementState {
  * delete, or find the corresponding cell of the visualization.
  */
 export class MidasElement extends React.Component<MidasElementProps, MidasElementState> {
+  // activateSignalFlag: boolean;
+  updatedSelection: PerChartSelectionValue;
+
   constructor(props: any) {
     super(props);
     this.embed = this.embed.bind(this);
@@ -65,6 +68,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.moveRight = this.moveRight.bind(this);
     this.getCode = this.getCode.bind(this);
     this.toggleBaseData = this.toggleBaseData.bind(this);
+    // this.shouldActivateSignal = this.shouldActivateSignal.bind(this);
+
+    // this.activateSignalFlag = true; // hack
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
       hidden: false,
@@ -86,11 +92,17 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     return this.props.encoding.selectionType === "multiclick";
   }
 
-  updateSelectionMarks(selection: PerChartSelectionValue) {
-    if (isFristSelectionContainedBySecond(selection, this.state.currentBrush) ) {
+  // shouldActivateSignal() {
+  //   return this.activateSignalFlag;
+  // }
+
+  async updateSelectionMarks(selection: PerChartSelectionValue) {
+    if (isFirstSelectionContainedBySecond(selection, this.state.currentBrush) ) {
       // LogDebug("BRUSH NOOP", [selection, this.state.currentBrush]);
       return;
     }
+    // this.activateSignalFlag = false;
+    this.updatedSelection = selection;
     const signal = this.state.view.signal.bind(this.state.view);
     const runAsync = this.state.view.runAsync.bind(this.state.view);
     if (Object.keys(selection).length === 0) {
@@ -100,10 +112,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       } else {
         signal(BRUSH_X_SIGNAL, [0, 0]);
       }
-      runAsync();
+      await runAsync();
+      // this.activateSignalFlag = true;
       return;
     }
-    LogDebug(`BRUSHING`, [selection, this.state.currentBrush]);
+    // LogDebug(`BRUSHING`, [selection, this.state.currentBrush]);
     // @ts-ignore because the vega view API is not fully TS typed.
     const scale = this.state.view.scale.bind(this.state.view);
     const encoding = this.props.encoding;
@@ -113,14 +126,17 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       const values = selection[selectedField];
       signal(MULTICLICK_TOGGLE, false);
       signal(MULTICLICK_PIXEL_SIGNAL, null);
+      // if we don't run async here it doesn't actually clear
+      // remove the signal for now
+      await runAsync();
       signal(MULTICLICK_TOGGLE, true);
-      // MAYBE TODO: find diff instead of clearing
-      // @ts-ignore ugh this string/number issue is dumb
-      values.map((v: string|number) => {
-        signal(MULTICLICK_PIXEL_SIGNAL, getMultiClickValue(selectedField, v, encoding.selectionDimensions));
+
+      for (let v of values) {
+        const signalValue = getMultiClickValue(selectedField, v, encoding.selectionDimensions);
+        signal(MULTICLICK_PIXEL_SIGNAL, signalValue);
+        await runAsync();
         hasModified = true;
-      });
-      runAsync();
+      }
     } else {
       if (selection[encoding.x]) {
         const x_pixel_min = scale("x")(selection[encoding.x][0]);
@@ -130,7 +146,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           : x_pixel_min + MIN_BRUSH_PX;
         LogDebug(`updated brush x: ${x_pixel_min}, ${x_pixel_max}`);
         signal(BRUSH_X_SIGNAL, [x_pixel_min, x_pixel_max]);
-        runAsync();
+        await runAsync();
         hasModified = true;
       }
       if (selection[encoding.y]) {
@@ -138,12 +154,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         const y_pixel_max = scale("y")(selection[encoding.y][1]);
         signal(BRUSH_Y_SIGNAL, [y_pixel_min, y_pixel_max]);
         hasModified = true;
-        runAsync();
+        await runAsync();
       }
     }
     if (!hasModified) {
       LogInternalError(`Draw brush didn't modify any scales for selection ${selection}`);
     }
+    // this.activateSignalFlag = true;
+    // LogDebug("setting flag to true");
     return;
   }
 
@@ -164,6 +182,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   getDebouncedFunction(dfName: string) {
     const callback = (signalName: string, value: any) => {
       // also need to call into python state...
+      // LogDebug("activateSignalFlag", this.activateSignalFlag);
+      // if (!this.shouldActivateSignal()) {
+      //   LogDebug("activateSignalFlag set to false, no-op");
+      //   return;
+      // }
       let processedValue = {};
       let cleanValue = {};
       // const selectedField = multiSelectedField(this.props.encoding);
@@ -172,6 +195,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       } else {
         cleanValue = value;
       }
+      if (isFirstSelectionContainedBySecond(cleanValue, this.updatedSelection)) {
+        return;
+      }
+      this.updatedSelection = null;
       processedValue[dfName] = cleanValue;
       let valueStr = JSON.stringify(processedValue);
       valueStr = (valueStr === "null") ? "None" : valueStr;
@@ -182,6 +209,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       // have to set focus manually because the focus is not set
       document.getElementById(getDfId(this.props.dfName)).focus();
     };
+    // huh, debouncing actually helps us! If there were mtulple triggered, we'll just do the new things
     const wrapped = (name: any, value: any) => {
       const n = new Date();
       let l = (window as any).lastInvoked;
