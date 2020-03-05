@@ -524,12 +524,16 @@ a.tip:hover span {
   font-weight: 600;
   white-space: nowrap;
   color: #434a56;
+  cursor: pointer;
   text-decoration: none;
 }
 
 .midas-chart-action a:hover {
-  background-color: #f7f7f9;
-  color: black;
+  background-color: var(--blue-100);
+}
+
+.midas-chart-action a:active {
+  background-color: var(--blue-300);
 }
 
 
