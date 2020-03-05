@@ -284,6 +284,7 @@ class Midas(object):
         else:
             if not self.config.linked:
                 return
+
             for df_info in self.__get_visualized_df_info():
                 s = list(filter(lambda p: p.column.df_name != df_info.df_name, all_predicate))
                 if len(s) > 0:
@@ -292,6 +293,10 @@ class Midas(object):
                         self._show_df_filtered(new_df, df_info.df_name)
                     else:
                         raise InternalLogicalError("df must be named")
+                else:
+                    # Note: we need to first clear the selections, otherwise filters that are not active won't happen.
+                    self._show_df_filtered(None, df_info.df_name)
+
 
 
     def __get_visualized_df_info(self) -> Iterator[VisualizedDFInfo]:
