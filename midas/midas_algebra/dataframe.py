@@ -23,6 +23,14 @@ from midas.showme import infer_encoding_helper
 from .selection import SelectionType, SelectionValue, NumericRangeSelection, SetSelection, ColumnRef
 from .data_types import DFId
 
+# for adding documentation from datascience module despite the wrapper
+def add_doc(value):
+    def _doc(func):
+        # processed_value = value.replace("Table()", "m")
+        func.__doc__ = value
+        return func
+    return _doc
+
 ColumnSelection = Union[str, List[str]]
 
 class ColumnType(Enum):
@@ -263,9 +271,13 @@ class MidasDataFrame(object):
     def rows(self, idx: int):
         return self.table.rows(idx)
 
+
+    @add_doc(Table.column.__doc__)
     def column(self, col_name: str):
         return self.table[col_name]
 
+
+    @add_doc(Table.select.__doc__)
     def select(self, columns: List[str]) -> 'MidasDataFrame':
         new_table = self.table.select(columns)
         new_ops = Select(columns, self._ops)
@@ -273,6 +285,7 @@ class MidasDataFrame(object):
         return self.new_df_from_ops(new_ops, new_table, df_name)
 
 
+    @add_doc(Table.where.__doc__)
     def where(self, column_or_label, value_or_predicate=None, other=None):
         new_table = self.table.where(column_or_label, value_or_predicate, other)
         predicate = Predicate(column_or_label, value_or_predicate, other)
@@ -281,6 +294,7 @@ class MidasDataFrame(object):
         return self.new_df_from_ops(new_ops, new_table, df_name)
 
 
+    @add_doc(Table.join.__doc__)
     def join(self, column_label, other: 'MidasDataFrame', other_label):
         new_table = self.table.join(column_label, other.table, other_label)
         new_ops = Join(column_label, other, other_label, self._ops)
@@ -288,14 +302,14 @@ class MidasDataFrame(object):
         return self.new_df_from_ops(new_ops, new_table, df_name)
     
 
+    @add_doc(Table.group.__doc__)
     def group(self, column_or_label: ColumnSelection, collect=None):
         new_table = self.table.groups(column_or_label, collect)
         new_ops = GroupBy(column_or_label, collect, self._ops)
         df_name = find_name(False)
         return self.new_df_from_ops(new_ops, new_table, df_name)
 
-
-
+    @add_doc(Table.apply.__doc__)
     def apply(self, fn, *column_or_columns):
         return self.table.apply(fn, *column_or_columns)
 
@@ -311,7 +325,9 @@ class MidasDataFrame(object):
 
 
     def get_code(self):
-      return get_midas_code(self._ops)
+        """returns the code used to generate the current dataframe
+        """
+        return get_midas_code(self._ops)
 
 
     def vis(self, **kwargs):
