@@ -352,6 +352,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     if (this.hasSelection()) {
       className += " selected-card";
     }
+    const toggleSummaryPin = this.state.isBaseShown
+      ? "📌"
+      : "📍";
+
     return (
       <div className={className} id={getDfId(this.props.dfName)}
         tabIndex={-1}
@@ -360,7 +364,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           }}>
         <div className="midas-header">
           <span>{this.props.title}</span>
-          <a onClick={() => this.toggleBaseData()}> toggle summary</a>
+          <a onClick={() => this.toggleBaseData()}>{toggleSummaryPin}</a>
           <details title="click to see options">
             <summary>
               {DetailButton}
