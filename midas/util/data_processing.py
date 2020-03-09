@@ -66,7 +66,7 @@ def get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df_na
     # min_bucket_count = round(current_max_bins/MAX_BINS)
     d_max = unique_vals[-1]
     d_min = unique_vals[0]
-    min_bucket_size = round((d_max - d_min) / MAX_BINS)
+    min_bucket_size = (d_max - d_min) / MAX_BINS
     # set_trace()
     # imports = "import numpy as np"
     def create_code(bound):
