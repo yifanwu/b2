@@ -353,8 +353,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       className += " selected-card";
     }
     const toggleSummaryPin = this.state.isBaseShown
-      ? "📌"
-      : "📍";
+      ? " 📌"
+      : " 📍";
 
     return (
       <div className={className} id={getDfId(this.props.dfName)}

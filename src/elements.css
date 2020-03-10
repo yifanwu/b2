@@ -248,6 +248,8 @@
 
 .card {
   text-align: left;
+  /* need the following otherwise width is not confined to parent's */
+  word-break: break-word;
   margin: var(--size-2);
   padding: var(--size-2);
   border: 1px solid var(--cyan-100);
