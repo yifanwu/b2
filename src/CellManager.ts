@@ -190,4 +190,12 @@ export default class CellManager {
     this.lastExecutedCell = cell;
     return cell.cell_id;
   }
+
+  /**
+   * To be called by the event listener to update CellManager
+   * @param cell
+   */
+  updateLastExecutedCell(cell: any) {
+    this.lastExecutedCell = cell;
+  }
 }

@@ -182,9 +182,13 @@ export function makeComm(is_first_time = true) {
           const on_msg = makeOnMsg(ref, cellManager);
           set_on_msg(on_msg);
 
+          // TODO: optimize and chose not to send
           if (is_first_time) {
             Jupyter.notebook.events.on("finished_execute.CodeCell", function(evt: any, data: any) {
               // we also need to tell cell manager which one was the most recently ran!
+              cellManager.updateLastExecutedCell(data.cell);
+
+              // passed to Python for more logging
               const code = data.cell.get_text();
               comm.send({
                 command: "cell-ran",
