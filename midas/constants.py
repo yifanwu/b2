@@ -9,5 +9,5 @@ COUNT_COL_NAME = "count"
 MAX_BINS = 100
 MAX_DOTS = 10000
 
-LOG_DB_PATH = "../experiment_results/experiment_log.sqlite"
-LOG_DB_BACKUP_FOLDER = "../experiment_results/backups/"
+LOG_DB_PATH = "/Users/yifanwu/dev/midas-experiment/experiment_results/experiment_log.sqlite"
+LOG_DB_BACKUP_FOLDER = "/Users/yifanwu/dev/midas-experiment/experiment_results/backups/"

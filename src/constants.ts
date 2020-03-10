@@ -1,5 +1,5 @@
 // CONFIG
-export const IS_DEBUG = true;
+export const IS_DEBUG = false;
 
 // derived from config
 export const EmbedConfig = IS_DEBUG
