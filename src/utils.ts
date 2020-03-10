@@ -101,7 +101,7 @@ export function copyTextToClipboard(text: string) {
  * @param s2 another selections
  */
 export function isFirstSelectionContainedBySecond(s1?: PerChartSelectionValue, s2?: PerChartSelectionValue) {
-  if (s1 && s2) {
+  if (s1 && Object.keys(s1).length && s2 && Object.keys(s2).length) {
     // iternate
     if (Object.keys(s1).length > Object.keys(s2).length) {
       return false;
@@ -113,9 +113,9 @@ export function isFirstSelectionContainedBySecond(s1?: PerChartSelectionValue, s
       }
     }
     return true;
-  } else if (s1) {
+  } else if (s1 && Object.keys(s1).length) {
     return false;
-  } else if (s2) {
+  } else if (s2 && Object.keys(s2).length) {
     return false;
   } else {
     // both must be null
