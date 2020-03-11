@@ -1,29 +1,25 @@
-# Midas, Reifying Interactions in Jupyter Notebook
+# Midas: Moving Between Code and Interactive Visualizations 🚧
 
-## 🚧 Warning 🚧
-
-The code is still under heavy construction; please check back on status.
+The code is still under heavy construction.
 
 ## Installation Guide
 
-Clone the repository and cd into the project:
+We assume that you have Jupyter Notebook (_not Lab_) installed already.  Clone the repository and cd into the project's root directory:
 
 ```sh
-npm run install
-npm run build
-python setup.py develop
+python setup.py
 jupyter nbextension install --py --symlink midas
 ```
 
 Note the JS file has been built and deployed at `midas/static/index.js`.
 
-## Hard Coding Note
+## Dev Installation Guide
 
-There is instrumentation for experimentation currently that is hard coded to Yifan's dev path: `midas/constants.py`:
+To build your own JS bundle:
 
-```python
-LOG_DB_PATH = "/Users/yifanwu/dev/midas-experiment/experiment_results/experiment_log.sqlite"
-LOG_DB_BACKUP_FOLDER = "/Users/yifanwu/dev/midas-experiment/experiment_results/backups/"
+```sh
+npm run install
+npm run watch
 ```
 
-You should be sure not to invoke midas with `Midas("somestring")`, or to create the relevant sqlite files and folders.
+Alternatively you can do `npm run build` instead of watch. The rest is the same.

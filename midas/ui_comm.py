@@ -260,7 +260,7 @@ class UiComm(object):
         self.vis_spec[df.df_name] = encoding
         self.id_by_df_name[df.df_name] = df._id
 
-        if ISDEBUG: set_trace()
+        # if ISDEBUG: set_trace()
         records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
         code = get_midas_code(df._ops)
         # TODO: check if we even need to do the dumping

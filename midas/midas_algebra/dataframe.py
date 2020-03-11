@@ -346,7 +346,7 @@ class MidasDataFrame(object):
         Raises:
             UserError: wehen the keyword arguments do not match the expected EncodingSpec
         """
-        if ISDEBUG: set_trace()
+        # if ISDEBUG: set_trace()
         spec = parse_encoding(kwargs, self)
         if spec:
             sanity_check_spec_with_data(spec, self)
