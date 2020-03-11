@@ -62,7 +62,9 @@ class Midas(object):
     # log_file: IO[Any]
     _start_time: datetime
 
-    def __init__(self, user_id: Optional[str]=None, linked=True):
+
+    def __init__(self, user_id: Optional[str]=None, task_id: Optional[str]=None):
+        # , linked=True
         # wrap around the data science library so we can use it
         self.are = are
         self.np = np
@@ -73,16 +75,15 @@ class Midas(object):
             raise UserError("must assign a name")
         self._assigned_name = assigned_name
         if user_id:
-            self.user_id = user_id
             self._start_time = datetime.now()
             time_stamp = self._start_time.strftime("%Y%m%d-%H%M%S")
-            self.log_entry_to_db = open_sqlite_for_logging(user_id, time_stamp)
+            self.log_entry_to_db = open_sqlite_for_logging(user_id, task_id, time_stamp)
         ui_comm = UiComm(is_in_ipynb, assigned_name, self._i_get_df_info, self.remove_df, self.from_ops, self._add_selection, self._get_filtered_code, self.log_entry)
         self._ui_comm = ui_comm
         self.df_info_store = {}
         self._context = Context(self.df_info_store, self.from_ops)
         self.all_selections = []
-        self.config = MidasConfig(linked, True if user_id else False)
+        self.config = MidasConfig(True, True if user_id else False)
         self._last_add_selection_df = ""
         self.immediate_selection = []
         self.current_selection = []

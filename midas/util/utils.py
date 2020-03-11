@@ -11,10 +11,11 @@ from re import sub
 
 from typing import Tuple, List, Optional
 from IPython import get_ipython  # type: ignore
+from IPython.core.debugger import set_trace
 
+from midas.constants import ISDEBUG
 from midas.midas_algebra.selection import ColumnRef, EmptySelection, SelectionValue
 from midas.util.errors import UserError, InternalLogicalError
-from midas.constants import LOG_DB_PATH, LOG_DB_BACKUP_FOLDER
 
 
 def isnotebook():
@@ -33,15 +34,55 @@ def isnotebook():
 def red_print(m):
     print(f"\x1b[31m{m}\x1b[0m")
 
+LOG_SQL_SETUP_LOG = """
+CREATE TABLE log (
+  session_id  TEXT,
+  action      TEXT,
+  seconds_since_start INTEGER,
+  optional_metadata   TEXT
+);
+"""
 
-def open_sqlite_for_logging(user_id, time_stamp):
-    # paranoia
-    session_id = f'{user_id}_{time_stamp}'
-    copy(LOG_DB_PATH, f'{LOG_DB_BACKUP_FOLDER}{session_id}.sqlite')
-    con = sqlite3.connect(LOG_DB_PATH)
+LOG_SQL_SETUP_SESSION = """
+CREATE TABLE session (
+  user_id    TEXT,
+  task_id    TEXT,
+  session_id TEXT,
+  start_time TEXT
+);
+"""
+
+
+def open_sqlite_for_logging(user_id: str, task_id: str, time_stamp: str):
+    """opens sqlite file for experuiment logging purpose
+    
+    Note that this is not associated with Midas operations.
+    
+    Arguments:
+        user_id {str} -- the id assigned to the experiment participant
+        time_stamp {[type]} -- [description]
+    
+    Returns:
+        [type] -- [description]
+    """
+    session_id = f'{user_id}_{task_id}_{time_stamp}'
+    # copy(LOG_DB_PATH, f'{LOG_DB_BACKUP_FOLDER}{session_id}.sqlite')
+    file_name = f"./experiment_log_{user_id}.sqlite"
+    should_execute_setup = not path.exists(file_name)
+    set_trace()
+    # check if it's there
+    # if not, do the initial setup
+    con = sqlite3.connect(file_name)
     cur = con.cursor()
-    cur.execute(f"INSERT INTO session VALUES ('{user_id}','{session_id}', '{time_stamp}')")
+
+    if should_execute_setup:
+        cur.execute(LOG_SQL_SETUP_LOG)
+        cur.execute(LOG_SQL_SETUP_SESSION)
+        con.commit()
+
+    cur.execute(f"INSERT INTO session VALUES ('{user_id}', '{task_id}', '{session_id}', '{time_stamp}')")
     con.commit()
+
     def log_entry_to_db(fun_name: str, diff: float, optional_metadata: str):
         sql = f"INSERT INTO log VALUES ('{session_id}', '{fun_name}', {diff}, '{optional_metadata}');"
         try:
@@ -84,6 +125,7 @@ def get_random_string(stringLength=10):
 
 def find_name(throw_error=False) -> Optional[str]:
     try:
+        # if ISDEBUG: set_trace()
         prev_line = traceback.format_stack()[-3]
         code = prev_line.splitlines()[1]
         body = ast.parse(code.strip()).body[0]
