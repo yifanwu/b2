@@ -282,13 +282,17 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   changeVisual() {
     this.props.functions.getChartCode(this.props.dfName);
     navigateToNotebookCell(this.props.cellId);
+    this.props.functions.logEntry("change_visual", this.props.dfName);
   }
 
+  /**
+   * currently called by the snapshot
+   */
   getCode() {
     const code = this.state.code
       ? this.state.code
       : this.props.code;
-    this.props.functions.logEntry("get_code", code);
+    // this.props.functions.logEntry("get_code", code);
     return code;
   }
 
@@ -296,6 +300,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     // this.props.functions.getCode(this.props.dfName);
     // adding a new line because in the cell new line is annoying
     copyTextToClipboard(this.getCode() + "\n");
+    this.props.functions.logEntry("get_code", this.props.dfName);
   }
 
   getSvg(): Promise<string> {

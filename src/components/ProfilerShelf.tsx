@@ -23,6 +23,7 @@ interface ProfilerShelfState {
 
 interface ProfilerShelfProps {
   columnSelectMsg: (columnName: string, tableName: string) => void;
+  logEntry: (action: string, metadata: string) => void;
 }
 
 
@@ -89,6 +90,8 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
     this.setState(prevState => {
       return { isShownAll: !prevState.isShownAll};
     });
+    // also send note
+    this.props.logEntry("toggle_shelf", "");
   }
 
   toggleTable(tableName: string) {

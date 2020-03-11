@@ -130,7 +130,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     // this bleads the abstraction a little
     this.props.containerFunctions.elementFunctions.executeCapturedCells(`<div>${combined}<div>`, comments);
 
-    this.props.containerFunctions.elementFunctions.logEntry("snapshot_single");
+    this.props.containerFunctions.elementFunctions.logEntry("snapshot_single", "");
   }
 
   drawBrush(selectionArrayStr: string) {

@@ -11,7 +11,7 @@ export type PerChartSelectionValue = {[index: string]: SelectionValue};
 
 export interface MidasElementFunctions {
   addCurrentSelectionMsg: (valueStr: string) => void;
-  logEntry: (action: string, metadata?: string) => void;
+  logEntry: (action: string, metadata: string) => void;
   // getCode: (dataFrame: string) => void;
   setUIItxFocus: (dataFrame?: string) => void;
   getChartCode: (dataFrame: string) => void;

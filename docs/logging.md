@@ -32,11 +32,14 @@ UI
 - `snapshot_all`
 - `move_chart`
 - `resize_midas_area`
+- `toggle_midas`
+- `toggle_shelf`
 - `toggle_chart_visibility`
 - `column_click`
 - `ui_selection`
 - `get_code`
 - `remove_df`
+- `change_visual`
 
 - `navigate_to_original_cell`
 

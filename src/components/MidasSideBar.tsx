@@ -68,6 +68,8 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
         };
       }
     });
+    // also send
+    this.props.midasElementFunctions.elementFunctions.logEntry("toggle_midas", "");
   }
 
   setMidasContainerRef(input: MidasContainer) {
@@ -109,6 +111,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
           <ProfilerShelf
             ref={this.setProfilerShelfRef}
             columnSelectMsg={this.props.columnSelectMsg}
+            logEntry={this.props.midasElementFunctions.elementFunctions.logEntry}
           />
         </div></>
     );
