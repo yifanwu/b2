@@ -101,6 +101,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       // LogDebug("BRUSH NOOP", [selection, this.state.currentBrush]);
       return;
     }
+
+    this.setState({ currentBrush: selection });
     // this.activateSignalFlag = false;
     this.updatedSelection = selection;
     const signal = this.state.view.signal.bind(this.state.view);
