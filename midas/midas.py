@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from midas.constants import ISDEBUG
 from warnings import filterwarnings
 from IPython import get_ipython
 from typing import Optional, List, Dict, Iterator, Union, cast, Any
@@ -19,6 +18,7 @@ except ImportError as err:
     display = lambda x: None
     logging = lambda x, y: None
 
+from midas.constants import ISDEBUG
 from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
 from .util.errors import InternalLogicalError, debug_log
@@ -259,6 +259,19 @@ class Midas(object):
         self.log_entry("get_current_selection")
         return self.current_selection
 
+    @property
+    def immediate_value(self):
+        """syntax shortcut for the first value selected
+        - if it's a bar chart, it's array of string, e.g., ['CA']
+        - if it's scatter or line, it's, e.g., [100, 200]
+        """
+        if len(self.immediate_selection) == 0:
+            return None
+        first = self.immediate_selection[0]
+        if first.selection_type == SelectionType.empty:
+            return None
+        # if first.selection_type == SelectionType.string_set:
+        return first.val # type: ignore
 
     # this function just modifies the current selection and returns it
     # this currently assume that all the selectionvalue are from one dataframe
