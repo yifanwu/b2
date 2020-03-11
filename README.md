@@ -8,7 +8,7 @@ We assume that you have Jupyter Notebook (_not Lab_) installed already.  Clone t
 
 ```sh
 pip install -r requirements.txt
-python setup.py develope
+python setup.py develop
 jupyter nbextension install --py --symlink midas
 ```
 

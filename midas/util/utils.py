@@ -69,7 +69,6 @@ def open_sqlite_for_logging(user_id: str, task_id: str, time_stamp: str):
     # copy(LOG_DB_PATH, f'{LOG_DB_BACKUP_FOLDER}{session_id}.sqlite')
     file_name = f"./experiment_log_{user_id}.sqlite"
     should_execute_setup = not path.exists(file_name)
-    set_trace()
     # check if it's there
     # if not, do the initial setup
     con = sqlite3.connect(file_name)
