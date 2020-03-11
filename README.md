@@ -7,7 +7,8 @@ The code is still under heavy construction.
 We assume that you have Jupyter Notebook (_not Lab_) installed already.  Clone the repository and cd into the project's root directory:
 
 ```sh
-python setup.py
+pip install -r requirements.txt
+python setup.py develope
 jupyter nbextension install --py --symlink midas
 ```
 
