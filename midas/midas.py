@@ -5,6 +5,7 @@ from typing import Optional, List, Dict, Iterator, Union, cast, Any
 from datascience import Table
 from datascience.predicates import are
 import numpy as np
+import math
 from json import dumps
 from datetime import datetime
 from typing import Dict, List
@@ -68,13 +69,14 @@ class Midas(object):
         # wrap around the data science library so we can use it
         self.are = are
         self.np = np
+        self.math = math
         # deepcopy triggers 
         filterwarnings("ignore")
         assigned_name = find_name(True)
         if assigned_name is None:
             raise UserError("must assign a name")
         self._assigned_name = assigned_name
-        if user_id:
+        if user_id and task_id:
             self._start_time = datetime.now()
             time_stamp = self._start_time.strftime("%Y%m%d-%H%M%S")
             self.log_entry_to_db = open_sqlite_for_logging(user_id, task_id, time_stamp)
@@ -98,7 +100,8 @@ class Midas(object):
             self._show_df,
             # self._show_df_filtered,
             # self.show_profile,
-            self._i_get_df,
+            # self._i_get_df,
+            self._get_filtered_df,
             self._context.apply_selection,
             self.add_join_info)
 
@@ -163,6 +166,18 @@ class Midas(object):
         r = self._i_get_df_info(df_name)
         if r:
             return r.df
+        return None
+
+    def _get_filtered_df(self, df_name: str):
+        # if this is one of the charts, return its current filtered value
+        r = self._i_get_df_info(df_name)
+        if r:
+            if r.df_type == "visualized":
+                return r.df
+            else:
+                # if this is one of the _original_ data, then filter it...
+                # need to apply filter...
+                return r.df.apply_self_selection_value(self.current_selection)
         return None
 
     def log_entry(self, fun_name: str, optional_metadata: Optional[str]=None):
