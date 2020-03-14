@@ -482,12 +482,14 @@ class Join(RelationalOp):
     def __repr__(self):
         return f"{{{self.op_type.value}: {{left: {self.child}, right: {self.other._ops}, on: {self.self_columns},{self.other_columns}}}}}"
 
+
 # Note, place here because of cyclic imports : (
 class DFInfo(object):
     def __init__(self, df: MidasDataFrame):
         # df is the immediate df that might be filtered by each tick
         self.df = df
         self.created_on = datetime.now()
+        self.df_type = "original"
 
     # def update_df(self, df: Optional[MidasDataFrame]) -> bool:
     #     raise InternalLogicalError("Should not attempt to update base dataframes")
@@ -502,6 +504,7 @@ class VisualizedDFInfo(DFInfo):
         self.df_name = df.df_name
         # original df is that which was defined at the beginning
         self.original_df = df
+        self.df_type = "visualized"
         # self.predicates: List[SelectionEvent] = []
         
     def update_df(self, df: Optional[MidasDataFrame]) -> bool:
@@ -726,4 +729,5 @@ def infer_encoding(mdf: MidasDataFrame) -> Optional[EncodingSpec]:
     df = mdf.table
     type_check_with_warning(df, Table)
     selectable = get_selectable_column(mdf)
-    return infer_encoding_helper(df, selectable)
+    is_groupby = mdf._ops.op_type == RelationalOpType.groupby
+    return infer_encoding_helper(mdf, selectable, is_groupby)

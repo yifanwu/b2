@@ -52,7 +52,7 @@ class EncodingSpec(object):
         y: str,
         y_type: Literal["ordinal", "quantitative", "temporal"],
         selection_type: Literal["none", "multiclick", "brush"],
-        selection_dimensions: Literal["none", "multiclick", "brush"]
+        selection_dimensions: Literal["", "x", "y", "xy"]
     ):
         """EncodingSpec object used for Midas to generate Vega-Lite specifications
         
@@ -63,7 +63,7 @@ class EncodingSpec(object):
             y {str} -- column for y axis
             y_type {str} -- "ordinal" | "quantitative" | "temporal"
             selection_type {str} -- "none", "multiclick", "brush"
-            selection_dimensions {str} -- "none", "multiclick", "brush"
+            selection_dimensions {str} -- "", "x", "y", "xy"
         """
         self.mark = mark 
         self.x = x

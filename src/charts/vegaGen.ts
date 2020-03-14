@@ -53,12 +53,14 @@ function brushSelection(selectionKind: SelectionDimensions) {
     "on": "[mousedown[event.shiftKey], window:mouseup] > window:mousemove!",
     "translate": "[mousedown[event.shiftKey], window:mouseup] > window:mousemove!",
     // @ts-ignore
-    "zoom": null
+    // "zoom": null
+    // the following is needed for the brush layer to not activate
+    "empty": "none"
   };
   if (selectionKind === "x") {
-    result["encodings"] = "x";
+    result["encodings"] = ["x"];
   } else if (selectionKind === "y") {
-    result["encodings"] = "y";
+    result["encodings"] = ["y"];
   }
   return result;
 }
@@ -156,6 +158,12 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
       } else {
         barSpec["layer"] = [
           {
+            // the width has to be set this way because:
+            // https://stackoverflow.com/questions/60663992/vega-lite-default-bar-width-strange
+            // when it's quantitative the width does not fill up
+            // but setting this might be brittle
+            // TODO: test the quantitative
+            // "mark": {"type": "bar", "size": 15},
             "mark": "bar",
             "encoding": {
               "color": colorSpec
@@ -163,6 +171,7 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
             "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
           },
           {
+            // "mark": {"type": "bar", "size": 15},
             "mark": "bar",
             "transform": [
               {
