@@ -171,11 +171,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const encoding = this.props.encoding;
     let rounedEncoding: any = {};
     if (selection[encoding.x]) {
-      const digits = getDigitsToRound(selection[encoding.x][1], selection[encoding.x][0]);
+      const digits = getDigitsToRound(selection[encoding.x][0], selection[encoding.x][1]);
       rounedEncoding[encoding.x] = selection[encoding.x].map((v: number) => Math.round(v * digits) / digits);
     }
     if (selection[encoding.y]) {
-      const digits = getDigitsToRound(selection[encoding.y][1], selection[encoding.y][0]);
+      const digits = getDigitsToRound(selection[encoding.y][0], selection[encoding.y][1]);
       rounedEncoding[encoding.y] = selection[encoding.y].map((v: number) => Math.round(v * digits) / digits);
     }
     return rounedEncoding;
@@ -197,7 +197,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       } else {
         cleanValue = value;
       }
-      if (isFirstSelectionContainedBySecond(cleanValue, this.updatedSelection)) {
+      if (this.updatedSelection && isFirstSelectionContainedBySecond(cleanValue, this.updatedSelection)) {
         return;
       }
       this.updatedSelection = null;

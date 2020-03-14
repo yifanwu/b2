@@ -198,6 +198,10 @@ export function LogDebug(message: string, obj?: any) {
 
 
 export function getDigitsToRound(minVal: number, maxVal: number) {
+  // asset order
+  if (minVal > maxVal) {
+    LogInternalError(`getDigitsToRound must receive ordered arguments, but we got ${minVal}, ${maxVal}`);
+  }
   const diff = maxVal - minVal;
   const digits = Math.log(diff) / Math.log(10);
   if (digits < 1) {
