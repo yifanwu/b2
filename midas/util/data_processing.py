@@ -67,7 +67,7 @@ def get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df_na
             round_num = -1 * floor(log10(bound))
             binning_lambda = f"lambda x: 'null' if {midas_reference_name}.np.isnan(x) else round(int(x/{bound}) * {bound}, {round_num})"
         else:
-            binning_lambda = f"lambda x: 'null' if {midas_reference_name}.np.isnan(x) else int(x/{bound}) * {bound})"
+            binning_lambda = f"lambda x: 'null' if {midas_reference_name}.np.isnan(x) else int(x/{bound}) * {bound}"
         bin_transform = f"{df_name}['{bin_column_name}'] = {df_name}.apply({binning_lambda}, '{col_name}')"
         grouping_transform = f"{new_name} = {df_name}.group('{bin_column_name}').vis()"
         code = f"{bin_transform}\n{grouping_transform}"
