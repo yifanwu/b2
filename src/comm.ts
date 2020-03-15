@@ -295,6 +295,9 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
       case "profiler_update_data": {
         return;
       }
+      /**
+       * TODO: make the profiler know that the chart has been seen
+       */
       case "chart_render": {
         const chartRenderLoad = load as ChartRenderComm;
         LogSteps("Chart", chartRenderLoad.dfName);

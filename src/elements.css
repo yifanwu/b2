@@ -209,6 +209,10 @@
   border: 2px solid var(--yellow-vivid-050);
 }
 
+.seen-column {
+  background-color: var(--yellow-vivid-150) !important;
+}
+
 /* .midas-shelf-selection-item {
   width: 100%;
   display: flex;

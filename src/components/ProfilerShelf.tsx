@@ -8,6 +8,7 @@ import { TOGGLE_PANNEL_BUTTON, PROFILTER_SHELF_WIDTH, CONTAINER_INIT_WIDTHS } fr
 interface ProfilerColumn {
   columnName: string;
   columnType: string;
+  hasSeen?: boolean;
 }
 
 interface ProfilerShelfState {
@@ -52,6 +53,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
     // this.drop = this.drop.bind(this);
     // this.dragEnd = this.dragEnd.bind(this);
     // this.dragStart = this.dragStart.bind(this);
+    this.markAsSeen = this.markAsSeen.bind(this);
     createTogglePannelButton(this.togglePannel);
     this.state = {
       tables: {},
@@ -77,6 +79,15 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
 
   columnClicked(columnName: string, tableName: string) {
     this.props.columnSelectMsg(columnName, tableName);
+    this.markAsSeen(columnName, tableName);
+  }
+
+  markAsSeen(columnName: string, tableName: string) {
+    this.setState(prevState => {
+      const idx = prevState.tables[tableName].findIndex((i) => i.columnName === columnName);
+      prevState.tables[tableName][idx].hasSeen = true;
+      return prevState;
+    });
   }
 
   hideItem(tableName: string, index: number) {
@@ -140,6 +151,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
           columnType={c.columnType}
           onClick={() => this.columnClicked(c.columnName, tableName)}
           onDelete={() => this.hideItem(tableName, i)}
+          hasSeen={c.hasSeen}
         />)
         : [];
       return <div className="profiler-table" key={`table-${tableName}`}>
@@ -148,7 +160,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
       </div>;
     });
     const content = (tableDivs.length > 0)
-      ? tableDivs
+      ? tableDivs.reverse()
       : <ProfileShelfLandingPage/>
       ;
     // const style = {left: this.state.x, top: this.state.y};

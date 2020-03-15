@@ -12,6 +12,7 @@ interface ColumnItemProps {
   columnType: string;
   onDelete: () => void;
   onClick: () => void;
+  hasSeen?: boolean;
 }
 
 export class ColumnItem extends React.Component<ColumnItemProps, {}> {
@@ -24,9 +25,10 @@ export class ColumnItem extends React.Component<ColumnItemProps, {}> {
 
   render() {
     const shownName = trimStr(this.props.columnName, SHELF_TEXT_MAX_LEN);
+    const additionalClassName = this.props.hasSeen ? "seen-column" : "";
+    const className = `shelf-item column-item-header ${additionalClassName}`;
     return (
-      // <div className="midas-shelf-selection-item">
-        <div className="shelf-item column-item-header">
+        <div className={className}>
         <span
           className="selection-column-name"
           onClick={this.props.onClick}
