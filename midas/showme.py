@@ -46,7 +46,7 @@ def infer_encoding_helper(df: Table, selectable, is_groupby: bool):
             # whether it's multiclick or brush would depend on whether the value is numeric
             # if its a groupby, can make the assum0ption that the first one is the ordinal value and the second one is the quantitative value
             selection_type = "multiclick" if is_string_dtype(df[first_col]) else "brush"
-            return EncodingSpec("bar", first_col, "ordinal", second_col, "quantitative", selection_type, selection_dimensions)
+            return EncodingSpec("bar", first_col, "ordinal", second_col, "quantitative", selection_type, selection_dimensions, "x")
         if is_string_dtype(df[first_col]) and is_numeric_dtype(df[second_col]):
             return EncodingSpec("bar", first_col, "ordinal", second_col, "quantitative", "multiclick", selection_dimensions)
         elif is_numeric_dtype(df[first_col]) and is_string_dtype(df[second_col]):

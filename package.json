@@ -41,9 +41,9 @@
     "styled-components": "^4.4.0",
     "tslint": "^5.18.0",
     "tslint-react": "^4.0.0",
-    "vega": "5.4.0",
-    "vega-embed": "^4.2.1",
-    "vega-lite": "^4.0.2"
+    "vega": "^5.10.0",
+    "vega-embed": "^4.2.5",
+    "vega-lite": "^4.6.0"
   },
   "devDependencies": {
     "css-loader": "^3.1.0",

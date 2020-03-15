@@ -13,6 +13,7 @@ export interface EncodingSpec {
   yType: "ordinal" | "quantitative" | "temporal";
   selectionType: SelectionType;
   selectionDimensions: SelectionDimensions;
+  sort: "x" | "y" | "";
   size?: string;
 }
 
@@ -151,6 +152,14 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
           // }
         },
       };
+      // if sort
+      // not supoorting ssort for now until we can figure out how to make it stable
+      // and sorted only based on the filtered values
+      // if (encoding.sort === "y") {
+      //   barSpec["encoding"]["y"]["sort"] = "-x";
+      // } else if (encoding.sort === "x") {
+      //   barSpec["encoding"]["x"]["sort"] = "-y";
+      // }
       if (encoding.selectionDimensions === "") {
         // no selection
         barSpec["mark"] = "bar";

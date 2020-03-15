@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Optional
 from typing_extensions import Literal
 
 from midas.midas_algebra.selection import SelectionValue
@@ -52,7 +52,8 @@ class EncodingSpec(object):
         y: str,
         y_type: Literal["ordinal", "quantitative", "temporal"],
         selection_type: Literal["none", "multiclick", "brush"],
-        selection_dimensions: Literal["", "x", "y", "xy"]
+        selection_dimensions: Literal["", "x", "y", "xy"],
+        sort: Literal["x", "y", ""] = ""
     ):
         """EncodingSpec object used for Midas to generate Vega-Lite specifications
         
@@ -64,6 +65,7 @@ class EncodingSpec(object):
             y_type {str} -- "ordinal" | "quantitative" | "temporal"
             selection_type {str} -- "none", "multiclick", "brush"
             selection_dimensions {str} -- "", "x", "y", "xy"
+            sort optional{str} -- "x", "y"
         """
         self.mark = mark 
         self.x = x
@@ -72,6 +74,7 @@ class EncodingSpec(object):
         self.y_type = y_type
         self.selection_dimensions = selection_dimensions
         self.selection_type = selection_type
+        self.sort = sort
 
 
     def __eq__(self, other: 'EncodingSpec'):
@@ -84,15 +87,16 @@ class EncodingSpec(object):
 
     def __repr__(self):
         # FIXME: not sure why we have a "!r" here...
-        return f"EncodingSpec({self.mark!r}, {self.x!r}, {self.x_type}, {self.y!r}, {self.y_type}, {self.selection_dimensions}, {self.selection_type!r})"
+        # despite reading... https://stackoverflow.com/questions/38418070/what-does-r-do-in-str-and-repr
+        return f"EncodingSpec({self.mark!r}, {self.x!r}, {self.x_type}, {self.y!r}, {self.y_type}, {self.selection_dimensions}, {self.selection_type!r}, {self.sort})"
 
     def to_hash(self):
-        return f'{self.mark}_{self.x}_{self.x_type}_{self.y}_{self.y_type}_{self.selection_dimensions}_{self.selection_type}'
+        return f'{self.mark}_{self.x}_{self.x_type}_{self.y}_{self.y_type}_{self.selection_dimensions}_{self.selection_type}_{self.sort}'
 
     
     def to_args(self):
-        return f'{{"mark"="{self.mark}", "x"="{self.x}", "xType"="{self.x_type}", "y"="{self.y}", "yType"="{self.y_type}", "selectionDimensions"="{self.selection_dimensions}", "selectionType"="{self.selection_type}"}}'
+        return f'{{"mark"="{self.mark}", "x"="{self.x}", "x_type"="{self.x_type}", "y"="{self.y}", "y_type"="{self.y_type}", "selection_dimensions"="{self.selection_dimensions}", "selection_type"="{self.selection_type}", "sort"="{self.sort}"}}'
 
 
     def to_json(self):
-        return f'{{"mark": "{self.mark}", "x": "{self.x}", "xType": "{self.x_type}", "y": "{self.y}", "yType": "{self.y_type}", "selectionDimensions": "{self.selection_dimensions}", "selectionType": "{self.selection_type}"}}'
+        return f'{{"mark": "{self.mark}", "x": "{self.x}", "xType": "{self.x_type}", "y": "{self.y}", "yType": "{self.y_type}", "selectionDimensions": "{self.selection_dimensions}", "selectionType": "{self.selection_type}", "sort": "{self.sort}"}}'
