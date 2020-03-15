@@ -100,6 +100,7 @@ class JoinInfo(object):
 # FIXME: think about how to make this less clunky --- seems that this has to be constantly passed around
 class RuntimeFunctions(NamedTuple):
     add_df: Callable[['MidasDataFrame'], None]
+    create_with_table_wrap: Callable[[Table, str], 'MidasDataFrame']
     show_df: Callable[['MidasDataFrame', EncodingSpec, Optional[bool]], None]
     # show_df_filtered: Callable[['MidasDataFrame', DFName], None]
     # show_profiler: Callable[['MidasDataFrame'], None]
@@ -271,6 +272,26 @@ class MidasDataFrame(object):
     def rows(self, idx: int):
         return self.table.rows(idx)
 
+    @add_doc(Table.sample.__doc__)
+    def sample(self, k: int):
+        """function to sample dataframes
+        - if the name is assigned, it will be registered as an original table
+        - if there is no name, the dataframe is printed
+        
+        Arguments:
+            k {int} -- size of the sample
+        """
+        new_df = self.table.sample(k)
+        try:
+            df_name = find_name()
+            if df_name:
+                new_df.df_name = df_name
+                return self._rt_funcs.create_with_table_wrap(new_df, df_name)
+            return new_df
+        except UserError as err:
+            return new_df
+
+        # let's register this 
 
     @add_doc(Table.column.__doc__)
     def column(self, col_name: str):

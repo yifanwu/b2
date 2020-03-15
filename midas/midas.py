@@ -97,6 +97,7 @@ class Midas(object):
 
         self._rt_funcs = RuntimeFunctions(
             self.add_df,
+            self.create_with_table_wrap,
             self._show_df,
             # self._show_df_filtered,
             # self.show_profile,
