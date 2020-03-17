@@ -4,7 +4,7 @@ import arrayMove from "array-move";
 
 import { EncodingSpec } from "../charts/vegaGen";
 import { AlertType, MidasContainerFunctions, SelectionValue } from "../types";
-import { LogInternalError, LogSteps, getDfId, LogDebug } from "../utils";
+import { LogInternalError, LogSteps, getDfId, LogDebug, addNotebookMenuBtn } from "../utils";
 import { SNAPSHOT_BUTTON } from "../constants";
 
 import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
@@ -52,23 +52,6 @@ interface ContainerState {
   midasPythonInstanceName: string;
 }
 
-
-function createSnapShotButton(getSnapShot: () => void) {
-  if (!$(`#${SNAPSHOT_BUTTON}`).length) {
-    // create if does not exist
-    const newButton = `<div class="btn-group">
-      <button
-        id="${SNAPSHOT_BUTTON}"
-        class="btn btn-default one-time-animation"
-        title="Take a snapshot of current charts"
-      >📷</button>
-    </div>`;
-    $("#maintoolbar-container").append(newButton);
-  }
-  $(`#${SNAPSHOT_BUTTON}`).click(() => getSnapShot());
-  return;
-}
-
 // const MidasSortableContainer = SortableContainer(({ children }: { children: any }) => {
 //   return <div>{children}</div>;
 // }, {withRef: true});
@@ -87,7 +70,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     this.removeAlert = this.removeAlert.bind(this);
     this.snapShotAll = this.snapShotAll.bind(this);
 
-    createSnapShotButton(this.snapShotAll);
+    addNotebookMenuBtn(this.snapShotAll, SNAPSHOT_BUTTON, "📷", "Take a snapshot of current charts");
 
     this.state = {
       notebookMetaData: [],

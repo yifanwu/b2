@@ -4,6 +4,7 @@ import { SelectionShelf } from "./SelectionShelf";
 import { ProfilerShelf } from "./ProfilerShelf";
 import { MidasContainerFunctions } from "../types";
 import { TOGGLE_MIDAS_BUTTON } from "../constants";
+import { addNotebookMenuBtn } from "../utils";
 
 interface MidasSidebarProps {
   columnSelectMsg: (col: string, table: string) => void;
@@ -15,23 +16,6 @@ interface MidasSidebarState {
   isShown: boolean;
   curWidth: number;
 }
-
-function createToggleAllButton(clickFn: () => void) {
-  if (!$(`#${TOGGLE_MIDAS_BUTTON}`).length) {
-    // create if does not exist
-    const newButton = `<div class="btn-group">
-      <button
-        id="${TOGGLE_MIDAS_BUTTON}"
-        class="btn btn-default one-time-animation"
-        title="Take a snapshot of current charts"
-      >Toggle Midas</button>
-    </div>`;
-    $("#maintoolbar-container").append(newButton);
-  }
-  $(`#${TOGGLE_MIDAS_BUTTON}`).click(() => clickFn());
-  return;
-}
-
 
 export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSidebarState> {
 
@@ -46,11 +30,10 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
     };
 
     this.toggle = this.toggle.bind(this);
-    createToggleAllButton(this.toggle);
+    addNotebookMenuBtn(this.toggle, TOGGLE_MIDAS_BUTTON, "Toggle Midas", "Toggle the Midas side area");
 
     this.setMidasContainerRef = this.setMidasContainerRef.bind(this);
     this.setProfilerShelfRef = this.setProfilerShelfRef.bind(this);
-    // this.setSelectionShelfRef = this.setSelectionShelfRef.bind(this);
   }
 
   toggle() {

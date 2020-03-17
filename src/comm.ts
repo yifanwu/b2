@@ -1,6 +1,6 @@
 /// <reference path="./external/Jupyter.d.ts" />
-import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME, MIDAS_SELECTION_FUN } from "./constants";
-import { LogSteps, LogDebug } from "./utils";
+import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME, MIDAS_SELECTION_FUN, TOGGLE_SELECTION_BUTTON } from "./constants";
+import { LogSteps, LogDebug, addNotebookMenuBtn } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType, FunKind, MidasContainerFunctions } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
@@ -163,6 +163,7 @@ export function makeComm(is_first_time = true) {
           };
 
           const cellManager = new CellManager(midasInstanceName);
+          addNotebookMenuBtn(cellManager.toggleSelectionCells, TOGGLE_SELECTION_BUTTON, "🔵", "Click to toggle Midas selection cells");
           const setUIItxFocus = cellManager.setFocus.bind(cellManager);
           const executeCapturedCells = cellManager.executeCapturedCells.bind(cellManager);
 

@@ -1,5 +1,5 @@
-import { LogDebug, commentUncommented, LogSteps, getEmojiEnnotatedComment, foldCode } from "./utils";
-import { MIDAS_SELECTION_FUN } from "./constants";
+import { LogDebug, commentUncommented, LogSteps, getEmojiEnnotatedComment, foldCode, showOrHideSelectionCells } from "./utils";
+import { MIDAS_SELECTION_FUN, CELL_METADATA_FUN_TYPE } from "./constants";
 import { FunKind } from "./types";
 
 
@@ -42,9 +42,11 @@ export default class CellManager {
   currentFocus?: string;
   lastExecutedCell?: any;
   reactiveCells: Map<string, number[]>;
+  showSelectionCells: boolean;
 
   constructor(midasInstanceName: string) {
     this.recordReactiveCell = this.recordReactiveCell.bind(this);
+    this.toggleSelectionCells = this.toggleSelectionCells.bind(this);
 
     this.currentStep = 0;
     this.cellsCreated = [];
@@ -53,6 +55,7 @@ export default class CellManager {
     this.currentFocus = undefined;
     this.lastExecutedCell = null;
     this.reactiveCells = new Map();
+    this.showSelectionCells = true;
   }
 
   setFocus(dfName?: string) {
@@ -114,6 +117,7 @@ export default class CellManager {
 
   /**
    * This is triggered by the interactions
+   * TODO: rename to indicate that this is used just by the interactions
    * @param funName
    * @param params
    */
@@ -139,7 +143,8 @@ export default class CellManager {
   }
 
   /**
-   * this is invoked by none-selections code effects
+   * note that we chose not to scroll for this
+   *   because if we had competing scrolls (e.g., w/ a reactive cell), then the experinece may get confusing.
    * @param code
    * @param funKind
    */
@@ -158,6 +163,9 @@ export default class CellManager {
       // cell = Jupyter.notebook.insert_cell_below("code");
       cell = Jupyter.notebook.insert_cell_at_index("code", insertIdx);
     }
+    cell.metadata[CELL_METADATA_FUN_TYPE] = funKind;
+
+    // modify content
     const comment = getEmojiEnnotatedComment(funKind);
     cell.set_text(comment + "\n" + code);
     // make sure that the notebook cell is selected
@@ -175,6 +183,11 @@ export default class CellManager {
       this.exeucteCell(cell);
     }
     return cell;
+  }
+
+  toggleSelectionCells() {
+    this.showSelectionCells = !this.showSelectionCells;
+    showOrHideSelectionCells(this.showSelectionCells);
   }
 
   /**

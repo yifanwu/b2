@@ -1,5 +1,6 @@
 import { PerChartSelectionValue, SelectionValue, FunKind } from "./types";
 import { SelectionDimensions } from "./charts/vegaGen";
+import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS } from "./constants";
 
 export const STRICT = true;
 
@@ -23,6 +24,21 @@ export function LogInternalError(message: string): null {
     throw new Error(message);
   }
   return null;
+}
+
+export function addNotebookMenuBtn(onClick: () => void, btnId: string, btnText: string, btnTitle: string) {
+  if (!$(`#${btnId}`).length) {
+    // create if does not exist
+    const newButton = `<div class="btn-group">
+      <button
+        id="${btnId}"
+        class="btn btn-default one-time-animation"
+        title=${btnTitle}
+      >${btnText}</button>
+    </div>`;
+    $("#maintoolbar-container").append(newButton);
+  }
+  $(`#${btnId}`).click(() => onClick());
 }
 
 export function getEmojiEnnotatedComment(funKind: FunKind) {
@@ -196,6 +212,25 @@ export function LogDebug(message: string, obj?: any) {
   }
 }
 
+
+export function showOrHideSelectionCells(show: boolean) {
+  const cells = getSelectionCells();
+  // based on code like this
+  // https://github.com/jupyter/notebook/blob/70d74d21ac051fbeaa81d4ef4fff9fa759de96d7/notebook/static/notebook/js/cell.js#L165
+  cells.map((c: any) => {
+    if (show) {
+      c.element.removeClass(MIDAS_COLAPSE_CELL_CLASS);
+    } else {
+      c.element.addClass(MIDAS_COLAPSE_CELL_CLASS);
+    }
+  });
+}
+
+function getSelectionCells() {
+  const allCells = Jupyter.notebook.get_cells();
+  const selectionCells = allCells.filter((c: any) => (CELL_METADATA_FUN_TYPE in c.metadata) && c.metadata[CELL_METADATA_FUN_TYPE] === "interaction");
+  return selectionCells;
+}
 
 export function getDigitsToRound(minVal: number, maxVal: number) {
   // asset order

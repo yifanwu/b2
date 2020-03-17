@@ -1,4 +1,3 @@
-
 export { default as vegaEmbed } from "vega-embed";
 
 import "jqueryui";

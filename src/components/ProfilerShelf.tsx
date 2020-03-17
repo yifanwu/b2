@@ -2,7 +2,7 @@ import React from "react";
 
 import { ColumnItem } from "./ColumnItem";
 import { ProfileShelfLandingPage } from "./ProfileShelfLandingPage";
-import { LogDebug } from "../utils";
+import { LogDebug, addNotebookMenuBtn } from "../utils";
 import { TOGGLE_PANNEL_BUTTON, PROFILTER_SHELF_WIDTH, CONTAINER_INIT_WIDTHS } from "../constants";
 
 interface ProfilerColumn {
@@ -27,23 +27,6 @@ interface ProfilerShelfProps {
   logEntry: (action: string, metadata: string) => void;
 }
 
-
-function createTogglePannelButton(togglePannel: () => void) {
-  if (!$(`#${TOGGLE_PANNEL_BUTTON}`).length) {
-    // create if does not exist
-    const newButton = `<div class="btn-group">
-      <button
-        id="${TOGGLE_PANNEL_BUTTON}"
-        class="btn btn-default one-time-animation"
-        title="Toggle the column pannel in the middle"
-      >Toggle Column Shelf</button>
-    </div>`;
-    $("#maintoolbar-container").append(newButton);
-  }
-  $(`#${TOGGLE_PANNEL_BUTTON}`).click(() => togglePannel());
-  return;
-}
-
 export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerShelfState> {
   constructor(props: ProfilerShelfProps) {
     super(props);
@@ -54,7 +37,8 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
     // this.dragEnd = this.dragEnd.bind(this);
     // this.dragStart = this.dragStart.bind(this);
     this.markAsSeen = this.markAsSeen.bind(this);
-    createTogglePannelButton(this.togglePannel);
+
+    addNotebookMenuBtn(this.togglePannel, TOGGLE_PANNEL_BUTTON, "Toggle Pane", "Toggle the yellow column pannel");
     this.state = {
       tables: {},
       isShown: {},

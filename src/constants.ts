@@ -40,7 +40,14 @@ export const MULTICLICK_SIGNAL = "select";
 export const MULTICLICK_PIXEL_SIGNAL = "select_tuple";
 export const MULTICLICK_TOGGLE = "select_toggle";
 
+// internal structures of the notebook that we will modify
+export const CELL_METADATA_FUN_TYPE = "midasFunType";
+
 // some div ids that we use
+export const TOGGLE_SELECTION_BUTTON = "midas-toggle-selection-btn";
 export const SNAPSHOT_BUTTON = "midas-snap-shot-all";
 export const TOGGLE_PANNEL_BUTTON = "midas-toggle-pannel";
 export const TOGGLE_MIDAS_BUTTON = "midas-toggle-all";
+
+export const MIDAS_COLAPSE_CELL_CLASS = "midas-collapse-cell";
+

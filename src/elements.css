@@ -213,6 +213,12 @@
   background-color: var(--yellow-vivid-150) !important;
 }
 
+.midas-collapse-cell {
+  display: none !important;
+  /* also animation */
+  animation: one-time-animation 2s forwards 1;
+}
+
 /* .midas-shelf-selection-item {
   width: 100%;
   display: flex;
