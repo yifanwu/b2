@@ -330,13 +330,6 @@ class UiComm(object):
             })
         return
 
-    def send_user_error(self, message: str):
-        self.comm.send({
-            "type": "notification",
-            "style": "error",
-            "value": message
-        })
-
     @logged(remove_on_chart_removal=True)
     def after_selection(self, selections, df_name, tick: int):
         self.comm.send({
@@ -387,11 +380,13 @@ class UiComm(object):
             "value": message
         })
 
-    def send_error_msg(self, message: str):
+    def send_column_click_error_msg(self, message: str, df_name: str, column_name: str):
         self.comm.send({
             "type": "notification",
             "style": "error",
-            "value": message
+            "value": message,
+            "dfName": df_name,
+            "columnName": column_name,
         })
 
     def navigate_to_chart(self, df_name: DFName):

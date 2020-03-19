@@ -213,6 +213,10 @@
   background-color: var(--yellow-vivid-150) !important;
 }
 
+.error-column {
+  background-color: var(--red-300) !important;
+}
+
 .midas-collapse-cell {
   display: none !important;
   /* also animation */

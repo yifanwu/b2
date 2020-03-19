@@ -32,6 +32,9 @@ type NotificationCommLoad  = {
   type: string;
   style: string;
   value: string;
+  // note that optional might have json issues
+  dfName?: string;
+  columnName?: string;
 };
 
 type SynchronizeSelectionLoad = {
@@ -241,6 +244,9 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         const errorLoad = load as NotificationCommLoad;
         const alertType = AlertType[errorLoad.style];
         refToMidas.addAlert(errorLoad.value, alertType);
+        if (alertType === AlertType.error && errorLoad.dfName && errorLoad.dfName !== "" && errorLoad.columnName) {
+          refToProfilerShelf.markAsErrored(errorLoad.columnName, errorLoad.dfName);
+        }
         return;
       }
       case "after_selection": {

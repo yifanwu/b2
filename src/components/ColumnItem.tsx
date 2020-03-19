@@ -13,6 +13,7 @@ interface ColumnItemProps {
   onDelete: () => void;
   onClick: () => void;
   hasSeen?: boolean;
+  hasError?: boolean;
 }
 
 export class ColumnItem extends React.Component<ColumnItemProps, {}> {
@@ -25,7 +26,11 @@ export class ColumnItem extends React.Component<ColumnItemProps, {}> {
 
   render() {
     const shownName = trimStr(this.props.columnName, SHELF_TEXT_MAX_LEN);
-    const additionalClassName = this.props.hasSeen ? "seen-column" : "";
+    let additionalClassName = this.props.hasSeen ? "seen-column" : "";
+    if (this.props.hasError) {
+      additionalClassName += " error-column";
+    }
+
     const className = `shelf-item column-item-header ${additionalClassName}`;
     return (
         <div className={className}>

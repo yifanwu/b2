@@ -9,6 +9,7 @@ interface ProfilerColumn {
   columnName: string;
   columnType: string;
   hasSeen?: boolean;
+  hasError?: boolean;
 }
 
 interface ProfilerShelfState {
@@ -64,6 +65,14 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
   columnClicked(columnName: string, tableName: string) {
     this.props.columnSelectMsg(columnName, tableName);
     this.markAsSeen(columnName, tableName);
+  }
+
+  markAsErrored(columnName: string, tableName: string) {
+    this.setState(prevState => {
+      const idx = prevState.tables[tableName].findIndex((i) => i.columnName === columnName);
+      prevState.tables[tableName][idx].hasError = true;
+      return prevState;
+    });
   }
 
   markAsSeen(columnName: string, tableName: string) {
@@ -136,6 +145,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
           onClick={() => this.columnClicked(c.columnName, tableName)}
           onDelete={() => this.hideItem(tableName, i)}
           hasSeen={c.hasSeen}
+          hasError={c.hasError}
         />)
         : [];
       return <div className="profiler-table" key={`table-${tableName}`}>
