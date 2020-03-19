@@ -186,6 +186,8 @@ class MidasDataFrame(object):
             # exporting
             "to_csv",
             "to_df",
+            # derivation
+            "stats",
             # mutations
             "sort",
             "drop",
