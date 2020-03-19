@@ -120,11 +120,7 @@ class Context(object):
 
 
     def apply_selection(self, target_df: MidasDataFrame, selections: List[SelectionValue], is_union=False) -> Optional[MidasDataFrame]:
-        # debug_log(f"Context apply_selection called {target_df.df_name}")
-        # debug_log(str(selections))
         if len(selections) == 0:
-            # then return nothing
-            # makes the semantics a little messy
             return None
         # before we do any of that, just check to see if the filter is directly on the target_df itself?
         selections_on_base = map(self.get_base_df_selection, selections)
@@ -175,7 +171,8 @@ class Context(object):
                 replacement_op = self.apply_join_selection(r, selections)
             else:
                 # NO OP
-                debug_log(f"No op for {df_name} selection because no join was found")
+                if ISDEBUG:
+                    debug_log(f"No op for {df_name} selection because no join was found")
                 return ops
 
         # 2. apply the replacement

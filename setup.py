@@ -26,7 +26,7 @@ DATA_FILES          = [
                             ]),
                             ('etc/jupyter/nbconfig/notebook.d' , ['midas.json'])
                         ]
-EXTRAS_REQUIRE      = {'widget': ['ipywidgets']}
+# EXTRAS_REQUIRE      = {'foldcode': ['codemirror/addon/fold/foldcode']}
 
 
 import io
@@ -73,7 +73,7 @@ setup(name=NAME,
       packages=PACKAGES,
       package_data=PACKAGE_DATA,
       data_files=DATA_FILES,
-      extras_require=EXTRAS_REQUIRE,
+    #   extras_require=EXTRAS_REQUIRE,
       include_package_data=True,
       classifiers=[
         'Development Status :: 1 - Unstable',
