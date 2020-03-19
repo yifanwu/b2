@@ -7,6 +7,7 @@ import asttokens
 import ast
 import operator
 from datascience import Table, are
+from pandas import DataFrame
 
 # for development
 from IPython.core.debugger import set_trace
@@ -126,6 +127,7 @@ class MidasDataFrame(object):
     _ops: 'RelationalOp' # type: ignore
     # the following is used for code gen
     _suggested_df_name: Optional[str]
+    _pandas_df: DataFrame
     current_filtered_data: Optional['MidasDataFrame']
 
     def __init__(self,
@@ -151,6 +153,7 @@ class MidasDataFrame(object):
                 self.df_name = DFName(df_name_raw)
         if hasattr(self, "df_name") and (self.df_name is not None):
             self._rt_funcs.add_df(self)
+
 
     #################
     # Magic Methods #
@@ -185,7 +188,6 @@ class MidasDataFrame(object):
             "boxplot",
             # exporting
             "to_csv",
-            "to_df",
             # derivation
             "stats",
             # mutations
@@ -273,6 +275,18 @@ class MidasDataFrame(object):
 
     def rows(self, idx: int):
         return self.table.rows(idx)
+
+
+    @add_doc(Table.to_df.__doc__)
+    def to_df(self):
+        if self._pandas_df is None:
+            self._pandas_df = self.table.to_df()
+        return self._pandas_df
+
+    @add_doc(DataFrame.info.__doc__)
+    def info(self, verbose=False, memory_usage=None):
+        return self.to_df().info(verbose, memory_usage)
+
 
     @add_doc(Table.sample.__doc__)
     def sample(self, k: int):
