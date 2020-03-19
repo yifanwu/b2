@@ -470,16 +470,20 @@ a.tip:hover span {
   /* background-color: var(--blue-grey-050); */
 }
 
+.midas-header details {
+  display: inline;
+}
+
 .midas-header details:not([open]) > :not(summary) {
   display: none !important;
 }
 
 .midas-header summary {
   list-style: none;
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: 6px;
+  /* position: absolute; */
+  /* top: 0; */
+  /* right: 0; */
+  padding: 5px;
   z-index: 1000;
   background: white;
   box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
@@ -515,7 +519,7 @@ a.tip:hover span {
   position: absolute;
   top: 35px;
   z-index: 100;
-  right: 0px;
+  /* right: 0px; */
   display: flex;
   flex-direction: column;
   padding-bottom: 8px;
