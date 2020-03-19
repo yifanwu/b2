@@ -142,6 +142,12 @@ export default class CellManager {
     return;
   }
 
+  getLastExecutedCellIdx() {
+    if (this.lastExecutedCell) {
+      return Jupyter.notebook.find_cell_index(this.lastExecutedCell);
+    }
+  }
+
   /**
    * note that we chose not to scroll for this
    *   because if we had competing scrolls (e.g., w/ a reactive cell), then the experinece may get confusing.
@@ -150,17 +156,13 @@ export default class CellManager {
    */
   createCell(code: string, funKind: FunKind, shouldExecute: boolean) {
     let cell;
-    if (this.lastExecutedCell) {
-      const idx = Jupyter.notebook.find_cell_index(this.lastExecutedCell);
+    const idx = this.getLastExecutedCellIdx();
+    if (idx) {
       cell = Jupyter.notebook.insert_cell_at_index("code", idx + 1);
     } else {
       LogDebug("Last executed cell not found!");
-      // when last executed is not found, this is often the case of a refresh
-      // if we are currently at the top, move to bottom
-      // if we are somewhere in the middle, then do that
       const allCells = Jupyter.notebook.get_cells();
       const insertIdx = allCells.length;
-      // cell = Jupyter.notebook.insert_cell_below("code");
       cell = Jupyter.notebook.insert_cell_at_index("code", insertIdx);
     }
     cell.metadata[CELL_METADATA_FUN_TYPE] = funKind;
