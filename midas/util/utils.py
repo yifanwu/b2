@@ -122,22 +122,44 @@ def get_random_string(stringLength=10):
     return ''.join(random.choice(letters) for i in range(stringLength))
 
 
-def find_name(throw_error=False) -> Optional[str]:
+def get_basic_group_vis(new_name, df_name, col_name):
+    return f"{new_name} = {df_name}.group('{col_name}').vis()"    
+
+def _get_first_target_from_prev_line(stack):
     try:
-        # if ISDEBUG: set_trace()
-        prev_line = traceback.format_stack()[-3]
+        prev_line = stack[-3]
         code = prev_line.splitlines()[1]
         body = ast.parse(code.strip()).body[0]
-        if hasattr(body, 'targets'):
-            a = body.targets[0].id # type: ignore
-            if throw_error and (a is None):
-                raise InternalLogicalError("We did not get a name when expected!")
-            return a
-        elif throw_error:
-            raise UserError("We expect you to assign this compute to a variable")
-        return None
+        first_target = body.targets[0] # type: ignore
+        return first_target
     except:
         return None
+
+
+def find_tuple_name():
+    try:
+        stack = traceback.format_stack()
+        first_target = _get_first_target_from_prev_line(stack)
+        a = first_target.elts[0].id # type: ignore
+        b = first_target.elts[1].id # type: ignore
+        return a, b
+    except:
+        return None
+    
+        
+def find_name(throw_error=False):
+    try:
+        stack = traceback.format_stack()
+        first_target = _get_first_target_from_prev_line(stack)
+        a = first_target.id # type: ignore
+        if throw_error and (a is None):
+            raise InternalLogicalError("We did not get a name when expected!")
+        return a
+    except:
+        if throw_error:
+            raise UserError("We expect you to assign this compute to a variable")
+        return None
+
 
 ifnone = lambda a, b: b if a is None else a
 
