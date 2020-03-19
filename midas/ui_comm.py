@@ -23,7 +23,7 @@ from midas.state_types import DFName
 from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, VisualizedDFInfo, get_midas_code
 from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
-from .util.utils import sanitize_string_for_var_name
+from .util.utils import sanitize_string_for_var_name, get_basic_group_vis
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, get_numeric_distribution_code, get_datetime_distribution_code
 
@@ -132,14 +132,18 @@ class UiComm(object):
                 column = data["column"]
                 df_name = DFName(data["df_name"])
                 self.tmp = f"{column}_{df_name}"
-                code, execute = self.create_distribution_query(column, df_name)
+                code, execute, err_message = self.create_distribution_query(column, df_name)
                 self.log_entry("column_click", df_name)
                 if code:
                     if execute:
                         self.create_cell(code, "query", True)
                     else:
-                        self.send_error_msg(f'We are not able to create a chart for {df_name}--{code}')
-                        # self.create_cell(code, "query", False)
+                        self.send_column_click_error_msg(
+                            f'We are not able to create a chart for {df_name}--{err_message}',
+                            df_name,
+                            column
+                        )
+                        self.create_cell(code, "query", False)
                 return
             elif command == "remove_dataframe":
                 df_name = data["df_name"]
@@ -469,20 +473,20 @@ class UiComm(object):
     #   del self.shelf_selections[df_name]
 
     # returns a tuple to indicate if the retured result should be ran
-    def create_distribution_query(self, col_name: str, df_name: str) -> Tuple[Optional[str], bool]:
+    def create_distribution_query(self, col_name: str, df_name: str) -> Tuple[str, bool, str]:
         df_info = self.get_df(DFName(df_name))
         if df_info is None:
             raise InternalLogicalError("Should not be getting distribution on unregistered dataframes and columns")
         df = df_info.df
         col_value = df.table.column(col_name)
-        new_name = sanitize_string_for_var_name(f"{col_name}_distribution")
+        new_name = sanitize_string_for_var_name(f"{col_name}_{df_name}_distribution")
         if (is_string_dtype(col_value)):
             # we need to check the cardinarily
             unique_vals = np.unique(col_value)
             current_max_bins = len(unique_vals)
+            code = get_basic_group_vis(new_name, df.df_name, col_name)
             if current_max_bins < MAX_BINS:
-                code = f"{new_name} = {df.df_name}.group('{col_name}').vis()"
-                return (code, True)
+                return (code, True, "")
             else:
                 # try parsing a value
                 try:
@@ -490,7 +494,7 @@ class UiComm(object):
                     return get_datetime_distribution_code(col_name, df)
                 except ValueError:
                     # too many columns
-                    return (f"Too many columns to display for column {col_name}!", False)
+                    return (code, False, f"Too many columns to display for column {col_name}!")
         else:
             # we need to write the binning function and then print it out...
             # get the bound
@@ -498,7 +502,7 @@ class UiComm(object):
             current_max_bins = len(unique_vals)
             if (current_max_bins < MAX_BINS):
                 code = f"{new_name} = {df.df_name}.group('{col_name}').vis()"
-                return (code, True)
+                return (code, True, "")
             else:
                 return get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df.df_name, new_name, self.midas_instance_name)
             
