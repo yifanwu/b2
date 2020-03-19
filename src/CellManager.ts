@@ -1,5 +1,5 @@
-import { LogDebug, commentUncommented, LogSteps, getEmojiEnnotatedComment, foldCode, showOrHideSelectionCells } from "./utils";
-import { MIDAS_SELECTION_FUN, CELL_METADATA_FUN_TYPE } from "./constants";
+import { LogDebug, commentUncommented, LogSteps, getEmojiEnnotatedComment, foldCode, showOrHideSelectionCells, findQueryCell, selectCell, deleteAllSelectionCells } from "./utils";
+import { MIDAS_SELECTION_FUN, CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS } from "./constants";
 import { FunKind } from "./types";
 
 
@@ -61,12 +61,15 @@ export default class CellManager {
   setFocus(dfName?: string) {
     this.prevFocus = this.currentFocus;
     this.currentFocus = dfName;
-    // LogDebug(`Set focus: ${dfName}`);
   }
 
+  /**
+   * called by snapshot features.
+   * @param div
+   * @param comments
+   */
   executeCapturedCells(div: string, comments: string) {
-    const cell = this.createCell(`#${comments}\nfrom IPython.display import HTML, display\ndisplay(HTML("""${div}"""))`, "chart", true);
-    cell.code_mirror.display.lineDiv.scrollIntoView();
+    this.createCell(`#${comments}\nfrom IPython.display import HTML, display\ndisplay(HTML("""${div}"""))`, "chart", true);
   }
 
   runReactiveCells(dfName: string) {
@@ -115,6 +118,7 @@ export default class CellManager {
   }
 
 
+
   /**
    * This is triggered by the interactions
    * TODO: rename to indicate that this is used just by the interactions
@@ -132,7 +136,7 @@ export default class CellManager {
       // now make sure the code is foled!
       const newText = emojiComment + "\n" + newCode.join("\n");
       cell.set_text(newText);
-      this.exeucteCell(cell);
+      this.exeucteCell(cell, "interaction");
       // 1 because we want to leave the emoji
       // -1 because the last line is the line that executes
       foldCode(cell.code_mirror, 1, newCode.length - 1);
@@ -155,6 +159,20 @@ export default class CellManager {
    * @param funKind
    */
   createCell(code: string, funKind: FunKind, shouldExecute: boolean) {
+    // check if this has alredy been executed before
+    if (funKind === "query") {
+      const foundCell = findQueryCell(code);
+      if (foundCell) {
+        if (shouldExecute) {
+          this.exeucteCell(foundCell, funKind);
+        } else {
+          // just scroll to it
+          selectCell(foundCell, true);
+        }
+        return;
+      }
+    }
+    // actually create if needed
     let cell;
     const idx = this.getLastExecutedCellIdx();
     if (idx) {
@@ -171,9 +189,11 @@ export default class CellManager {
     const comment = getEmojiEnnotatedComment(funKind);
     cell.set_text(comment + "\n" + code);
     // make sure that the notebook cell is selected
-    const currentIdx = Jupyter.notebook.find_cell_index(cell);
-    Jupyter.notebook.select(currentIdx);
-    // cell.code_mirror.display.lineDiv.scrollIntoView();
+    // if we need to hide it
+    if ((funKind === "interaction") && (!this.showSelectionCells)) {
+      cell.element.addClass(MIDAS_COLAPSE_CELL_CLASS);
+    }
+
     this.cellsCreated.push({
       code,
       funKind,
@@ -182,7 +202,9 @@ export default class CellManager {
       time: new Date()
     });
     if (shouldExecute) {
-      this.exeucteCell(cell);
+      this.exeucteCell(cell, funKind);
+    } else {
+      selectCell(cell, false);
     }
     return cell;
   }
@@ -192,6 +214,12 @@ export default class CellManager {
     showOrHideSelectionCells(this.showSelectionCells);
   }
 
+  deleteAllSelectionCells() {
+    if (confirm(`Are you sure you want to remove all selection cells so far? This cannot be undone.`)) {
+      deleteAllSelectionCells();
+    }
+  }
+
   /**
    * we can use one of the following two:
    * - Jupyter.notebook.insert_cell_at_index(type, index);
@@ -199,10 +227,13 @@ export default class CellManager {
    *
    * we are going to try with inserting at a fixed place
    */
-  exeucteCell(cell: any) {
+  exeucteCell(cell: any, funKind: FunKind) {
     cell.execute();
     this.currentStep += 1;
     this.lastExecutedCell = cell;
+    if (funKind === "query" || funKind === "chart") {
+      selectCell(cell, true);
+    }
     return cell.cell_id;
   }
 

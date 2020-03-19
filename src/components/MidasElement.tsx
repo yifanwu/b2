@@ -1,5 +1,5 @@
 /// <reference path="../external/Jupyter.d.ts" />
-import React from "react";
+import React, { RefObject } from "react";
 // import {
 //   SortableContainer,
 //   SortableElement,
@@ -54,6 +54,7 @@ interface MidasElementState {
 export class MidasElement extends React.Component<MidasElementProps, MidasElementState> {
   // activateSignalFlag: boolean;
   updatedSelection: PerChartSelectionValue;
+  private myRef: RefObject<HTMLDivElement>;
 
   constructor(props: any) {
     super(props);
@@ -70,6 +71,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.toggleBaseData = this.toggleBaseData.bind(this);
     // this.shouldActivateSignal = this.shouldActivateSignal.bind(this);
 
+    this.myRef = React.createRef<HTMLDivElement>();
     // this.activateSignalFlag = true; // hack
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
@@ -86,6 +88,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   componentDidMount() {
     // FIXME: maybe do not need to run everytime???
     this.embed();
+    this.myRef.current.scrollIntoView();
   }
 
   isMultiSelect() {
@@ -364,7 +367,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       : " 📍";
 
     return (
-      <div className={className} id={getDfId(this.props.dfName)}
+      <div
+        ref={this.myRef}
+        className={className}
+        id={getDfId(this.props.dfName)}
         tabIndex={-1}
         onBlur={() => {
             this.props.functions.setUIItxFocus();

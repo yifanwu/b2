@@ -26,6 +26,7 @@ export function LogInternalError(message: string): null {
   return null;
 }
 
+
 export function addNotebookMenuBtn(onClick: () => void, btnId: string, btnText: string, btnTitle: string) {
   if (!$(`#${btnId}`).length) {
     // create if does not exist
@@ -150,14 +151,23 @@ export function executeCellId(cellId: string) {
   cell.execute();
 }
 
+
+export function selectCell(cell: any, scroll: boolean) {
+  const currentIdx = Jupyter.notebook.find_cell_index(cell);
+  if (!currentIdx) {
+    LogInternalError(`Was not able to find cel`);
+  } else {
+    Jupyter.notebook.select(currentIdx);
+    if (scroll) cell.code_mirror.display.lineDiv.scrollIntoView();
+  }
+}
+
+
 export function navigateToNotebookCell(cellId: string) {
   // note that this the the cell msg!
   LogDebug(`navigate to cell called for ${cellId}`);
   const cell = Jupyter.notebook.get_msg_cell(cellId);
-  const index = Jupyter.notebook.find_cell_index(cell);
-  if (!index) throw LogInternalError(`Was not able to find cell ${cellId}`);
-  Jupyter.notebook.select(index);
-  cell.code_mirror.display.lineDiv.scrollIntoView();
+  selectCell(cell, true);
 }
 
 /**
@@ -173,6 +183,15 @@ export function foldCode(cm: any, from: number, to: number) {
   cm.foldCode(CodeMirror.Pos(from, 0), rangeFinder, "fold");
 }
 
+function getUncommentedCode(code: string) {
+  let all = [];
+  for (let l of code.split("\n")) {
+    if (l[0] !== "#") {
+      all.push(l);
+    }
+  }
+  return all;
+}
 
 function commentIfNot(l: string) {
   if (l[0] !== "#") {
@@ -212,9 +231,16 @@ export function LogDebug(message: string, obj?: any) {
   }
 }
 
+export function deleteAllSelectionCells() {
+  const cells = getCellsByFunKind("interaction");
+  for (let c of cells) {
+    const idx = Jupyter.notebook.find_cell_index(c);
+    Jupyter.notebook.delete_cells([idx]);
+  }
+}
 
 export function showOrHideSelectionCells(show: boolean) {
-  const cells = getSelectionCells();
+  const cells = getCellsByFunKind("interaction");
   // based on code like this
   // https://github.com/jupyter/notebook/blob/70d74d21ac051fbeaa81d4ef4fff9fa759de96d7/notebook/static/notebook/js/cell.js#L165
   cells.map((c: any) => {
@@ -226,10 +252,31 @@ export function showOrHideSelectionCells(show: boolean) {
   });
 }
 
-function getSelectionCells() {
+function getCellsByFunKind(funKind: FunKind) {
   const allCells = Jupyter.notebook.get_cells();
-  const selectionCells = allCells.filter((c: any) => (CELL_METADATA_FUN_TYPE in c.metadata) && c.metadata[CELL_METADATA_FUN_TYPE] === "interaction");
+  const selectionCells = allCells.filter((c: any) => (CELL_METADATA_FUN_TYPE in c.metadata) && c.metadata[CELL_METADATA_FUN_TYPE] === funKind);
   return selectionCells;
+}
+
+
+/**
+ * Note that this function has HEAVY hard coding
+ * @param code
+ */
+export function findQueryCell(code: string) {
+  // strip all comments and see if it's the same
+  const uncommented = getUncommentedCode(code);
+  if (uncommented.length === 0) {
+    return LogInternalError("chart should have at least one line");
+  }
+  const cells = getCellsByFunKind("query");
+  for (let c of cells) {
+    const text = getUncommentedCode(c.get_text());
+    if (uncommented.join("\n") === text.join("\n")) {
+      return c;
+    }
+  }
+  return null;
 }
 
 export function getDigitsToRound(minVal: number, maxVal: number) {

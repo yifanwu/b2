@@ -1,7 +1,7 @@
 export enum AlertType {
-  Error = "error",
-  Debug = "debug",
-  Confirmation = "confirmation"
+  error = "error",
+  debug = "debug",
+  confirmation = "confirmation"
 }
 
 // the index is the column names, corresponding to values
@@ -23,4 +23,4 @@ export interface MidasContainerFunctions {
   elementFunctions: MidasElementFunctions;
 }
 
-export type FunKind = "chart" | "query" | "interaction";
+export type FunKind = "chart" | "query" | "interaction" | "reactive";

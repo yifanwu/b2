@@ -45,6 +45,7 @@ export const CELL_METADATA_FUN_TYPE = "midasFunType";
 
 // some div ids that we use
 export const TOGGLE_SELECTION_BUTTON = "midas-toggle-selection-btn";
+export const DELETE_SELECTION_BUTTON = "midas-delete-selection-btn";
 export const SNAPSHOT_BUTTON = "midas-snap-shot-all";
 export const TOGGLE_PANNEL_BUTTON = "midas-toggle-pannel";
 export const TOGGLE_MIDAS_BUTTON = "midas-toggle-all";

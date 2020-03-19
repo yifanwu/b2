@@ -159,14 +159,13 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     });
   }
 
-
   navigate(dfName: string) {
     const elmnt = document.getElementById(getDfId(dfName));
     elmnt.scrollIntoView();
   }
 
 
-  addAlert(msg: string, alertType: AlertType = AlertType.Error) {
+  addAlert(msg: string, alertType: AlertType = AlertType.error) {
     // const idx = this.state.alerts.length;
     this.setState(prevState => {
       prevState.alerts.push({
@@ -308,12 +307,17 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     for (let i = 0; i < alerts.length; i++) {
       const a = alerts[i];
       if (a.shown) {
-        const className = a.alertType === AlertType.Error ? "midas-alerts-error" : "midas-alerts-debug";
+        const className = a.alertType === AlertType.error ? "midas-alerts-error" : "midas-alerts-debug";
         const newDiv = <div
           className={`card midas-alert ${className}`}
           key={`alert-${i}`}
         >
-          <CloseButton onClick={() => this.removeAlert(i)} size={20} color={"white"}/>
+          <CloseButton
+            onClick={() => this.removeAlert(i)}
+            size={15}
+            color={"white"}
+            paddingRight={5}
+          />
           {a.msg}
           {/* <div style={{"float": "right", "paddingRight": 20}}> */}
           {/* </div> */}
