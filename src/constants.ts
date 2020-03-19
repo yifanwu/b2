@@ -3,8 +3,8 @@ export const IS_DEBUG = false;
 
 // derived from config
 export const EmbedConfig = IS_DEBUG
-  ? {actions: true}
-  : {actions: false}
+  ? {actions: true, renderer: "svg"}
+  : {actions: false, renderer: "svg"}
   ;
 
 // in px
