@@ -3,6 +3,7 @@ import React from "react";
 interface CloseButtonProps {
   onClick: () => void;
   size: number;
+  paddingRight?: number;
   color?: string;
 }
 
@@ -15,8 +16,11 @@ export const CloseButton: React.StatelessComponent<CloseButtonProps> = (p) => {
       l85.6,85.6l-85.6,85.6c-5.3,5.3-5.3,13.8,0,19.1c2.6,2.6,6.1,4,9.5,4s6.9-1.3,9.5-4l85.6-85.6l85.6,85.6c2.6,2.6,6.1,4,9.5,4
       c3.5,0,6.9-1.3,9.5-4c5.3-5.3,5.3-13.8,0-19.1l-85.4-85.6l85.6-85.6C347.6,146.7,347.6,138.2,342.3,132.9z"/></g>
     </svg>;
-  // style={{width: p.size}}
-  return <div className="close-btn" onClick={p.onClick}>
+  const style = p.paddingRight
+    ? { "paddingRight": p.paddingRight}
+    : {}
+    ;
+  return <div className="close-btn" onClick={p.onClick} style={style}>
     {buttonSvg}
   </div>;
 };
