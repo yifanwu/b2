@@ -16,7 +16,7 @@ from midas.constants import MAX_BINS, MAX_DOTS, ISDEBUG
 from midas.state_types import DFName
 from midas.vis_types import EncodingSpec
 from midas.util.errors import InternalLogicalError, UserError, NotAllCaseHandledError
-from midas.util.utils import find_name, get_random_string, red_print
+from midas.util.utils import find_name, find_tuple_name, get_random_string, red_print
 from midas.util.errors import type_check_with_warning, InternalLogicalError
 from midas.vis_types import EncodingSpec, ENCODING_COUNT
 from midas.showme import infer_encoding_helper
@@ -225,6 +225,10 @@ class MidasDataFrame(object):
     def __str__(self):
         return self.table.__str__()
 
+    @property
+    def __len__(self):
+        return len(self.table.rows)
+
     @classmethod
     def create_with_table(cls, table: Table, df_name_raw: Optional[str], midas_ref):
         if df_name_raw is None:
@@ -287,6 +291,30 @@ class MidasDataFrame(object):
     def info(self, verbose=False, memory_usage=None):
         return self.to_df().info(verbose, memory_usage)
 
+    @add_doc(Table.take.__doc__)
+    def take(self, n):
+        name = find_name()
+        t = self.table.take(n)
+        if name:
+            return self._rt_funcs.create_with_table_wrap(t, name)
+        else:
+            return t
+
+    def head(self, k=5):
+        return self.table.take(list(range(k)))
+
+    @add_doc(Table.split.__doc__)
+    def split(self, k):
+        f, s = self.table.split(k)
+        v = find_tuple_name()
+        if (v):
+            first_name, second_name = v
+            df_one = self._rt_funcs.create_with_table_wrap(f, first_name)
+            df_two = self._rt_funcs.create_with_table_wrap(s, second_name)
+            return df_one, df_two
+        else:
+            print("cannot find tuple name")
+            return f, s
 
     @add_doc(Table.sample.__doc__)
     def sample(self, k: int):
