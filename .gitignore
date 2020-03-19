@@ -5,6 +5,7 @@ midas/scrap/
 *old.py
 midasenv/
 midas/widget/
+midas/static/
 midas/midas_algebra/tests/
 sandbox/
 *.json
