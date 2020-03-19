@@ -157,9 +157,14 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
       // and sorted only based on the filtered values
       // if (encoding.sort === "y") {
       //   barSpec["encoding"]["y"]["sort"] = "-x";
-      // } else if (encoding.sort === "x") {
-      //   barSpec["encoding"]["x"]["sort"] = "-y";
-      // }
+      // } else
+      if (encoding.sort === "x") {
+        barSpec["transform"] = [{
+          "calculate": "datum.is_overview ? datum.count : null",
+          "as": "sort_order"
+        }],
+        barSpec["encoding"]["x"]["sort"] = {"field": "sort_order", "order": "descending"};
+      }
       if (encoding.selectionDimensions === "") {
         // no selection
         barSpec["mark"] = "bar";
