@@ -96,7 +96,7 @@ class Midas(object):
 
 
         self._rt_funcs = RuntimeFunctions(
-            self.add_df,
+            self._add_df,
             self.create_with_table_wrap,
             self._show_df,
             # self._show_df_filtered,
@@ -107,7 +107,7 @@ class Midas(object):
             self.add_join_info)
 
 
-    def add_df(self, mdf: MidasDataFrame):
+    def _add_df(self, mdf: MidasDataFrame):
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         self.df_info_store[mdf.df_name] = DFInfo(mdf)
