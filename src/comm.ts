@@ -222,6 +222,20 @@ export function makeComm(is_first_time = true) {
                 code,
               });
             });
+            // this is for dealing with concurrency.
+            Jupyter.notebook.events.on("kernel_idle.Kernel", function() {
+              LogDebug("Kernele idle");
+              document.getElementById("midas-floater-container").style.pointerEvents = "auto";
+              // document.getElementsByClassName("vega-embed").style.pointerEvents="auto";
+              document.getElementById("midas-floater-container").classList.remove("midas-selection-busy");
+            });
+
+            Jupyter.notebook.events.on("kernel_busy.Kernel", function() {
+              LogDebug("Kernele busy");
+              document.getElementById("midas-floater-container").style.pointerEvents = "none";
+              // document.getElementsByClassName("vega-embed").style.pointerEvents="none";
+              document.getElementById("midas-floater-container").classList.add("midas-selection-busy");
+            });
           }
         }
       });

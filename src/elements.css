@@ -390,6 +390,9 @@
   cursor: col-resize;
 }
 
+.midas-selection-busy {
+  opacity: 0.4;
+}
 
 #midas-resizer:hover {
   background-color: var(--blue-grey-200);
