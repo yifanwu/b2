@@ -178,7 +178,8 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
             // but setting this might be brittle
             // TODO: test the quantitative
             // "mark": {"type": "bar", "size": 15},
-            "mark": "bar",
+            // "mark": "bar",
+            "mark": {"type": "bar",  "tooltip": true},
             "encoding": {
               "color": colorSpec
             },
@@ -186,7 +187,8 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
           },
           {
             // "mark": {"type": "bar", "size": 15},
-            "mark": "bar",
+            // "mark": "bar",
+            "mark": {"type": "bar",  "tooltip": true},
             "transform": [
               {
                 "filter": {
@@ -208,7 +210,8 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
         "description": `Midas for ${dfName}`,
         "data": { "values": data },
         "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
-        "mark": "point",
+        // "mark": "point",
+        "mark": {"type": "point",  "tooltip": true},
         "encoding": {
           "x": {
             "field": encoding.x,
