@@ -1,6 +1,6 @@
 import { PerChartSelectionValue, SelectionValue, FunKind } from "./types";
 import { SelectionDimensions } from "./charts/vegaGen";
-import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS } from "./constants";
+import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG } from "./constants";
 
 export const STRICT = true;
 
@@ -224,6 +224,8 @@ export function LogSteps(func: string, message?: string) {
 }
 
 export function LogDebug(message: string, obj?: any) {
+  // don't print if we are in release
+  if (!IS_DEBUG) return;
   if (obj) {
     console.log(`${FgMegenta}${message}\n`, obj, `\n${Reset}`);
   } else {
