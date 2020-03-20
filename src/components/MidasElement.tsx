@@ -37,6 +37,7 @@ interface MidasElementState {
   elementId: string;
   hidden: boolean;
   view: View;
+  hasFilteredValues: boolean;
   code: string;
   isBaseShown: boolean;
   generatedCells: any[];
@@ -82,6 +83,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       generatedCells: [],
       currentBrush: null,
       isBaseShown: true,
+      hasFilteredValues: false,
     };
   }
 
@@ -337,8 +339,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       .insert(newValues);
 
     this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
+    const hasFilteredValues = newValues.length > 0
+      ? true
+      : false
+      ;
+
     this.setState({
-      code
+      code,
+      hasFilteredValues
     });
   }
 
@@ -362,9 +370,12 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     if (this.hasSelection()) {
       className += " selected-card";
     }
-    const toggleSummaryPin = this.state.isBaseShown
-      ? " 📌"
-      : " 📍";
+    const toggleSummaryPin = this.state.hasFilteredValues
+      ? this.state.isBaseShown
+        ? <a onClick={() => this.toggleBaseData()}>{" 📌"}</a>
+        : <a onClick={() => this.toggleBaseData()}>{" 📍"}</a>
+      : null
+      ;
 
     return (
       <div
@@ -377,7 +388,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
           }}>
         <div className="midas-header">
           <span>{this.props.title}</span>
-          <a onClick={() => this.toggleBaseData()}>{toggleSummaryPin}</a>
+          {toggleSummaryPin}
           <details title="click to see options">
             <summary>
               {DetailButton}
