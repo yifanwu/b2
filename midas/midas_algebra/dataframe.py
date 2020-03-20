@@ -225,7 +225,6 @@ class MidasDataFrame(object):
     def __str__(self):
         return self.table.__str__()
 
-    @property
     def __len__(self):
         return len(self.table.rows)
 
@@ -277,8 +276,10 @@ class MidasDataFrame(object):
     # e.g., https://dbader.org/blog/python-memoization
 
 
-    def rows(self, idx: int):
-        return self.table.rows(idx)
+
+    @add_doc(Table.rows.__doc__)
+    def rows(self):
+        return self.table.rows
 
 
     @add_doc(Table.to_df.__doc__)
