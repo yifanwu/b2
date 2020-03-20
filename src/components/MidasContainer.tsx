@@ -99,14 +99,16 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     let allCodeStrs: string[] = [];
     for (let key in this.refsCollection) {
       const element = this.refsCollection[key];
-      try {
+      if (element) {
         const svg = await element.getSvg();
         allSvgStrs.push(svg);
         const code = element.getCode();
         allCodeStrs.push(`# ${code}`);
-      } catch (err) {
-        LogInternalError(`Cannot create svg for element, with error: ${err}`);
       }
+      // try {
+      // } catch (err) {
+      //   LogInternalError(`Cannot create svg for element, with error: ${err}`);
+      // }
     }
     const combined = allSvgStrs.join("");
     const comments = "# Current snapshot queries:\n" + allCodeStrs.join("\n");
@@ -242,7 +244,8 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
    */
   removeDataFrame(dfName: string) {
     this.props.containerFunctions.removeDataFrameMsg(dfName);
-
+    // should also remove ref otherwise snapshot will bug out
+    delete this.refsCollection[dfName];
     this.setState(prevState => {
       return {
         elements: prevState.elements.filter(e => (e.dfName !== dfName))
