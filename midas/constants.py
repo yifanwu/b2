@@ -7,7 +7,7 @@ DATA_SOURCE = "table"
 IS_OVERVIEW_FIELD_NAME = "is_overview"
 COUNT_COL_NAME = "count"
 # to accomate the number of US states
-MAX_BINS = 60
+MAX_BINS = 100
 # note that max generated bins is much smaller than the allowed bins to make the chart we create a little nicer looking.
 MAX_GENERATED_BINS = 20
 MAX_DOTS = 10000
