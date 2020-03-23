@@ -1,5 +1,5 @@
 /// <reference path="./external/Jupyter.d.ts" />
-import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME, MIDAS_SELECTION_FUN, TOGGLE_SELECTION_BUTTON, DELETE_SELECTION_BUTTON } from "./constants";
+import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME, MIDAS_SELECTION_FUN, TOGGLE_SELECTION_BUTTON, DELETE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS } from "./constants";
 import { LogSteps, LogDebug, addNotebookMenuBtn } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType, FunKind, MidasContainerFunctions } from "./types";
@@ -226,17 +226,19 @@ export function makeComm(is_first_time = true) {
             });
             // this is for dealing with concurrency.
             Jupyter.notebook.events.on("kernel_idle.Kernel", function() {
-              LogDebug("Kernele idle");
-              document.getElementById("midas-floater-container").style.pointerEvents = "auto";
-              // document.getElementsByClassName("vega-embed").style.pointerEvents="auto";
-              document.getElementById("midas-floater-container").classList.remove("midas-selection-busy");
+              const container = document.getElementById(MIDAS_CONTAINER_ID);
+              if (container) {
+                container.style.pointerEvents = "auto";
+                container.classList.remove(MIDAS_BUSY_CLASS);
+              }
             });
 
             Jupyter.notebook.events.on("kernel_busy.Kernel", function() {
-              LogDebug("Kernele busy");
-              document.getElementById("midas-floater-container").style.pointerEvents = "none";
-              // document.getElementsByClassName("vega-embed").style.pointerEvents="none";
-              document.getElementById("midas-floater-container").classList.add("midas-selection-busy");
+              const container = document.getElementById(MIDAS_CONTAINER_ID);
+              if (container) {
+                container.style.pointerEvents = "none";
+                container.classList.add(MIDAS_BUSY_CLASS);
+              }
             });
           }
         }

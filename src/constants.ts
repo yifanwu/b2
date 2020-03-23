@@ -52,3 +52,5 @@ export const TOGGLE_MIDAS_BUTTON = "midas-toggle-all";
 
 export const MIDAS_COLAPSE_CELL_CLASS = "midas-collapse-cell";
 export const MIDAS_CURRENT_CLASS = "midas-current-cell";
+export const MIDAS_CONTAINER_ID = "midas-content-container";
+export const MIDAS_BUSY_CLASS = "midas-selection-busy";
