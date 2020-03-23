@@ -76,12 +76,12 @@ function getSelectionDimensionsToArray(s: SelectionDimensions) {
 function genSelection(selectionType: SelectionType, selectionDimensions: SelectionDimensions) {
   if (selectionDimensions === "") {
     return {
-      "zoom": zoomSelection
+      // "zoom": zoomSelection
     };
   }
   if (selectionType === "multiclick") {
     return {
-      "zoom": zoomSelection,
+      // "zoom": zoomSelection,
       "select": {
         "type": "multi",
         "encodings": getSelectionDimensionsToArray(selectionDimensions),
@@ -92,14 +92,14 @@ function genSelection(selectionType: SelectionType, selectionDimensions: Selecti
   }
   if (selectionType === "brush") {
     return {
-      "zoom": zoomSelection,
+      // "zoom": zoomSelection,
       "brush": brushSelection(selectionDimensions)
     };
   }
   LogInternalError(`Only two selection types are supported, but you specified ${selectionType}`);
   // roll with it?
   return {
-    "zoom": zoomSelection
+    // "zoom": zoomSelection
   };
 }
 
