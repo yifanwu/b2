@@ -1,5 +1,5 @@
 import { LogDebug, commentUncommented, LogSteps, getEmojiEnnotatedComment, foldCode, showOrHideSelectionCells, findQueryCell, selectCell, deleteAllSelectionCells } from "./utils";
-import { MIDAS_SELECTION_FUN, CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS } from "./constants";
+import { MIDAS_SELECTION_FUN, CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, MIDAS_CURRENT_CLASS } from "./constants";
 import { FunKind } from "./types";
 
 
@@ -136,7 +136,7 @@ export default class CellManager {
       // now make sure the code is foled!
       const newText = emojiComment + "\n" + newCode.join("\n");
       cell.set_text(newText);
-      this.exeucteCell(cell, "interaction");
+      this.executeCell(cell, "interaction");
       // 1 because we want to leave the emoji
       // -1 because the last line is the line that executes
       foldCode(cell.code_mirror, 1, newCode.length - 1);
@@ -164,7 +164,7 @@ export default class CellManager {
       const foundCell = findQueryCell(code);
       if (foundCell) {
         if (shouldExecute) {
-          this.exeucteCell(foundCell, funKind);
+          this.executeCell(foundCell, funKind);
         } else {
           // just scroll to it
           selectCell(foundCell, true);
@@ -202,7 +202,7 @@ export default class CellManager {
       time: new Date()
     });
     if (shouldExecute) {
-      this.exeucteCell(cell, funKind);
+      this.executeCell(cell, funKind);
     } else {
       selectCell(cell, false);
     }
@@ -227,7 +227,7 @@ export default class CellManager {
    *
    * we are going to try with inserting at a fixed place
    */
-  exeucteCell(cell: any, funKind: FunKind) {
+  executeCell(cell: any, funKind: FunKind) {
     cell.execute();
     this.currentStep += 1;
     if (funKind === "query" || funKind === "chart") {
