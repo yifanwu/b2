@@ -1,15 +1,14 @@
 import React, { RefObject } from "react";
 import arrayMove from "array-move";
-// import { SortableContainer } from "react-sortable-hoc";
 
+import { CloseButton } from "./CloseButton";
 import { EncodingSpec } from "../charts/vegaGen";
 import { AlertType, MidasContainerFunctions, SelectionValue } from "../types";
 import { LogInternalError, LogSteps, getDfId, LogDebug, addNotebookMenuBtn } from "../utils";
-import { SNAPSHOT_BUTTON } from "../constants";
+import { SNAPSHOT_BUTTON, MIDAS_CONTAINER_ID } from "../constants";
 
 import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
 import MidasElement from "./MidasElement";
-import { CloseButton } from "./CloseButton";
 
 // Mappings
 //  this stores the information connecting the cells to
@@ -162,8 +161,8 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
   }
 
   navigate(dfName: string) {
-    const elmnt = document.getElementById(getDfId(dfName));
-    elmnt.scrollIntoView();
+    const ele = document.getElementById(getDfId(dfName));
+    ele.scrollIntoView({behavior: "smooth"});
   }
 
 
@@ -310,21 +309,20 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     for (let i = 0; i < alerts.length; i++) {
       const a = alerts[i];
       if (a.shown) {
-        const className = a.alertType === AlertType.error ? "midas-alerts-error" : "midas-alerts-debug";
+        const className = a.alertType === AlertType.error
+        ? "midas-alerts-error"
+        : "midas-alerts-debug";
         const newDiv = <div
-          className={`card midas-alert ${className}`}
-          key={`alert-${i}`}
+          className={`midas-alert ${className}`}
         >
-          <CloseButton
-            onClick={() => this.removeAlert(i)}
-            size={15}
-            color={"white"}
-            paddingRight={5}
-          />
-          {a.msg}
-          {/* <div style={{"float": "right", "paddingRight": 20}}> */}
-          {/* </div> */}
-        </div>;
+        <CloseButton
+          onClick={() => this.removeAlert(i)}
+          size={15}
+          color={"white"}
+          paddingRight={5}
+        />
+        {a.msg}
+      </div>;
         alertDivs.push(newDiv);
       }
     }
@@ -337,12 +335,14 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     //   : <ChartsViewLandingPage/>;
     const content = (chartDivs.length > 0) ? chartDivs : <ChartsViewLandingPage />;
     // #HACK without this, the allerts might not be visible when scrolloing is needed
-    const cssHack = <div style={{height: 200}}></div>;
+    // const cssHack = <div style={{height: 200}}></div>;
     return (
-      <div className="shelf" id="midas-floater-container">
+      <div className="shelf" id={MIDAS_CONTAINER_ID}>
+        <div id="midas-alert-area">
+          {alertDivs}
+        </div>
         {content}
-        {alertDivs}
-        {cssHack}
+        {/* {cssHack} */}
       </div>
     );
   }

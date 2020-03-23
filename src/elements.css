@@ -312,13 +312,24 @@
   font-family: monospace;
 }
 
+#midas-alert-area {
+  position: absolute;
+  z-index: 100;
+  opacity: 0.8;
+}
+
 /* have fading animation */
 /* note that we need to coodinate with ALERT_ALIVE_TIME */
-/* .midas-alert {
-  animation: logo-animation linear 10s;
-} */
+  /* animation: logo-animation linear 10s; */
+.midas-alert {
+  margin: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  /* the following is for the close button to show up properly */
+  display: flex;
+}
 
-@keyframes logo-animation{
+@keyframes logo-animation {
   0% {
     opacity:1;
   }
@@ -336,13 +347,11 @@
 .midas-alerts-error {
   background-color: var(--red-400);
   color: var(--red-050);
-  display: flex;
 }
 
 .midas-alerts-confirm {
   background-color: var(--yellow-vivid-300);
   color: var(--yellow-vivid-050);
-  display: flex;
 }
 
 .midas-sortable-list {
