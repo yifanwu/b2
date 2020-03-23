@@ -230,7 +230,6 @@ export default class CellManager {
   exeucteCell(cell: any, funKind: FunKind) {
     cell.execute();
     this.currentStep += 1;
-    this.lastExecutedCell = cell;
     if (funKind === "query" || funKind === "chart") {
       selectCell(cell, true);
     }
@@ -242,6 +241,12 @@ export default class CellManager {
    * @param cell
    */
   updateLastExecutedCell(cell: any) {
+    // remove prev
+    if (this.lastExecutedCell) {
+      this.lastExecutedCell.element.removeClass(MIDAS_CURRENT_CLASS);
+    }
     this.lastExecutedCell = cell;
+    // add new
+    cell.element.addClass(MIDAS_CURRENT_CLASS);
   }
 }

@@ -158,7 +158,7 @@ export function selectCell(cell: any, scroll: boolean) {
     LogInternalError(`Was not able to find cel`);
   } else {
     Jupyter.notebook.select(currentIdx);
-    if (scroll) cell.code_mirror.display.lineDiv.scrollIntoView();
+    if (scroll) cell.code_mirror.display.lineDiv.scrollIntoView({behavior: "smooth"});
   }
 }
 

@@ -216,6 +216,8 @@ export function makeComm(is_first_time = true) {
             // - rendered might be a better proxy since they might change the values
             // the only issue is if the people forget to render it, oh well : /
             Jupyter.notebook.events.on("rendered.MarkdownCell", function(evt: any, data: any) {
+              // TODO
+              cellManager.updateLastExecutedCell(data.cell);
               const code = data.cell.get_text();
               comm.send({
                 command: "markdown-cell-rendered",

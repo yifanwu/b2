@@ -51,4 +51,4 @@ export const TOGGLE_PANNEL_BUTTON = "midas-toggle-pannel";
 export const TOGGLE_MIDAS_BUTTON = "midas-toggle-all";
 
 export const MIDAS_COLAPSE_CELL_CLASS = "midas-collapse-cell";
-
+export const MIDAS_CURRENT_CLASS = "midas-current-cell";
