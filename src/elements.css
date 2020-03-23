@@ -264,8 +264,8 @@
   text-align: left;
   /* need the following otherwise width is not confined to parent's */
   word-break: break-word;
-  margin: var(--size-2);
-  padding: var(--size-2);
+  margin: 2px;
+  padding: var(--size-1);
   border: 1px solid var(--cyan-100);
   box-shadow: 0 3px 2px -2px var(--blue-grey-100);
   border-radius: var(--size-2);

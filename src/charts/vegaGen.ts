@@ -117,6 +117,7 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
       let barSpec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": `Midas Generated Visualization of dataframe ${dfName}`,
+        "height": 120,
         "data": {
           "values": data
         },
