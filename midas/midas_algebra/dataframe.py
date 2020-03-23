@@ -379,7 +379,24 @@ class MidasDataFrame(object):
     def apply(self, fn, *column_or_columns):
         return self.table.apply(fn, *column_or_columns)
 
+    #############################
+    # /begin wrap around pandas #
+    #############################
+    
+    def to_numpy(self):
+        """similar to pandas' `to_numpy`
+        """
+        return self.to_df().to_numpy()
 
+    # dropna is hard to support
+    # def dropna(self):
+    #     """similar to pandas' `dropna`
+    #     """
+
+    ###########################
+    # /end wrap around pandas #
+    ###########################
+    
     # def show_profile(self):
     #     self._rt_funcs.show_profiler(self)
 
