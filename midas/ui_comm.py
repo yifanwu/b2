@@ -480,7 +480,7 @@ class UiComm(object):
             raise InternalLogicalError("Should not be getting distribution on unregistered dataframes and columns")
         df = df_info.df
         col_value = df.table.column(col_name)
-        new_name = sanitize_string_for_var_name(f"{col_name}_{df_name}_distribution")
+        new_name = sanitize_string_for_var_name(f"{col_name}_{df_name}_dist")
         if (is_string_dtype(col_value)):
             # we need to check the cardinarily
             unique_vals = np.unique(col_value)
