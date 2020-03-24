@@ -1,13 +1,12 @@
-from midas.util.errors import InternalLogicalError
-from midas.state_types import DFName
-
-from typing import Union, cast, Set
+from typing import List, cast, Set
 from enum import Enum
 import json
 
-# note that Column ref is different from 
-class ColumnRef(object):
-    
+from midas.util.utils import FG_BLUE, RESET_PRINT
+from midas.util.errors import InternalLogicalError
+from midas.state_types import DFName
+
+class ColumnRef(object):    
     def __init__(self, col_name: str, df_name: DFName):
         self.col_name = col_name
         self.df_name = df_name
@@ -60,7 +59,7 @@ class EmptySelection(SelectionValue):
         raise InternalLogicalError("Should not try to make empty selections into strings")
 
     def __repr__(self):
-        return f"{{column: {self.column}, val: None, minVal: None, maxVal: None}}"
+        return f"{{column: {self.column}, val: {FG_BLUE}None{RESET_PRINT}, minVal: None, maxVal: None}}"
 
 
 class NumericRangeSelection(SelectionValue):
@@ -112,10 +111,52 @@ class SetSelection(SelectionValue):
         return True
 
     def __repr__(self):
-        return f"{{column: {self.column}, val: {self.val}}}"
+        return f"{{column: {self.column}, val: {FG_BLUE}{self.val}{RESET_PRINT}}}"
 
     def __str__(self) -> str:
         return self.__repr__()
 
     def to_str(self):
         return f'{{"{self.column.df_name}": {{"{self.column.col_name}": {json.dumps(self.val)}}}}}'
+
+
+def diff_selection_value(new_selection: List[SelectionValue], old_selection: List[SelectionValue])-> List[SelectionValue]:
+    """returns the difference between the values
+    Arguments:
+        new_selection {List[SelectionValue]} -- one selection
+        old_selection {List[SelectionValue]} -- another selection
+    Returns:
+        returns
+        - None if there are no changes
+        - an empty selection if the selection is removed
+        - all the new diffs as selections
+    """
+    def find_selection(a_selection: SelectionValue, selections: List[SelectionValue]):
+        for s in selections:
+            if s == a_selection:
+                return True
+        return False
+
+    def find_df(df: ColumnRef, selections: List[SelectionValue]):
+        for s in selections:
+            if s.column == df:
+                return True
+        return False
+
+    diff = []
+    for s in new_selection:
+        if not find_selection(s, old_selection):
+            diff.append(s)
+    for s in old_selection:
+        if not find_df(s.column, new_selection):
+            # this means that this item has been removed
+            diff.append(EmptySelection(s.column))
+    return diff
+
+
+def find_selections_with_df_name(current_selection: List[SelectionValue], df_name):
+    r = []
+    for s in current_selection:
+        if s.column.df_name == df_name:
+            r.append(s.column)
+    return r

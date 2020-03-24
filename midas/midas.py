@@ -20,10 +20,10 @@ except ImportError as err:
     logging = lambda x, y: None
 
 from midas.constants import ISDEBUG
-from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType
+from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType, find_selections_with_df_name, diff_selection_value
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
-from .util.errors import InternalLogicalError, debug_log
-from .util.utils import find_selections_with_df_name, red_print, open_sqlite_for_logging
+from .util.errors import InternalLogicalError, debug_log, UserError
+from .util.utils import red_print, open_sqlite_for_logging, isnotebook, find_name
 from .vis_types import EncodingSpec
 from .state_types import DFName
 from .ui_comm import UiComm
@@ -34,8 +34,6 @@ from midas.state_types import DFName
 from .ui_comm import UiComm
 from .midas_magic import MidasMagic
 from .util.instructions import HELP_INSTRUCTION
-from .util.errors import UserError
-from .util.utils import isnotebook, find_name, diff_selection_value
 from .config import MidasConfig
 
 

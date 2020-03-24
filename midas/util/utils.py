@@ -5,21 +5,20 @@ from os import path
 import traceback
 import ast
 import sqlite3
-from datetime import datetime
-from shutil import copyfile, copy
 from re import sub
 import requests
 from pathlib import Path
 import time 
 
-from typing import Tuple, List, Optional
+from typing import Tuple, List
 from IPython import get_ipython  # type: ignore
 from IPython.core.debugger import set_trace
 
 from midas.constants import ISDEBUG
-from midas.midas_algebra.selection import ColumnRef, EmptySelection, SelectionValue
 from midas.util.errors import UserError, InternalLogicalError
 
+FG_BLUE = "\x1b[34m";
+RESET_PRINT = "\x1b[0m";
 
 def fetch_and_cache(data_url, file, data_dir="data", force=False):
     """
@@ -199,39 +198,6 @@ def find_name(throw_error=False):
 ifnone = lambda a, b: b if a is None else a
 
 
-def diff_selection_value(new_selection: List[SelectionValue], old_selection: List[SelectionValue])-> List[SelectionValue]:
-    """returns the difference between the values
-    Arguments:
-        new_selection {List[SelectionValue]} -- one selection
-        old_selection {List[SelectionValue]} -- another selection
-    Returns:
-        returns
-        - None if there are no changes
-        - an empty selection if the selection is removed
-        - all the new diffs as selections
-    """
-    def find_selection(a_selection: SelectionValue, selections: List[SelectionValue]):
-        for s in selections:
-            if s == a_selection:
-                return True
-        return False
-
-    def find_df(df: ColumnRef, selections: List[SelectionValue]):
-        for s in selections:
-            if s.column == df:
-                return True
-        return False
-
-    diff = []
-    for s in new_selection:
-        if not find_selection(s, old_selection):
-            diff.append(s)
-    for s in old_selection:
-        if not find_df(s.column, new_selection):
-            # this means that this item has been removed
-            diff.append(EmptySelection(s.column))
-    return diff
-
 def get_min_max_tuple_from_list(values: List[float]) -> Tuple[float, float]:
     """sets in place the array if the values are not min and max
     
@@ -242,10 +208,3 @@ def get_min_max_tuple_from_list(values: List[float]) -> Tuple[float, float]:
        returns the modifed array in place
     """
     return (min(values), max(values))
-
-def find_selections_with_df_name(current_selection: List[SelectionValue], df_name):
-    r = []
-    for s in current_selection:
-        if s.column.df_name == df_name:
-            r.append(s.column)
-    return r
