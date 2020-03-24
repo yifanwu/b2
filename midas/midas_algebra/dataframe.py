@@ -393,9 +393,20 @@ class MidasDataFrame(object):
     #############################
     
     def to_numpy(self):
-        """similar to pandas' `to_numpy`
+        """pandas' `to_numpy`
         """
         return self.to_df().to_numpy()
+
+    def corr(self, method='pearson', min_periods=1):
+        """pandas' `corr`       
+        Keyword Arguments:
+            method {str} -- [description] (default: {'pearson'})
+            min_periods {int} -- [description] (default: {1})
+        
+        Returns:
+            [type] -- [description]
+        """
+        return self.to_df().corr(method, min_periods)
 
     # dropna is hard to support
     # def dropna(self):
