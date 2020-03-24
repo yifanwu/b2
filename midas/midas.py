@@ -53,13 +53,12 @@ class Midas(object):
     _ui_comm: UiComm
     _context: Context
     _rt_funcs: RuntimeFunctions
-    immediate_selection: List[SelectionValue]
+    immediate_interaction_selection: List[SelectionValue]
     current_selection: List[SelectionValue]
     all_selections: List[List[SelectionValue]]
     _assigned_name: str
     df_info_store: Dict[DFName, DFInfo]
     config: MidasConfig
-    _last_add_selection_df: str
     # log_file: IO[Any]
     _start_time: datetime
 
@@ -86,8 +85,7 @@ class Midas(object):
         self._context = Context(self.df_info_store, self.from_ops)
         self.all_selections = []
         self.config = MidasConfig(True, True if user_id else False)
-        self._last_add_selection_df = ""
-        self.immediate_selection = []
+        self.immediate_interaction_selection = []
         self.current_selection = []
         if is_in_ipynb:
             ip = get_ipython()
@@ -275,14 +273,14 @@ class Midas(object):
         return self.current_selection
 
     @property
-    def immediate_value(self):
+    def immediate_interaction_value(self):
         """syntax shortcut for the first value selected
         - if it's a bar chart, it's array of string, e.g., ['CA']
         - if it's scatter or line, it's, e.g., [100, 200]
         """
-        if len(self.immediate_selection) == 0:
+        if len(self.immediate_interaction_selection) == 0:
             return None
-        first = self.immediate_selection[0]
+        first = self.immediate_interaction_selection[0]
         if first.selection_type == SelectionType.empty:
             return None
         # if first.selection_type == SelectionType.string_set:
@@ -295,7 +293,7 @@ class Midas(object):
         # date = datetime.now()
         # selection_event = SelectionEvent(date, selection, DFName(df_name))
         # self.append_df_predicates(selection_event)
-        self.immediate_selection = selection
+        self.immediate_interaction_selection = selection
         new_selection = list(filter(lambda v: v.column.df_name != df_name, self.current_selection))
         none_empty = list(filter(lambda s: s.selection_type != SelectionType.empty , selection))
         new_selection.extend(none_empty)
@@ -364,14 +362,18 @@ class Midas(object):
                     # flatmap
                     current_selection.extend(self._ui_comm.get_predicate_info(v)[0]) # type: ignore
             # this check if for when there is no UI effect, but code effect
-            diff = diff_selection_value(current_selection, self.current_selection)
-            if len(diff) > 0:
-                dfs = set([d.column.df_name for d in diff])
-                # note that we ignore the case when multipel dataframes have changed.
-                df_involved = dfs.pop()
-                self.current_selection = current_selection
-            else:
-                df_involved = self._last_add_selection_df
+            # diff = diff_selection_value(current_selection, self.current_selection)
+            # if len(diff) > 0:
+            #     dfs = set([d.column.df_name for d in diff])
+            #     # note that we ignore the case when multipel dataframes have changed.
+            #     df_involved = dfs.pop()
+            #     self.current_selection = current_selection
+            # else:
+            # note that we only trigger df_involved when it's from the GUI, and tht GUI sets the 
+            self.current_selection = current_selection
+            df_involved = ""
+            if len(self.immediate_interaction_selection)> 0:
+                df_involved = self.immediate_interaction_selection[0].column.df_name
             self.__tick(current_selection)
             self.log_entry("code_selection", dumps([s.to_str() for s in self.current_selection]))
 
