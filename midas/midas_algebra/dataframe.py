@@ -194,7 +194,6 @@ class MidasDataFrame(object):
             # derivation
             "stats",
             # mutations
-            "sort",
             "drop",
             "relabel",
             "append_column",
@@ -381,6 +380,13 @@ class MidasDataFrame(object):
     @add_doc(Table.apply.__doc__)
     def apply(self, fn, *column_or_columns):
         return self.table.apply(fn, *column_or_columns)
+
+    def sort(self, column, descending=True):
+        new_table = self.table.sort(column, descending)
+        # now just replace the table value, but nothing else
+        self._table = new_table
+        return self
+
 
     #############################
     # /begin wrap around pandas #

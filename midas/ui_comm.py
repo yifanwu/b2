@@ -136,14 +136,15 @@ class UiComm(object):
                 self.log_entry("column_click", df_name)
                 if code:
                     if execute:
-                        self.create_cell(code, "query", True)
+                        # creating new line so that the horizontal scroll wouldn't occlude the code
+                        self.create_cell(code + "\n", "query", True)
                     else:
                         self.send_column_click_error_msg(
                             f'We are not able to create a chart for {df_name}--{err_message}',
                             df_name,
                             column
                         )
-                        self.create_cell(code, "query", False)
+                        self.create_cell(code + "\n", "query", False)
                 return
             elif command == "remove_dataframe":
                 df_name = data["df_name"]
@@ -280,7 +281,7 @@ class UiComm(object):
         }
         self.comm.send(message)
         return
-
+        
 
     def get_dfs_from_code_str(self, code: str) -> List[MidasDataFrame]:
         assignments = []
