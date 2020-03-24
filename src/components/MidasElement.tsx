@@ -396,13 +396,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
               {DetailButton}
             </summary>
             <div className="midas-chart-action">
-              <a title="Move chart left" onClick={this.moveLeft}>⬅️</a>
-              <a title="Move chart right" onClick={this.moveRight}>➡️</a>
-              <a title="Snap an image of chat to notebook" onClick={() => this.snapToCell()}>📷</a>
-              <a title="Copy visual code definitions to clippboard" onClick={() => this.changeVisual()}>📊</a>
-              <a title="Copy data query code to clopboard" onClick={() => this.copyCodeToClipboard()}>📋</a>
-              <a title={this.state.hidden ? "Open the chart" : "Fold the chart"} onClick={() => this.toggleHiddenStatus()}>{this.state.hidden ? "➕" : "➖"}</a>
-              <a title="Remove the chart" onClick={() => this.props.removeChart()}>❌</a>
+              <a title="Move chart left" onClick={this.moveLeft}>⬅️ move left</a>
+              <a title="Move chart right" onClick={this.moveRight}>➡️ move right</a>
+              <a title="Snap an image of chat to notebook" onClick={() => this.snapToCell()}>📷 snapshot to notebook</a>
+              <a title="Copy visual code definitions to clippboard" onClick={() => this.changeVisual()}>📊 get definition cell</a>
+              <a title="Copy data query code to clopboard" onClick={() => this.copyCodeToClipboard()}>📋 get code to clipboard</a>
+              <a title={this.state.hidden ? "Open the chart" : "Fold the chart"} onClick={() => this.toggleHiddenStatus()}>{this.state.hidden ? "➕ maximize chart" : "➖ minimize chart"} </a>
+              <a title="Remove the chart" onClick={() => this.props.removeChart()}>❌ delete chart</a>
             </div>
           </details>
         </div>
