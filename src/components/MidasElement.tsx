@@ -197,9 +197,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       let processedValue = {};
       let cleanValue = {};
       // const selectedField = multiSelectedField(this.props.encoding);
+      // weird, includes vlMulti
       if (!this.isMultiSelect()) {
         cleanValue = this.roundIfPossible(value);
       } else {
+        delete value["vlMulti"];
         cleanValue = value;
       }
       if (this.updatedSelection && isFirstSelectionContainedBySecond(cleanValue, this.updatedSelection)) {
