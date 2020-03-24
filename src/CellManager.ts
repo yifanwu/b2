@@ -92,10 +92,12 @@ export default class CellManager {
         const r = getCell(cells[i]);
         if (r) {
           cellIdxs.push(r);
-        } else {
-          // remove if they are no longer available to save checking next time
-          cells.splice(i, 1);
         }
+        // fixme: this causes bugs
+        // else {
+        //   // remove if they are no longer available to save checking next time
+        //   cells.splice(i, 1);
+        // }
       }
       LogSteps(`[${dfName}] Reactively executing cells ${cellIdxs}`);
       Jupyter.notebook.execute_cells(cellIdxs);
