@@ -8,6 +8,7 @@ import ast
 import operator
 from datascience import Table, are
 from pandas import DataFrame
+from vega import VegaLite
 
 # for development
 from IPython.core.debugger import set_trace
@@ -20,6 +21,7 @@ from midas.util.utils import find_name, find_tuple_name, get_random_string, red_
 from midas.util.errors import type_check_with_warning, InternalLogicalError
 from midas.vis_types import EncodingSpec, ENCODING_COUNT
 from midas.showme import infer_encoding_helper
+from midas.util.data_processing import static_vega_gen
 
 from .selection import SelectionType, SelectionValue, NumericRangeSelection, SetSelection, ColumnRef
 from .data_types import DFId
@@ -109,6 +111,7 @@ class RuntimeFunctions(NamedTuple):
     # get_stream: Callable[[DFName], MidasSelectionStream] 
     apply_other_selection: Callable[['MidasDataFrame', List[SelectionValue]], Optional['MidasDataFrame']]
     add_join_info: Callable[[JoinInfo], None]
+    log_entry: Callable[[str, Optional[str]], None]
 
 
 class NotInRuntime():
@@ -437,14 +440,19 @@ class MidasDataFrame(object):
         return self
 
 
-    def reactive_vis(self, **kwargs):
+    def static_vis(self, **kwargs):
         """This function is called inplace of `vis` for reactive cells, whose participation in the event loop is different from the others.
-        """
+        # """
+        self._rt_funcs.log_entry("show_static_df", None)
+
         spec = parse_encoding(kwargs, self)
         if spec:
             sanity_check_spec_with_data(spec, self)
-            self._rt_funcs.show_df(self, spec, False)
-        return self
+            # do show me
+            vg_spec = static_vega_gen(spec, self)
+            # print(vg_spec)
+            return VegaLite(vg_spec)
+        return None
 
     
     def can_join(self, other_df: 'MidasDataFrame', col_name: str,col_name_other: Optional[str]=None):

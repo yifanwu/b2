@@ -4,4 +4,4 @@ pandas
 datascience
 asttokens
 pyperclip
-
+vega

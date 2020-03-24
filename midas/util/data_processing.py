@@ -1,16 +1,18 @@
 from datascience import Table
+import json
 import numpy as np
 from math import log10, pow, floor
 from pandas import notnull
 from typing import Tuple
 from IPython.core.debugger import set_trace
 
-from midas.midas_algebra.dataframe import MidasDataFrame
+# from midas.midas_algebra.dataframe import MidasDataFrame
 from midas.constants import ISDEBUG
 from .errors import InternalLogicalError
 from midas.constants import IS_OVERVIEW_FIELD_NAME, MAX_BINS, STUB_DISTRIBUTION_BIN, MAX_GENERATED_BINS
 from midas.vis_types import FilterLabelOptions
 from .utils import sanitize_string_for_var_name
+from midas.vis_types import EncodingSpec
 
 
 def get_chart_title(df_name: str):
@@ -24,6 +26,59 @@ DATE_HIERARCHY = [
     ("D", "day")
 ]
 
+
+# MidasDataFrame
+def static_vega_gen(encoding: EncodingSpec, df):
+    records = dataframe_to_dict(df, FilterLabelOptions.none)
+    # data = json.dumps(records)
+    if encoding.mark == "bar":
+        barSpec = {
+            "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+            "height": 200,
+            "data": {"values": records},
+            "mark": "bar",
+            "encoding": {
+                "x": {
+                    "field": encoding.x,
+                    "type": encoding.x_type
+                },
+                "y": {
+                    "field": encoding.y,
+                    "type": encoding.y_type,
+                },
+            }
+        }
+        if encoding.sort == "x":
+            barSpec["encoding"]["x"]["sort"] = "-y"
+        return barSpec
+    elif encoding.mark == "circle":
+        scatterSpec = {
+            "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+            "data": { "values": records },
+            "mark": {"type": "point",  "tooltip": 1},
+            "encoding": {
+                "x": {
+                    "field": encoding.x,
+                    "type": encoding.x_type,
+                    "scale": {"zero": 0}
+                },
+                "y": {"field": encoding.y, "type": encoding.y_type},
+            }
+        }
+        return scatterSpec
+    elif encoding.mark == "line":
+        lineSpec = {
+            "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+            "data": { "values": records },
+            "mark": "line",
+            "encoding": {
+                "x": {"field": encoding.x, "type": encoding.x_type},
+                "y": {"field": encoding.y, "type": encoding.y_type},
+            },
+        }
+        return lineSpec
+    else:
+        return None
 
 def create_binning_code(bound, col_name, df_name, new_name, midas_reference_name):
     bin_column_name = f"{col_name}_bin"
@@ -59,8 +114,8 @@ def try_parsing_date_time_level(ref, col_value, col_name, df_name):
     else:
         return None
 
-
-def get_datetime_distribution_code(col_name, df: MidasDataFrame):
+# MidasDataFrame
+def get_datetime_distribution_code(col_name, df):
     col_value = df.table.column(col_name)
     for h in DATE_HIERARCHY:
         r = try_parsing_date_time_level(h, col_value, col_name, df.df_name)
@@ -163,8 +218,8 @@ def sanitize_dataframe(df: Table):
             df[col_name] = np.where(notnull(col), col, None).astype(object)
     return df
 
-
-def dataframe_to_dict(df: MidasDataFrame, include_filter_label: FilterLabelOptions):
+# MidasDataFrame
+def dataframe_to_dict(df, include_filter_label: FilterLabelOptions):
     """[summary]
     
     Keyword Arguments:

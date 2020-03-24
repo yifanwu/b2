@@ -99,12 +99,11 @@ class Midas(object):
             self._add_df,
             self.create_with_table_wrap,
             self._show_df,
-            # self._show_df_filtered,
-            # self.show_profile,
-            # self._i_get_df,
             self._get_filtered_df,
             self._context.apply_selection,
-            self.add_join_info)
+            self.add_join_info,
+            self.log_entry
+        )
 
 
     def _add_df(self, mdf: MidasDataFrame):
