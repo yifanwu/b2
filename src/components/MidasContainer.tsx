@@ -335,14 +335,14 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     //   : <ChartsViewLandingPage/>;
     const content = (chartDivs.length > 0) ? chartDivs : <ChartsViewLandingPage />;
     // #HACK without this, the allerts might not be visible when scrolloing is needed
-    // const cssHack = <div style={{height: 200}}></div>;
+    const cssHack = <div style={{height: 200}}></div>;
     return (
       <div className="shelf" id={MIDAS_CONTAINER_ID}>
         <div id="midas-alert-area">
           {alertDivs}
         </div>
         {content}
-        {/* {cssHack} */}
+        {cssHack}
       </div>
     );
   }
