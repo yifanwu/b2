@@ -179,12 +179,12 @@
   border-radius: 5px;
 } 
 
-.midas-current-cell .input_area {
+.midas-current-cell {
   /* height: 5px;
   background-color: var(--blue-200); */
   /* border-right-width: 5px; */
-  border-bottom-color: var(--blue-200);
-  border-bottom-width: 5px;
+  border-bottom-color: var(--blue-200) !important;
+  border-bottom-width: 5px !important;
 }
 
 .editable-text-title, .selection-column-name {
