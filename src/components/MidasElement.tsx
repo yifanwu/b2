@@ -374,8 +374,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     }
     const toggleSummaryPin = this.state.hasFilteredValues
       ? this.state.isBaseShown
-        ? <a onClick={() => this.toggleBaseData()}>{" 📌"}</a>
-        : <a onClick={() => this.toggleBaseData()}>{" 📍"}</a>
+        ? <a onClick={() => this.toggleBaseData()}>{"📌 show filtered data only"}</a>
+        : <a onClick={() => this.toggleBaseData()}>{"📍 show original and filtered"}</a>
       : null
       ;
 
@@ -389,18 +389,19 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
             this.props.functions.setUIItxFocus();
           }}>
         <div className="midas-header">
-          <span>{this.props.title}</span>
-          {toggleSummaryPin}
+          <span>{this.props.title} </span>
+          {/*  open={this.state.isOpen} */}
           <details title="click to see options">
             <summary>
               {DetailButton}
             </summary>
             <div className="midas-chart-action">
+              {toggleSummaryPin}
+              <a title="Snap an image of chat to notebook" onClick={() => this.snapToCell()}>📷 snapshot to notebook</a>
+              <a title="Copy data query code to clopboard" onClick={() => this.copyCodeToClipboard()}>📋 copy code to clipboard</a>
+              <a title="Copy visual code definitions to clippboard" onClick={() => this.changeVisual()}>📊 find defining cell</a>
               <a title="Move chart left" onClick={this.moveLeft}>⬅️ move left</a>
               <a title="Move chart right" onClick={this.moveRight}>➡️ move right</a>
-              <a title="Snap an image of chat to notebook" onClick={() => this.snapToCell()}>📷 snapshot to notebook</a>
-              <a title="Copy visual code definitions to clippboard" onClick={() => this.changeVisual()}>📊 get definition cell</a>
-              <a title="Copy data query code to clopboard" onClick={() => this.copyCodeToClipboard()}>📋 get code to clipboard</a>
               <a title={this.state.hidden ? "Open the chart" : "Fold the chart"} onClick={() => this.toggleHiddenStatus()}>{this.state.hidden ? "➕ maximize chart" : "➖ minimize chart"} </a>
               <a title="Remove the chart" onClick={() => this.props.removeChart()}>❌ delete chart</a>
             </div>
