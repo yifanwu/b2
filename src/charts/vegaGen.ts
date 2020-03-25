@@ -50,9 +50,9 @@ const zoomSelection = {
 function brushSelection(selectionKind: SelectionDimensions) {
   let result = {
     "type": "interval",
-    "resolve": "union",
-    "on": "[mousedown[event.shiftKey], window:mouseup] > window:mousemove!",
-    "translate": "[mousedown[event.shiftKey], window:mouseup] > window:mousemove!",
+    // "resolve": "union",
+    // "on": "[mousedown[event.shiftKey], window:mouseup] > window:mousemove!",
+    // "translate": "[mousedown[event.shiftKey], window:mouseup] > window:mousemove!",
     // @ts-ignore
     // "zoom": null
     // the following is needed for the brush layer to not activate
