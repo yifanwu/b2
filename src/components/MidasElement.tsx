@@ -42,6 +42,7 @@ interface MidasElementState {
   isBaseShown: boolean;
   generatedCells: any[];
   currentBrush: PerChartSelectionValue;
+  // isOpen: boolean;
 }
 
 // const DragHandle = SortableHandle(() => <span className="drag-handle"><b>&nbsp;⋮⋮&nbsp;</b></span>);
@@ -84,6 +85,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       currentBrush: null,
       isBaseShown: true,
       hasFilteredValues: false,
+      // isOpen: false,
     };
   }
 
@@ -260,7 +262,10 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   toggleHiddenStatus() {
     this.setState(prevState => {
       this.props.functions.logEntry("toggle_chart_visibility", this.props.dfName);
-      return { hidden: !prevState.hidden };
+      return {
+        hidden: !prevState.hidden,
+        // isOpen: false
+      };
     });
   }
 
