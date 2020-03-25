@@ -108,7 +108,17 @@ class Midas(object):
         self.df_info_store[mdf.df_name] = DFInfo(mdf)
 
 
-    def show_profile(self, mdf: MidasDataFrame):
+    def show_profile(self, mdf: MidasDataFrame, df_name:str=None):
+        # sanity check
+        if df_name:
+            mdf.df_name = df_name
+        if not mdf.df_name:
+            red_print("Cannot create the profiler, please provide df_name as second argument")
+            return
+        if mdf.__len__() == 0:
+            red_print("Cannot create profiler for empty dataframe---please check the value of the dataframe.")
+            return
+
         self._ui_comm.create_profile(mdf)
 
 
