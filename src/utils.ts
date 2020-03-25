@@ -38,8 +38,8 @@ export function addNotebookMenuBtn(onClick: () => void, btnId: string, btnText: 
       >${btnText}</button>
     </div>`;
     $("#maintoolbar-container").append(newButton);
+    $(`#${btnId}`).click(() => onClick());
   }
-  $(`#${btnId}`).click(() => onClick());
 }
 
 export function getEmojiEnnotatedComment(funKind: FunKind) {
