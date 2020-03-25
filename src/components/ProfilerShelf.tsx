@@ -84,10 +84,12 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
   }
 
   hideItem(tableName: string, index: number) {
-    this.setState(prevState => {
-      prevState.tables[tableName].splice(index, 1);
-      return prevState;
-    });
+    if (confirm("are you sure you want to hide the column?")) {
+      this.setState(prevState => {
+        prevState.tables[tableName].splice(index, 1);
+        return prevState;
+      });
+    }
   }
 
   togglePannel() {
