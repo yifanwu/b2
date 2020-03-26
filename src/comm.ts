@@ -297,6 +297,10 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         LogDebug(`Success adding cell to ${reactiveLoad.dfName} for cell ${cellId}`);
         return;
       }
+      case "deactive": {
+        const cellId = msg.parent_header.msg_id;
+        cellManager.removeReactiveCell(cellId);
+      }
       case "execute_selection": {
         // note that this case is a special case of the execution
         const selectionLoad = load as ExecuteSelectionLoad;

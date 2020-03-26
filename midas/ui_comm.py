@@ -354,6 +354,11 @@ class UiComm(object):
             "shouldRun": should_run
         })
 
+    def remove_reactive_cell(self):
+        self.comm.send({
+            "type": "deactive",
+        })
+
     # note that we do not need to provide the cellid
     #   that's information to be captured on the JS end.
     def add_reactive_cell(self, df_name: str):

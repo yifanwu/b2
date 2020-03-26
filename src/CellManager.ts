@@ -42,6 +42,7 @@ export default class CellManager {
   currentFocus?: string;
   lastExecutedCell?: any;
   reactiveCells: Map<string, number[]>;
+  reactiveCellsReverse: Map<number, string>;
   showSelectionCells: boolean;
 
   constructor(midasInstanceName: string) {
@@ -55,6 +56,7 @@ export default class CellManager {
     this.currentFocus = undefined;
     this.lastExecutedCell = null;
     this.reactiveCells = new Map();
+    this.reactiveCellsReverse = new Map();
     this.showSelectionCells = true;
   }
 
@@ -117,9 +119,18 @@ export default class CellManager {
     } else {
       this.reactiveCells.set(dfName, [cellId]);
     }
+    this.reactiveCellsReverse.set(cellId, dfName);
   }
 
-
+  removeReactiveCell(cellId: number) {
+    const dfName = this.reactiveCellsReverse.get(cellId);
+    const arr = this.reactiveCells.get(dfName);
+    const idx = arr.indexOf(cellId);
+    if (idx > -1) {
+      arr.splice(idx, 1);
+      LogDebug("reactive cell removed");
+    }
+  }
 
   /**
    * This is triggered by the interactions
