@@ -349,6 +349,11 @@
   color: var(--red-050);
 }
 
+.midas-alerts-debug {
+  background-color: var(--yellow-vivid-400);
+  color: var(--red-050);
+}
+
 .midas-alerts-confirm {
   background-color: var(--yellow-vivid-300);
   color: var(--yellow-vivid-050);
