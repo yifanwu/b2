@@ -25,7 +25,6 @@ class MidasMagic(Magics):
             self.ui_comm.remove_reactive_cell()
             # do NOT execute the cell
             return
-
         if args.df:
             # self.ui_comm.send_debug_msg(f"NEW cell magic with shell: {args.df} with cell: {cell}")
             self.ui_comm.add_reactive_cell(args.df)

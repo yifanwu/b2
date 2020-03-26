@@ -41,7 +41,7 @@ export default class CellManager {
   prevFocus?: string;
   currentFocus?: string;
   lastExecutedCell?: any;
-  reactiveCells: Map<string, number[]>;
+  reactiveCells: Map<string, Set<number>>;
   reactiveCellsReverse: Map<number, string>;
   showSelectionCells: boolean;
 
@@ -88,48 +88,44 @@ export default class CellManager {
       LogDebug(`One of the cells is no longer found for ${c}`);
     }
 
-    function processCells(cells: number[]) {
-      let cellIdxs = [];
-      for (let i = 0; i < cells.length; i ++) {
-        const r = getCell(cells[i]);
+    function processCells(cells: Set<number>) {
+      let cellIdxs: any[] = [];
+      let newCells = new Set<number>();
+      cells.forEach((c) => {
+        const r = getCell(c);
         if (r) {
           cellIdxs.push(r);
+          newCells.add(c);
         }
-        // fixme: this causes bugs
-        // else {
-        //   // remove if they are no longer available to save checking next time
-        //   cells.splice(i, 1);
-        // }
-      }
+      });
       LogSteps(`[${dfName}] Reactively executing cells ${cellIdxs}`);
       Jupyter.notebook.execute_cells(cellIdxs);
+      return newCells;
     }
 
     // processed separately to ensure that the splicing would work correctly
     const allCells = this.reactiveCells.get("");
     const dfCells = this.reactiveCells.get(dfName);
-    if (allCells) processCells(allCells);
+    if (allCells) {
+      const newSet = processCells(allCells);
+      // TODO: update the newSet
+    }
     if (dfCells) processCells(dfCells);
   }
 
 
   recordReactiveCell(dfName: string, cellId: number) {
-    if (this.reactiveCells.has(dfName)) {
-      this.reactiveCells.get(dfName).push(cellId);
-    } else {
-      this.reactiveCells.set(dfName, [cellId]);
+    if (!this.reactiveCells.has(dfName)) {
+      this.reactiveCells.set(dfName, new Set());
     }
+    this.reactiveCells.get(dfName).add(cellId);
     this.reactiveCellsReverse.set(cellId, dfName);
   }
 
   removeReactiveCell(cellId: number) {
     const dfName = this.reactiveCellsReverse.get(cellId);
-    const arr = this.reactiveCells.get(dfName);
-    const idx = arr.indexOf(cellId);
-    if (idx > -1) {
-      arr.splice(idx, 1);
-      LogDebug("reactive cell removed");
-    }
+    const cellSet = this.reactiveCells.get(dfName);
+    cellSet.delete(cellId);
   }
 
   /**
