@@ -343,7 +343,7 @@ class Midas(object):
 
 
     # PUBLIC
-    def sel(self, current_selections_list: Union[List[Dict], List[SelectionValue]]):
+    def sel(self, current_selections_list: Union[List[Dict], List[SelectionValue]]=[]):
         """makes selections to visualizations in Midas panel
         
         Arguments:
