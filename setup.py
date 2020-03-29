@@ -8,7 +8,7 @@ For more information, see https://github.com/yifanwu/midas.
 """
 
 DESCRIPTION         = "Midas: Reification of interactions in Jupyter Notebook"
-NAME                = "midas"
+NAME                = "midas-ext"
 PACKAGES            = ['midas',
                        'midas.tests']
 PACKAGE_DATA        = {'midas': ['static/*.js',
@@ -76,10 +76,11 @@ setup(name=NAME,
     #   extras_require=EXTRAS_REQUIRE,
       include_package_data=True,
       classifiers=[
-        'Development Status :: 1 - Unstable',
-        'Environment :: Notebook',
+        'Development Status :: 2 - Pre-Alpha',
+        'Environment :: Other Environment',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: BSD License',
+        'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.6'],
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3.7'],
      )
