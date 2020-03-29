@@ -294,6 +294,10 @@ class MidasDataFrame(object):
     def info(self, verbose=False, memory_usage=None):
         return self.to_df().info(verbose, memory_usage)
 
+    def take_range(self, n_begin, n_end):
+        n = list(range(n_begin, n_end))
+        return self.take(n)
+
     @add_doc(Table.take.__doc__)
     def take(self, n):
         name = find_name()
