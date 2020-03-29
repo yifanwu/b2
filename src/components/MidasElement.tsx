@@ -220,19 +220,20 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       // have to set focus manually because the focus is not set
       document.getElementById(getDfId(this.props.dfName)).focus();
     };
-    // huh, debouncing actually helps us! If there were mtulple triggered, we'll just do the new things
+    // Note that debouncing is not just good to lower perf load
+    // If there were multiple verga triggered in a sequence programmatically, we'll just do the final thing at the end.
     const wrapped = (name: any, value: any) => {
       const n = new Date();
       let l = (window as any).lastInvoked;
       (window as any).lastInvoked = n;
-      if (l) {
-        if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
-          clearTimeout((window as any).lastInvokedTimer);
-        }
-        (window as any).lastInvokedTimer = setTimeout(() => callback(name, value), DEBOUNCE_RATE);
-      } else {
+      if (!l) {
+        // initially
         l = n;
       }
+      if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
+        clearTimeout((window as any).lastInvokedTimer);
+      }
+      (window as any).lastInvokedTimer = setTimeout(() => callback(name, value), DEBOUNCE_RATE);
     };
     return wrapped;
   }
