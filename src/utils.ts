@@ -1,6 +1,7 @@
-import { PerChartSelectionValue, SelectionValue, FunKind } from "./types";
+import { PerChartSelectionValue, SelectionValue, FunKind, MidasContainerFunctions } from "./types";
 import { SelectionDimensions } from "./charts/vegaGen";
-import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG } from "./constants";
+import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG, TOGGLE_SELECTION_BUTTON, DELETE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS } from "./constants";
+import CellManager from "./CellManager";
 
 export const STRICT = true;
 
@@ -16,6 +17,119 @@ const CELL_DOT_ANNOTATION = {
   "query": "🟡",
   "interaction": "🔵",
 };
+
+/**
+ * set up the Jupyter event listeners
+ */
+export function setupJupyterEvents(cellManager: CellManager, comm: any) {
+  Jupyter.notebook.events.on("finished_execute.CodeCell", function(_: any, data: any) {
+    // we also need to tell cell manager which one was the most recently ran!
+    cellManager.updateLastExecutedCell(data.cell);
+
+    // passed to Python for more logging
+    const code = data.cell.get_text();
+    comm.send({
+      command: "cell-ran",
+      code,
+    });
+  });
+  // also need to instrument markdowncells
+  // using "rendered.MarkdownCell" because
+  // - I cannot find the creation event
+  // - rendered might be a better proxy since they might change the values
+  // the only issue is if the people forget to render it, oh well : /
+  Jupyter.notebook.events.on("rendered.MarkdownCell", function(_: any, data: any) {
+    // TODO
+    cellManager.updateLastExecutedCell(data.cell);
+    const code = data.cell.get_text();
+    comm.send({
+      command: "markdown-cell-rendered",
+      code,
+    });
+  });
+  // this is for dealing with concurrency.
+  Jupyter.notebook.events.on("kernel_idle.Kernel", function() {
+    const container = document.getElementById(MIDAS_CONTAINER_ID);
+    if (container) {
+      container.style.pointerEvents = "auto";
+      container.classList.remove(MIDAS_BUSY_CLASS);
+    }
+  });
+
+  Jupyter.notebook.events.on("kernel_busy.Kernel", function() {
+    const container = document.getElementById(MIDAS_CONTAINER_ID);
+    if (container) {
+      container.style.pointerEvents = "none";
+      container.classList.add(MIDAS_BUSY_CLASS);
+    }
+  });
+}
+
+export function getContainerFunctions(
+  comm: any,
+  doLogging: boolean,
+  setUIItxFocus: (dfName?: string) => void,
+  executeCapturedCells: (div: string, comments: string) => void) {
+
+  let logEntry = (action: string, metadata: string) => {};
+  if (doLogging) {
+    logEntry = (action: string, metadata: string) => {
+      comm.send({
+        "command": "log_entry",
+        "action": action,
+        "metadata": metadata
+      });
+    };
+  }
+
+  const removeDataFrameMsg = (dfName: string) => {
+    comm.send({
+      "command": "remove_dataframe",
+      "df_name": dfName,
+    });
+  };
+
+  const addCurrentSelectionMsg = (valueStr: string) => {
+    comm.send({
+      "command": "add_current_selection",
+      "value": valueStr
+    });
+  };
+
+  const getChartCode = (dfName: string) => {
+    comm.send({
+      "command": "get-visualization-code-clipboard",
+      "df_name": dfName
+    });
+  };
+
+  const containerFunctions: MidasContainerFunctions = {
+    removeDataFrameMsg,
+    elementFunctions: {
+      logEntry,
+      addCurrentSelectionMsg,
+      setUIItxFocus,
+      getChartCode,
+      executeCapturedCells
+    }
+  };
+  return containerFunctions;
+}
+
+export function setupCellManagerUIChanges(cellManager: CellManager) {
+  addNotebookMenuBtn(
+    cellManager.toggleSelectionCells,
+    TOGGLE_SELECTION_BUTTON,
+    "🔵",
+    "Click to toggle Midas selection cells.",
+  );
+  addNotebookMenuBtn(
+    cellManager.deleteAllSelectionCells,
+    DELETE_SELECTION_BUTTON,
+    "✂️",
+    "Click to delete all selection cells so far."
+  );
+}
 
 export function LogInternalError(message: string): null {
   console.log(`${FgRed}${message}${Reset}`);

@@ -111,7 +111,7 @@ class RuntimeFunctions(NamedTuple):
     # get_stream: Callable[[DFName], MidasSelectionStream] 
     apply_other_selection: Callable[['MidasDataFrame', List[SelectionValue]], Optional['MidasDataFrame']]
     add_join_info: Callable[[JoinInfo], None]
-    log_entry: Callable[[str, Optional[str]], None]
+    log_entry: Optional[Callable[[str, Optional[str]], None]]
 
 
 class NotInRuntime():

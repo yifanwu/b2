@@ -9,8 +9,9 @@ from re import sub
 import requests
 from pathlib import Path
 import time 
+from datetime import datetime
 
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from IPython import get_ipython  # type: ignore
 from IPython.core.debugger import set_trace
 
@@ -86,6 +87,16 @@ CREATE TABLE session (
 );
 """
 
+def get_log_entry_fun(user_id: str, task_id: str):
+    start_time = datetime.now()
+    time_stamp = start_time.strftime("%Y%m%d-%H%M%S")
+    log_entry_to_db = open_sqlite_for_logging(user_id, task_id, time_stamp)
+    def log_entry(fun_name: str, optional_metadata: Optional[str]=None):
+        call_time = datetime.now()
+        diff = (call_time - start_time).total_seconds()
+        meta = optional_metadata if optional_metadata else ''
+        log_entry_to_db(fun_name, diff, meta)
+    return log_entry 
 
 def open_sqlite_for_logging(user_id: str, task_id: str, time_stamp: str):
     """opens sqlite file for experuiment logging purpose

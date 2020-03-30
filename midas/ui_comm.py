@@ -58,19 +58,22 @@ class UiComm(object):
     midas_instance_name: str
     create_df_from_ops:  Callable[[RelationalOp], MidasDataFrame]
 
-    def __init__(self, is_in_ipynb: bool, midas_instance_name: str,
-      get_df_fun: Callable[[DFName], Optional[DFInfo]],
-      remove_df_fun: Callable[[DFName], None],
-      create_df_from_ops: Callable[[RelationalOp], MidasDataFrame],
-      add_selection: Callable[[List[SelectionValue]], List[SelectionValue]],
-      get_filtered_code: Callable[[str], str],
-      log_entry: Callable[[str, Optional[str]], None]):
+    def __init__(self,
+        is_in_ipynb: bool,
+        midas_instance_name: str,
+        get_df_fun: Callable[[DFName], Optional[DFInfo]],
+        remove_df_fun: Callable[[DFName], None],
+        create_df_from_ops: Callable[[RelationalOp], MidasDataFrame],
+        add_selection: Callable[[List[SelectionValue]], List[SelectionValue]],
+        get_filtered_code: Callable[[str], str],
+        log_entry: Optional[Callable[[str, Optional[str]], None]]):
 
         # functions passed at creation time
         self.is_in_ipynb = is_in_ipynb
         self.midas_instance_name = midas_instance_name
-        self.set_comm(midas_instance_name)
-        self.register_recovery_comm(midas_instance_name)
+        do_logging = False if log_entry is None else True
+        self.set_comm(midas_instance_name, do_logging)
+        self.register_recovery_comm(midas_instance_name, do_logging)
         self.get_df = get_df_fun
         self.remove_df_fun = remove_df_fun
         self.create_df_from_ops = create_df_from_ops
@@ -203,19 +206,20 @@ class UiComm(object):
     #             df.show(**encoding)
 
 
-    def set_comm(self, midas_instance_name: str):
+    def set_comm(self, midas_instance_name: str, do_logging: bool):
         if self.is_in_ipynb:
             self.comm = Comm(target_name = MIDAS_CELL_COMM_NAME)
             self.comm.send({
-                "type": "midas_instance_name",
-                "value": midas_instance_name
+                "type": "initialize",
+                "name": midas_instance_name,
+                "doLogging": do_logging
             })
             self.comm.on_msg(self.handle_msg)
         else:
             self.comm = MockComm()
 
 
-    def register_recovery_comm(self, midas_instance_name: str):
+    def register_recovery_comm(self, midas_instance_name: str, do_logging: bool):
         def target_func(comm, open_msg):
             # comm is the kernel Comm instance
             # msg is the comm_open message
@@ -228,7 +232,7 @@ class UiComm(object):
                     return
                 else:
                     debug_log("Received recovery request. Reopening comm...")
-                    self.set_comm(self.midas_instance_name)
+                    self.set_comm(self.midas_instance_name, do_logging)
                     debug_log("Clearing stored visualizations...")
                     self.vis_spec = {}
                     debug_log("Comm reopened. Rerunning logged commands...")
@@ -399,11 +403,6 @@ class UiComm(object):
             "columnName": column_name,
         })
 
-    def navigate_to_chart(self, df_name: DFName):
-        self.comm.send({
-            "type": "navigate_to_vis",
-            "value": df_name
-        })
 
     def get_predicate_info(self, selections: Dict) -> Tuple[List[SelectionValue], str]:
         """[summary]

@@ -1,14 +1,12 @@
 from __future__ import absolute_import
 from warnings import filterwarnings
 from IPython import get_ipython
-from typing import Optional, List, Dict, Iterator, Union, cast, Any
+from typing import Optional, List, Dict, Iterator, Union, cast, Dict, List
 from datascience import Table
 from datascience.predicates import are
 import numpy as np
 import math
 from json import dumps
-from datetime import datetime
-from typing import Dict, List
 
 from IPython.core.debugger import set_trace
 
@@ -20,10 +18,10 @@ except ImportError as err:
     logging = lambda x, y: None
 
 from midas.constants import ISDEBUG
-from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType, find_selections_with_df_name, diff_selection_value
+from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType, find_selections_with_df_name
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
-from .util.errors import InternalLogicalError, debug_log, UserError
-from .util.utils import red_print, open_sqlite_for_logging, isnotebook, find_name
+from .util.errors import InternalLogicalError, UserError
+from .util.utils import get_log_entry_fun, red_print, get_log_entry_fun, isnotebook, find_name
 from .vis_types import EncodingSpec
 from .state_types import DFName
 from .ui_comm import UiComm
@@ -57,16 +55,14 @@ class Midas(object):
     _assigned_name: str
     df_info_store: Dict[DFName, DFInfo]
     config: MidasConfig
-    # log_file: IO[Any]
-    _start_time: datetime
 
 
     def __init__(self, user_id: Optional[str]=None, task_id: Optional[str]=None):
-        # , linked=True
         # wrap around the data science library so we can use it
         self.are = are
         self.np = np
         self.math = math
+
         # deepcopy triggers 
         filterwarnings("ignore")
         assigned_name = find_name(True)
@@ -74,15 +70,26 @@ class Midas(object):
             raise UserError("must assign a name")
         self._assigned_name = assigned_name
         if user_id and task_id:
-            self._start_time = datetime.now()
-            time_stamp = self._start_time.strftime("%Y%m%d-%H%M%S")
-            self.log_entry_to_db = open_sqlite_for_logging(user_id, task_id, time_stamp)
-        ui_comm = UiComm(is_in_ipynb, assigned_name, self._i_get_df_info, self.remove_df, self.from_ops, self._add_selection, self._get_filtered_code, self.log_entry)
+            self.log_entry = get_log_entry_fun(user_id, task_id)
+            self.config = MidasConfig(True, True)
+        else:
+            self.log_entry = None
+            self.config = MidasConfig(True, False)
+
+        ui_comm = UiComm(
+            is_in_ipynb,
+            assigned_name,
+            self._i_get_df_info,
+            self.remove_df,
+            self.from_ops,
+            self._add_selection,
+            self._get_filtered_code,
+            self.log_entry
+        )
         self._ui_comm = ui_comm
         self.df_info_store = {}
         self._context = Context(self.df_info_store, self.from_ops)
         self.all_selections = []
-        self.config = MidasConfig(True, True if user_id else False)
         self.immediate_interaction_selection = []
         self.current_selection = []
         if is_in_ipynb:
@@ -185,27 +192,6 @@ class Midas(object):
                 # need to apply filter...
                 return r.df.apply_self_selection_value(self.current_selection)
         return None
-
-    def log_entry(self, fun_name: str, optional_metadata: Optional[str]=None):
-        """
-        the structure would be 
-        |  fun_name | call_time | 
-        """
-        if self.config.logging:
-            call_time = datetime.now()
-            diff = (call_time - self._start_time).total_seconds()
-            meta = optional_metadata if optional_metadata else ''
-            self.log_entry_to_db(fun_name, diff, meta)
-
-
-    # def download_log(self):
-    #     ui_logs = []
-    #     for item in self.ui_comm.logged_comms:
-    #         # this is extremely brittle
-    #         fun_name = item[4]
-    #         call_time = item[5]
-    #         ui_logs.append(f"{fun_name}, {call_time}")
-    #     return "\n".join(ui_logs)
 
 
     def remove_df(self, df_name: DFName):
