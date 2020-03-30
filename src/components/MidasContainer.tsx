@@ -39,15 +39,10 @@ interface ContainerProps {
 }
 
 interface ContainerState {
-  notebookMetaData: MappingMetaData[];
-  // TODO: refact the name `elements` --- we now have different visual elements
   elements: ContainerElementState[];
   refs: Map<string, RefObject<HTMLDivElement>>;
-  // FIXME: the idToCell might not be needed given that we have refs.
   idToCell: Map<string, number>;
-  // maps signals to cellIds
   alerts: AlertItem[];
-  // used to create ids for alerts
   midasPythonInstanceName: string;
 }
 
@@ -69,10 +64,14 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     this.removeAlert = this.removeAlert.bind(this);
     this.snapShotAll = this.snapShotAll.bind(this);
 
-    addNotebookMenuBtn(this.snapShotAll, SNAPSHOT_BUTTON, "📷", "Take a snapshot of current charts");
+    addNotebookMenuBtn(
+      this.snapShotAll,
+      SNAPSHOT_BUTTON,
+      "📷",
+      "Take a snapshot of current charts"
+    );
 
     this.state = {
-      notebookMetaData: [],
       elements: [],
       refs: new Map(),
       idToCell: new Map(),
@@ -274,7 +273,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
 
       this.setState(prevState => {
         return {
-          notebookMetaData: prevState.notebookMetaData,
           elements: arrayMove(prevState.elements, oldIndex, newIndex),
           refs: prevState.refs,
           idToCell: prevState.idToCell,
@@ -291,7 +289,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
       notebookCellId, dfName, data, encoding, changeStep, code, hashVal }, index) => {
       return <MidasElement
         ref={r => this.refsCollection[dfName] = r}
-        // index={index}
         moveElement={this.moveElement(index)}
         functions={this.props.containerFunctions.elementFunctions}
         cellId={notebookCellId}
@@ -334,7 +331,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     //   >{chartDivs}</MidasSortableContainer>
     //   : <ChartsViewLandingPage/>;
     const content = (chartDivs.length > 0) ? chartDivs : <ChartsViewLandingPage />;
-    // #HACK without this, the allerts might not be visible when scrolloing is needed
     const cssHack = <div style={{height: 200}}></div>;
     return (
       <div className="shelf" id={MIDAS_CONTAINER_ID}>
