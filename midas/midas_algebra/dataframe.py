@@ -189,6 +189,7 @@ class MidasDataFrame(object):
             "hist",
             "hist_of_counts",
             "boxplot",
+            "show"
             # exporting
             "to_csv",
             # derivation
