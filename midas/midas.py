@@ -71,14 +71,17 @@ class Midas(object):
         self._assigned_name = assigned_name
         if user_id and task_id:
             self.log_entry = get_log_entry_fun(user_id, task_id)
-            self.config = MidasConfig(True, True)
+            do_logging = True
         else:
-            self.log_entry = None
-            self.config = MidasConfig(True, False)
+            self.log_entry = lambda fun_name, optional_metadata=None: None
+            do_logging = False
+
+        self.config = MidasConfig(True, do_logging)
 
         ui_comm = UiComm(
             is_in_ipynb,
             assigned_name,
+            do_logging,
             self._i_get_df_info,
             self.remove_df,
             self.from_ops,

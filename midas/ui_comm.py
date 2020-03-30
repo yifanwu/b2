@@ -61,17 +61,17 @@ class UiComm(object):
     def __init__(self,
         is_in_ipynb: bool,
         midas_instance_name: str,
+        do_logging: bool,
         get_df_fun: Callable[[DFName], Optional[DFInfo]],
         remove_df_fun: Callable[[DFName], None],
         create_df_from_ops: Callable[[RelationalOp], MidasDataFrame],
         add_selection: Callable[[List[SelectionValue]], List[SelectionValue]],
         get_filtered_code: Callable[[str], str],
-        log_entry: Optional[Callable[[str, Optional[str]], None]]):
+        log_entry: Callable[[str, Optional[str]], None]):
 
         # functions passed at creation time
         self.is_in_ipynb = is_in_ipynb
         self.midas_instance_name = midas_instance_name
-        do_logging = False if log_entry is None else True
         self.set_comm(midas_instance_name, do_logging)
         self.register_recovery_comm(midas_instance_name, do_logging)
         self.get_df = get_df_fun
