@@ -22,7 +22,6 @@ const outputPath = __dirname + "/midas/static";
 const outputLibraryTarget = "amd";
 
 module.exports = [
-  // the main vega extension
   Object.assign({}, commonConfig, {
     entry: "./src/index.tsx",
     output: {

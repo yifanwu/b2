@@ -176,12 +176,12 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   roundIfPossible(selection: any) {
     const encoding = this.props.encoding;
-    let rounedEncoding: any = {};
-    if (selection[encoding.x]) {
+    let rounedEncoding: any = Object.assign({}, selection);
+    if (selection[encoding.x] && (encoding.xType === "quantitative")) {
       const digits = getDigitsToRound(selection[encoding.x][0], selection[encoding.x][1]);
       rounedEncoding[encoding.x] = selection[encoding.x].map((v: number) => Math.round(v * digits) / digits);
     }
-    if (selection[encoding.y]) {
+    if (selection[encoding.y] && (encoding.yType === "quantitative")) {
       const digits = getDigitsToRound(selection[encoding.y][0], selection[encoding.y][1]);
       rounedEncoding[encoding.y] = selection[encoding.y].map((v: number) => Math.round(v * digits) / digits);
     }

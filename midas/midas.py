@@ -265,10 +265,6 @@ class Midas(object):
         print(HELP_INSTRUCTION)
 
 
-    def get_current_selection(self):
-        self.log_entry("get_current_selection")
-        return self.current_selection
-
     @property
     def immediate_interaction_value(self):
         """syntax shortcut for the first value selected

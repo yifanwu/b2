@@ -160,6 +160,8 @@ class UiComm(object):
             elif command == "add_current_selection":
                 value = json.loads(data["value"])
                 # parse it first!
+                s = data["value"]
+                debug_log(f"add_current_selection {s}")
                 self.handle_add_current_selection(value)
                 return
             elif command == "log_entry":
@@ -432,39 +434,41 @@ class UiComm(object):
         vis = self.vis_spec[df_name]
         x = ColumnRef(vis.x, df_name)
         if not selection:
-            if vis.mark == "circle":
+            if vis.selection_dimensions == "xy":
                 y = ColumnRef(vis.y, df_name)
                 result.extend([
                     EmptySelection(x),
                     EmptySelection(y)
                 ])
-            else:
+            elif vis.selection_dimensions == "x":
+                result.extend([
+                    EmptySelection(x)
+                ])
+            elif vis.selection_dimensions == "y":
+                y = ColumnRef(vis.y, df_name)
                 result.extend([
                     EmptySelection(x)
                 ])
         else:
-            if vis.mark == "circle":
-                y = ColumnRef(vis.y, df_name)
-                # the predicate is either going to be x or y, or both
-                selections_added = 0
-                if vis.x in selection:
+            selections_added = 0
+            if vis.x in selection:
+                if vis.x_type == "quantitative" or vis.x_type == "temporal":
                     x_selection = NumericRangeSelection(x, selection[vis.x][0], selection[vis.x][1])
-                    result.append(x_selection)
-                    selections_added += 1
-                if vis.y in selection:
-                    y_selection = NumericRangeSelection(y, selection[vis.y][0], selection[vis.y][1])
-                    result.append(y_selection)
-                    selections_added += 1
-                if selections_added == 0:
-                    raise InternalLogicalError(f"Unknown selection {selection}");
-            elif vis.mark == "bar":
-                predicate = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
-                result.append(predicate)
-            elif vis.mark == "line":
-                x_selection = NumericRangeSelection(ColumnRef(vis.x, df_name), selection[vis.x][0], selection[vis.x][1])
+                else:
+                    x_selection = SetSelection(ColumnRef(vis.x, df_name), selection[vis.x])
                 result.append(x_selection)
-            else:
-                raise InternalLogicalError(f"{vis.mark} not handled")
+                selections_added += 1
+            if vis.y in selection:
+                y = ColumnRef(vis.y, df_name)
+                
+                if vis.x_type == "quantitative" or vis.x_type == "temporal":
+                    y_selection = NumericRangeSelection(y, selection[vis.y][0], selection[vis.y][1])
+                else:
+                    y_selection = SetSelection(ColumnRef(vis.y, df_name), selection[vis.x])
+                result.append(y_selection)
+                selections_added += 1
+            if selections_added == 0:
+                raise InternalLogicalError(f"Unknown selection {selection}");
         return result, df_name
 
     # @logged(remove_on_chart_removal=False, "update_selection_shelf_selection_name")

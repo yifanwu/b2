@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import reduce
-from typing import List, Union, Optional, NamedTuple, Dict, cast, Callable, Any
+from typing import List, Union, Optional, NamedTuple, Set, cast, Callable, Any
 from datetime import datetime
 import inspect
 import asttokens
@@ -189,7 +189,7 @@ class MidasDataFrame(object):
             "hist",
             "hist_of_counts",
             "boxplot",
-            "show"
+            "show",
             # exporting
             "to_csv",
             # derivation
@@ -448,7 +448,7 @@ class MidasDataFrame(object):
             y_type {str} -- "ordinal" | "quantitative" | "temporal"
             selection_type {str} -- "none", "multiclick", "brush"
             selection_dimensions {str} -- "none", "multiclick", "brush"
-           
+            sort {str} -- "", "x", "y", "-x", "-y"
         Returns:
             DataFrame (so you can chain your functions)
         Raises:
@@ -785,7 +785,7 @@ def create_predicate(s: SelectionValue) -> Predicate:
 
 # helper tables placed here due to import issues
 
-def get_selectable_column(mdf: MidasDataFrame):
+def get_selectable_column(mdf: MidasDataFrame)->Set[str]:
     # if anything is the result of groupby aggregation
     columns_grouped = []
     def walk(ops: RelationalOp):
@@ -809,15 +809,15 @@ def get_selectable_column(mdf: MidasDataFrame):
         return result
     else:
         # no groupby, great, all the things are fine
-        return final_columns
+        return set(final_columns)
 
 def sanity_check_spec_with_data(spec, df):
     # TODO: add some constrains for bad configurations
     num_rows = df.num_rows
     if spec.mark == "bar" and num_rows > MAX_BINS:
         raise UserError("Too many categories for bar chart to plot. Please consider grouping.")
-    elif num_rows > MAX_DOTS:
-        raise UserError("Too many points to plot")
+    elif spec.mark == "circle" and num_rows > MAX_DOTS:
+        raise UserError("Too many points to plot.")
     return
 
 

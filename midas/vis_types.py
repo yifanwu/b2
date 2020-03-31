@@ -61,7 +61,7 @@ class EncodingSpec(object):
             y_type {str} -- "ordinal" | "quantitative" | "temporal"
             selection_type {str} -- "none", "multiclick", "brush"
             selection_dimensions {str} -- "", "x", "y", "xy"
-            sort optional{str} -- "x", "y"
+            sort optional{str} -- "", "x", "y", "-x", "-y"
         """
         self.mark = mark 
         self.x = x
