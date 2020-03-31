@@ -1,5 +1,7 @@
 // CONFIG
-export const IS_DEBUG = false;
+export const IS_DEBUG = true;
+
+export const CHART_HEIGHT = 120;
 
 // derived from config
 export const EmbedConfig = IS_DEBUG

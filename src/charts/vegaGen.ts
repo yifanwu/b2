@@ -1,8 +1,9 @@
-import { IS_OVERVIEW_FIELD_NAME } from "../constants";
+import { IS_OVERVIEW_FIELD_NAME, CHART_HEIGHT } from "../constants";
 import { LogInternalError } from "../utils";
 
 type SelectionType = "multiclick" | "brush" | "none";
 export type SelectionDimensions = "" | "x" | "y" | "xy";
+type SortType = "x" | "-x" | "y" | "-y" | "";
 
 // note that this is synced with the vis_types.py file
 export interface EncodingSpec {
@@ -13,7 +14,7 @@ export interface EncodingSpec {
   yType: "ordinal" | "quantitative" | "temporal";
   selectionType: SelectionType;
   selectionDimensions: SelectionDimensions;
-  sort: "x" | "y" | "";
+  sort: SortType;
   size?: string;
 }
 
@@ -110,14 +111,42 @@ function genSelectionReference(selectionType: SelectionType) {
   return "brush";
 }
 
+function modifySpecForSort(spec: any, sort: SortType, x: string, y: string) {
+
+  if ((sort === "y") || (sort === "-y")) {
+    spec["transform"] = [{
+      "calculate": `datum.is_overview ? datum['${y}'] : null`,
+      "as": "sort_order"
+    }];
+    const order = (sort === "-y")
+      ? "descending"
+      : "ascending"
+      ;
+    spec["encoding"]["x"]["sort"] = {"field": "sort_order", "order": order};
+
+  } else if ((sort === "x") || (sort === "-x")) {
+    spec["transform"] = [{
+      "calculate": `datum.is_overview ? datum['${x}'] : null`,
+      "as": "sort_order"
+    }];
+    const order = (sort === "-x")
+      ? "descending"
+      : "ascending"
+      ;
+      spec["encoding"]["y"]["sort"] = {"field": "sort_order", "order": order};
+  }
+  // modify in place
+  return;
+}
+
 
 export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[]) {
   switch (encoding.mark) {
-    case "bar":
+    case "bar": {
       let barSpec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": `Midas Generated Visualization of dataframe ${dfName}`,
-        "height": 120,
+        "height": CHART_HEIGHT,
         "data": {
           "values": data
         },
@@ -132,54 +161,17 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
               // @ts-ignore
               "stack": null
           },
-          // "color": colorSpec,
           "opacity": {
             "value": 0.5
           },
-          // "stroke": {"value": "#F0B429"},
-          // "strokeWidth": {
-          //   "condition": [
-          //     {
-          //       "test": {
-          //         "and": [
-          //           {"selection": "select"},
-          //           "length(data(\"select_store\"))"
-          //         ]
-          //       },
-          //       "value": 3
-          //     }
-          //   ],
-          //   "value": 0
-          // }
         },
       };
-      // if sort
-      // not supoorting ssort for now until we can figure out how to make it stable
-      // and sorted only based on the filtered values
-      // if (encoding.sort === "y") {
-      //   barSpec["encoding"]["y"]["sort"] = "-x";
-      // } else
-      if (encoding.sort === "x") {
-        barSpec["transform"] = [{
-          "calculate": "datum.is_overview ? datum.count : null",
-          "as": "sort_order"
-        }],
-        barSpec["encoding"]["x"]["sort"] = {"field": "sort_order", "order": "descending"};
-      }
       if (encoding.selectionDimensions === "") {
-        // no selection
         barSpec["mark"] = "bar";
         barSpec["encoding"]["color"] = colorSpec;
       } else {
         barSpec["layer"] = [
           {
-            // the width has to be set this way because:
-            // https://stackoverflow.com/questions/60663992/vega-lite-default-bar-width-strange
-            // when it's quantitative the width does not fill up
-            // but setting this might be brittle
-            // TODO: test the quantitative
-            // "mark": {"type": "bar", "size": 15},
-            // "mark": "bar",
             "mark": {"type": "bar",  "tooltip": true},
             "encoding": {
               "color": colorSpec
@@ -187,8 +179,6 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
             "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
           },
           {
-            // "mark": {"type": "bar", "size": 15},
-            // "mark": "bar",
             "mark": {"type": "bar",  "tooltip": true},
             "transform": [
               {
@@ -204,14 +194,16 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
         ];
         barSpec["resolve"] = {"scale": {"color": "independent"}};
       }
+      modifySpecForSort(barSpec, encoding.sort, encoding.x, encoding.y);
       return barSpec;
-    case "circle":
-      return {
+    }
+    case "circle": {
+      const circleSpec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+        "height": CHART_HEIGHT,
         "description": `Midas for ${dfName}`,
         "data": { "values": data },
         "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
-        // "mark": "point",
         "mark": {"type": "point",  "tooltip": true},
         "encoding": {
           "x": {
@@ -224,10 +216,22 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
           "opacity": {"value": 0.5}
         }
       };
-    case "line":
-      return {
+      // if this is click, then we need to add extra highlighting
+      if (encoding.selectionType === "multiclick") {
+        circleSpec["encoding"]["fill"] = {
+          "condition": [{"test": {"selection": "select"}, "value": "red"}],
+          "value": "none"
+        };
+      }
+
+      modifySpecForSort(circleSpec, encoding.sort, encoding.x, encoding.y);
+      return circleSpec;
+    }
+    case "line": {
+      const lineSpec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": dfName,
+        "height": CHART_HEIGHT,
         "data": { "values": data },
         "selection": genSelection(encoding.selectionType, encoding.selectionDimensions),
         "mark": "line",
@@ -238,6 +242,9 @@ export function genVegaSpec(encoding: EncodingSpec, dfName: string, data: any[])
         },
         "opacity": {"value": 0.5}
       };
+      modifySpecForSort(lineSpec, encoding.sort, encoding.x, encoding.y);
+      return lineSpec;
+    }
     default:
       throw Error(`${encoding.mark} not handled`);
   }

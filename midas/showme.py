@@ -4,6 +4,7 @@ from typing import Optional, Dict, cast
 from typing_extensions import Literal
 from datascience.tables import Table
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_any_dtype 
+from IPython.core.debugger import set_trace
 
 from midas.util.errors import type_check_with_warning, InternalLogicalError
 from midas.vis_types import EncodingSpec
@@ -26,7 +27,6 @@ def infer_encoding_helper(df: Table, selectable, is_groupby: bool):
         selectable {[type]} -- [description]
         is_groupby {bool} -- whether the ops were groupby
     """
-    # df = mdf.table
     df_len = len(df.columns)
     if df_len == 2:
         first_col = df.labels[0]
@@ -47,9 +47,12 @@ def infer_encoding_helper(df: Table, selectable, is_groupby: bool):
             # if its a groupby, can make the assum0ption that the first one is the ordinal value and the second one is the quantitative value
             selection_type = "brush"
             sort = ""
+
             if is_string_dtype(df[first_col]):
                 selection_type = "multiclick"
-                sort = "x"
+                # we will arrange it such that it's the second one that's numeric
+                sort = "-y"
+               
             return EncodingSpec("bar", first_col, "ordinal", second_col, "quantitative", selection_type, selection_dimensions, sort)
         if is_string_dtype(df[first_col]) and is_numeric_dtype(df[second_col]):
             return EncodingSpec("bar", first_col, "ordinal", second_col, "quantitative", "multiclick", selection_dimensions)

@@ -1,11 +1,7 @@
-from datetime import datetime
 from enum import Enum
+from midas.util.errors import UserError
 from typing import List, Any, Dict, Optional
 from typing_extensions import Literal
-
-from midas.midas_algebra.selection import SelectionValue
-from midas.state_types import DFName
-from midas.util.utils import get_random_string
 
 class ChartType(Enum):
     bar_categorical = "bar_categorical"
@@ -41,7 +37,7 @@ class Channel(Enum):
 # basic stub for Vega typing
 VegaSpecType = Dict[str, Any]
 
-ENCODING_COUNT = 7
+ENCODING_COUNT = 8
 
 class EncodingSpec(object):
     # note that this is synced with the vegaGen.ts file
@@ -53,7 +49,7 @@ class EncodingSpec(object):
         y_type: Literal["ordinal", "quantitative", "temporal"],
         selection_type: Literal["none", "multiclick", "brush"],
         selection_dimensions: Literal["", "x", "y", "xy"],
-        sort: Literal["x", "y", ""] = ""
+        sort: Literal["x", "y", "-y", "-x", ""] = ""
     ):
         """EncodingSpec object used for Midas to generate Vega-Lite specifications
         
