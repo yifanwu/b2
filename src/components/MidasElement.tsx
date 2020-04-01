@@ -355,9 +355,15 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       : false
       ;
 
-    this.setState({
-      code,
-      hasFilteredValues
+    // if there is not filtered values, then we also need to make sure that the isBaseShown is true
+    this.setState(prevState => {
+      if ((!hasFilteredValues) && (!prevState.isBaseShown)) {
+        this.toggleBaseData();
+      }
+      return {
+        code,
+        hasFilteredValues,
+      };
     });
   }
 
