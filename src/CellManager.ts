@@ -1,6 +1,7 @@
 import { LogDebug, commentUncommented, LogSteps, getEmojiEnnotatedComment, foldCode, showOrHideSelectionCells, findQueryCell, selectCell, deleteAllSelectionCells } from "./utils";
 import { MIDAS_SELECTION_FUN, CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, MIDAS_CURRENT_CLASS } from "./constants";
 import { FunKind } from "./types";
+import { LogEntryType } from "./comm";
 
 
 // interface CellMetaData {
@@ -44,8 +45,9 @@ export default class CellManager {
   reactiveCells: Map<string, Set<number>>;
   reactiveCellsReverse: Map<number, string>;
   showSelectionCells: boolean;
+  logEntry: LogEntryType;
 
-  constructor(midasInstanceName: string) {
+  constructor(midasInstanceName: string, logEntry: LogEntryType) {
     this.recordReactiveCell = this.recordReactiveCell.bind(this);
     this.toggleSelectionCells = this.toggleSelectionCells.bind(this);
 
@@ -58,6 +60,7 @@ export default class CellManager {
     this.reactiveCells = new Map();
     this.reactiveCellsReverse = new Map();
     this.showSelectionCells = true;
+    this.logEntry = logEntry;
   }
 
   setFocus(dfName?: string) {
@@ -221,6 +224,8 @@ export default class CellManager {
   toggleSelectionCells() {
     this.showSelectionCells = !this.showSelectionCells;
     showOrHideSelectionCells(this.showSelectionCells);
+    const logValue = this.showSelectionCells ? "show_selection_cells" : "hide_selection_cells";
+    this.logEntry(logValue);
   }
 
   deleteAllSelectionCells() {

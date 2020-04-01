@@ -1,7 +1,8 @@
 import { PerChartSelectionValue, SelectionValue, FunKind, MidasContainerFunctions } from "./types";
 import { SelectionDimensions } from "./charts/vegaGen";
-import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG, TOGGLE_SELECTION_BUTTON, DELETE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS } from "./constants";
+import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG, TOGGLE_SELECTION_BUTTON, DELETE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS, INTERACT_EMOJI } from "./constants";
 import CellManager from "./CellManager";
+import { LogEntryType } from "./comm";
 
 export const STRICT = true;
 
@@ -12,10 +13,10 @@ const FgMegenta = "\x1b[35m";
 const FgGray = "\x1b[90m";
 export const Reset = "\x1b[0m";
 
-const CELL_DOT_ANNOTATION = {
+const CELL_EMOJI_ANNOTATION = {
   "chart": "🟠",
   "query": "🟡",
-  "interaction": "🔵",
+  "interaction": INTERACT_EMOJI,
 };
 
 /**
@@ -67,20 +68,9 @@ export function setupJupyterEvents(cellManager: CellManager, comm: any) {
 
 export function getContainerFunctions(
   comm: any,
-  doLogging: boolean,
+  logEntry: LogEntryType,
   setUIItxFocus: (dfName?: string) => void,
   executeCapturedCells: (div: string, comments: string) => void) {
-
-  let logEntry = (action: string, metadata: string) => {};
-  if (doLogging) {
-    logEntry = (action: string, metadata: string) => {
-      comm.send({
-        "command": "log_entry",
-        "action": action,
-        "metadata": metadata
-      });
-    };
-  }
 
   const removeDataFrameMsg = (dfName: string) => {
     comm.send({
@@ -120,15 +110,15 @@ export function setupCellManagerUIChanges(cellManager: CellManager) {
   addNotebookMenuBtn(
     cellManager.toggleSelectionCells,
     TOGGLE_SELECTION_BUTTON,
-    "🔵",
+    `Toggle ${INTERACT_EMOJI} cells`,
     "Click to toggle Midas selection cells.",
   );
-  addNotebookMenuBtn(
-    cellManager.deleteAllSelectionCells,
-    DELETE_SELECTION_BUTTON,
-    "✂️",
-    "Click to delete all selection cells so far."
-  );
+  // addNotebookMenuBtn(
+  //   cellManager.deleteAllSelectionCells,
+  //   DELETE_SELECTION_BUTTON,
+  //   `✂️ all selection cells`,
+  //   "Click to delete all selection cells so far."
+  // );
 }
 
 export function LogInternalError(message: string): null {
@@ -157,7 +147,7 @@ export function addNotebookMenuBtn(onClick: () => void, btnId: string, btnText: 
 }
 
 export function getEmojiEnnotatedComment(funKind: FunKind) {
-  const d = CELL_DOT_ANNOTATION[funKind];
+  const d = CELL_EMOJI_ANNOTATION[funKind];
   if (!d) LogInternalError(`FunKind ${funKind} was not found`);
   const time = new Date().toLocaleTimeString(navigator.language, {hour: "2-digit", minute: "2-digit"});
   const comment = `# ${d} ${time} ${d}`;

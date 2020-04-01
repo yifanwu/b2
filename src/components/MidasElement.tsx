@@ -262,7 +262,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   toggleHiddenStatus() {
     this.setState(prevState => {
-      this.props.functions.logEntry("toggle_chart_visibility", this.props.dfName);
+      const logEntryValue = prevState.hidden ? "show_chart" : "hide_chart";
+      this.props.functions.logEntry(logEntryValue, this.props.dfName);
       return {
         hidden: !prevState.hidden,
         // isOpen: false
@@ -274,12 +275,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.setState(prevState => {
       if (prevState.isBaseShown) {
         // remove it
+        this.props.functions.logEntry("hide_midas", this.props.dfName);
         const changeSet = this.state.view
           .changeset()
           .remove((datum: any) => { return datum.is_overview === true; });
         this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
         return {isBaseShown: false};
       } else {
+        this.props.functions.logEntry("show_midas", this.props.dfName);
         const changeSet = this.state.view
           .changeset()
           .insert(this.props.data);
@@ -295,9 +298,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
    * is refreshed, this may not work.
    */
   changeVisual() {
-    this.props.functions.getChartCode(this.props.dfName);
+    // this.props.functions.getChartCode(this.props.dfName);
     navigateToNotebookCell(this.props.cellId);
-    this.props.functions.logEntry("change_visual", this.props.dfName);
+    this.props.functions.logEntry("navigate_to_definition_cell", this.props.dfName);
   }
 
   /**

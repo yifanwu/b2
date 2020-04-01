@@ -4,6 +4,8 @@
  * https://github.com/ipython-contrib/jupyter_contrib_nbextensions/blob/master/src/jupyter_contrib_nbextensions/nbextensions/codefolding/
  */
 
+import { INTERACT_EMOJI } from "./constants";
+
 function restoreFolding(cell: any, codecell: any) {
   if (cell.metadata.code_folding === undefined || !(cell instanceof codecell.CodeCell)) {
     return;
@@ -79,7 +81,7 @@ function regFoldHelper() {
         // the following is customization for midas
         // if there is a blue emoji then do not comment the last line out
         // ideally we can access the metadata, but hack works for now
-        const end = lineText.includes("🔵")
+        const end = lineText.includes(INTERACT_EMOJI)
           ? cm.lastLine() - 1
           : cm.lastLine()
           ;

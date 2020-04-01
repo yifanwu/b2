@@ -1,7 +1,8 @@
 // CONFIG
-export const IS_DEBUG = true;
+export const IS_DEBUG = false;
 
 export const CHART_HEIGHT = 120;
+export const INTERACT_EMOJI = "🔵";
 
 // derived from config
 export const EmbedConfig = IS_DEBUG

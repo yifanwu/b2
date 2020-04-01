@@ -94,10 +94,10 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
 
   togglePannel() {
     this.setState(prevState => {
+      const logEntryValue = prevState.isShownAll ? "hide_columns_pane" : "show_columns_pane";
+      this.props.logEntry(logEntryValue, "");
       return { isShownAll: !prevState.isShownAll};
     });
-    // also send note
-    this.props.logEntry("toggle_shelf", "");
   }
 
   toggleTable(tableName: string) {

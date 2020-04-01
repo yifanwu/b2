@@ -6,6 +6,8 @@ import { AlertType, FunKind } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
 import CellManager from "./CellManager";
 
+export type LogEntryType = (action: string, metadata?: string) => void;
+
 type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
 
@@ -128,11 +130,21 @@ export function makeComm(is_first_time = true) {
         if (load.type !== "initialize") {
           throw LogInternalError("Should send intiialize message first!");
         }
-        const cellManager = new CellManager(midasInstanceName);
+        let logEntry = (action: string, metadata: string) => {};
+        if (doLogging) {
+          logEntry = (action: string, metadata: string) => {
+            comm.send({
+              "command": "log_entry",
+              "action": action,
+              "metadata": metadata
+            });
+          };
+        }
+        const cellManager = new CellManager(midasInstanceName, logEntry);
         const setUIItxFocus = cellManager.setFocus.bind(cellManager);
         const executeCapturedCells = cellManager.executeCapturedCells.bind(cellManager);
         setupCellManagerUIChanges(cellManager);
-        const containerFunctions = getContainerFunctions(comm, doLogging, setUIItxFocus, executeCapturedCells);
+        const containerFunctions = getContainerFunctions(comm, logEntry, setUIItxFocus, executeCapturedCells);
 
         const columnSelectMsg = (column: string, tableName: string) => {
           const payload = {

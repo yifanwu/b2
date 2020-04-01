@@ -40,19 +40,19 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
     this.setState(prevState => {
       if (prevState.isShown) {
         const curWidth = $("#midas-sidebar-wrapper").width();
+        this.props.midasElementFunctions.elementFunctions.logEntry("hide_midas", "");
         return {
           isShown: !prevState.isShown,
           curWidth
         };
       } else {
+        this.props.midasElementFunctions.elementFunctions.logEntry("show_midas", "");
         return {
           isShown: !prevState.isShown,
           curWidth: prevState.curWidth
         };
       }
     });
-    // also send
-    this.props.midasElementFunctions.elementFunctions.logEntry("toggle_midas", "");
   }
 
   setMidasContainerRef(input: MidasContainer) {
