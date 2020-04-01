@@ -39,7 +39,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
     // this.dragStart = this.dragStart.bind(this);
     this.markAsSeen = this.markAsSeen.bind(this);
 
-    addNotebookMenuBtn(this.togglePannel, TOGGLE_PANNEL_BUTTON, "Toggle Pane", "Toggle the yellow column pannel");
+    addNotebookMenuBtn(this.togglePannel, TOGGLE_PANNEL_BUTTON, "Toggle Columns", "Toggle the yellow column pannel");
     this.state = {
       tables: {},
       isShown: {},

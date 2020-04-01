@@ -67,7 +67,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     addNotebookMenuBtn(
       this.snapShotAll,
       SNAPSHOT_BUTTON,
-      "📷",
+      "📷 charts",
       "Take a snapshot of current charts"
     );
 

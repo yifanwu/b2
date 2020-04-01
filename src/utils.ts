@@ -110,7 +110,7 @@ export function setupCellManagerUIChanges(cellManager: CellManager) {
   addNotebookMenuBtn(
     cellManager.toggleSelectionCells,
     TOGGLE_SELECTION_BUTTON,
-    `Toggle ${INTERACT_EMOJI} cells`,
+    `Toggle ${INTERACT_EMOJI}`,
     "Click to toggle Midas selection cells.",
   );
   // addNotebookMenuBtn(
