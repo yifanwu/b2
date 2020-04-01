@@ -413,6 +413,10 @@ export function getDfId(dfName: string) {
   return `df-${dfName}-chart`;
 }
 
+export function getChartDetailId(dfName: string) {
+  return `df-${dfName}-controls`;
+}
+
 export function trimStr(s: string, len: number) {
   // assume that len is greater than 4
   // we are going to trim from the middle

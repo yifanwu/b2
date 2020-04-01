@@ -12,7 +12,7 @@ import { EncodingSpec, genVegaSpec, multiSelectedField } from "../charts/vegaGen
 import { makeElementId } from "../config";
 import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL, EmbedConfig } from "../constants";
 import { PerChartSelectionValue, MidasElementFunctions } from "../types";
-import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFirstSelectionContainedBySecond, getMultiClickValue, copyTextToClipboard } from "../utils";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFirstSelectionContainedBySecond, getMultiClickValue, copyTextToClipboard, getChartDetailId } from "../utils";
 
 const DetailButton = <svg viewBox="0 0 16 16" fill="currentColor" stroke="none" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
   <circle r="2" cy="8" cx="2"></circle>
@@ -93,6 +93,15 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     // FIXME: maybe do not need to run everytime???
     this.embed();
     this.myRef.current.scrollIntoView();
+    // also add the click to close the elipsis
+    const detailsId = getChartDetailId(this.props.dfName);
+    const details = document.getElementById(detailsId);
+    const documentClickHandler = (ev: MouseEvent) => {
+      if (!details.contains(ev.target as any)) {
+        details.removeAttribute("open");
+      }
+    };
+    document.addEventListener("click", documentClickHandler);
   }
 
   isMultiSelect() {
@@ -406,7 +415,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         <div className="midas-header">
           <span>{this.props.title} </span>
           {/*  open={this.state.isOpen} */}
-          <details title="click to see options">
+          <details title="click to see options" id={getChartDetailId(this.props.dfName)}>
             <summary>
               {DetailButton}
             </summary>

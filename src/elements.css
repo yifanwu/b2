@@ -596,16 +596,16 @@ a.tip:hover span {
 }
 
 .midas-chart-action::before {
-  left: auto;
-  right: 14px;
+  right: auto;
+  left: 10px;
   top: -16px;
   border: 8px solid #0000;
   border-bottom-color: #d9d9d9;
 }
 
 .midas-chart-action::after {
-  left: auto;
-  right: 15px;
+  right: auto;
+  left: 11px;
   top: -14px;
   border: 7px solid #0000;
   border-bottom-color: #fff;
