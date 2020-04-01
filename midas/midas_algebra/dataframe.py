@@ -7,6 +7,7 @@ import asttokens
 import ast
 import operator
 from datascience import Table, are
+import numpy as np
 from pandas import DataFrame
 from vega import VegaLite
 
@@ -392,6 +393,10 @@ class MidasDataFrame(object):
         self._table = new_table
         return self
 
+    def add_index(self, index_name="index"):
+        index = np.arange(self.num_rows)
+        self.table[index_name] = index
+        return
 
     #############################
     # /begin wrap around pandas #
