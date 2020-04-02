@@ -12,7 +12,7 @@ import { EncodingSpec, genVegaSpec, multiSelectedField } from "../charts/vegaGen
 import { makeElementId } from "../config";
 import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL, EmbedConfig } from "../constants";
 import { PerChartSelectionValue, MidasElementFunctions } from "../types";
-import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFirstSelectionContainedBySecond, getMultiClickValue, copyTextToClipboard, getChartDetailId } from "../utils";
+import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFirstSelectionContainedBySecond, getMultiClickValue, copyTextToClipboard, getChartDetailId, disableMidasInteractions } from "../utils";
 
 const DetailButton = <svg viewBox="0 0 16 16" fill="currentColor" stroke="none" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
   <circle r="2" cy="8" cx="2"></circle>
@@ -222,6 +222,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       processedValue[dfName] = cleanValue;
       let valueStr = JSON.stringify(processedValue);
       valueStr = (valueStr === "null") ? "None" : valueStr;
+      // we have to disable here, and wait for kernel_idle to release it
+      disableMidasInteractions();
       this.props.functions.addCurrentSelectionMsg(valueStr);
       this.setState({ currentBrush: cleanValue });
       LogDebug(`Chart causing selection ${valueStr}`);

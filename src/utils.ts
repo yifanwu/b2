@@ -48,22 +48,30 @@ export function setupJupyterEvents(cellManager: CellManager, comm: any) {
       code,
     });
   });
-  // this is for dealing with concurrency.
-  Jupyter.notebook.events.on("kernel_idle.Kernel", function() {
-    const container = document.getElementById(MIDAS_CONTAINER_ID);
+  // // this is for dealing with concurrency.
+  // Jupyter.notebook.events.on("kernel_idle.Kernel", function() {
+  //   window.setTimeout(enableMidasInteractions, 1000);
+  // });
+
+  // Jupyter.notebook.events.on("kernel_busy.Kernel", function() {
+  //   window.setTimeout(disableMidasInteractions, 1000);
+  // });
+}
+
+export function enableMidasInteractions() {
+  const container = document.getElementById(MIDAS_CONTAINER_ID);
     if (container) {
-      container.style.pointerEvents = "auto";
+      // container.style.pointerEvents = "auto";
       container.classList.remove(MIDAS_BUSY_CLASS);
     }
-  });
+}
 
-  Jupyter.notebook.events.on("kernel_busy.Kernel", function() {
-    const container = document.getElementById(MIDAS_CONTAINER_ID);
-    if (container) {
-      container.style.pointerEvents = "none";
-      container.classList.add(MIDAS_BUSY_CLASS);
-    }
-  });
+export function disableMidasInteractions() {
+  const container = document.getElementById(MIDAS_CONTAINER_ID);
+  if (container) {
+    // container.style.pointerEvents = "none";
+    container.classList.add(MIDAS_BUSY_CLASS);
+  }
 }
 
 export function getContainerFunctions(

@@ -1,6 +1,6 @@
 /// <reference path="./external/Jupyter.d.ts" />
 import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME, MIDAS_SELECTION_FUN } from "./constants";
-import { LogSteps, LogDebug, LogInternalError, setupCellManagerUIChanges, getContainerFunctions, setupJupyterEvents } from "./utils";
+import { LogSteps, LogDebug, LogInternalError, setupCellManagerUIChanges, getContainerFunctions, setupJupyterEvents, enableMidasInteractions } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType, FunKind } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
@@ -210,6 +210,8 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         const selectionLoad = load as SynchronizeSelectionLoad;
         refToMidas.drawBrush(selectionLoad.selection);
         cellManager.runReactiveCells(selectionLoad.dfName);
+        // now release
+        enableMidasInteractions();
         return;
       }
       // case "add_selection_to_shelf": {

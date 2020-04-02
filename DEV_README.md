@@ -30,7 +30,12 @@ When you change the Python side code, you can use the following at the beginning
 
 In addition, know that if the JavaScript side triggers any computation in Python, the print messages will not surface---if you want to do better testing, you can use the `comm` to send a debug message (in place of printing) for the entry call, and then you can mock the input by running code, which behaves like normal executions and prints normally.
 
-
 ## Code Notes
 
 Code with `#REDZONE` are places where it is brittle and assumptions might be broken.
+
+## Architecture
+
+### Asynchrony
+
+Right when the user does the interaction, the Midas pane is set to be busy---interactions are disabled. Then when it gets the last ack from the code (`after_selection`), it releases.
