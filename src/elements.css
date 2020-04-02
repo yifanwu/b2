@@ -99,12 +99,13 @@
 #midas-content-container {
   overflow: scroll;
   /* text-align: center; */
+  /* we need this, because otherwise flex is not going to assign text enough width to fit the current display */
   width: 100%;
   max-height: 100%;
   padding-right: 20px;
   /* this is ro prevent the added midas-selection-busy
      from causing the flash effect */
-  transition-delay: 250ms;
+  /* transition-delay: 250ms; */
 }
 
 /* begin selection related */
@@ -262,7 +263,8 @@
 
 #profiler-shelf {
   overflow: scroll;
-  width: 180px;
+  /* width: 180px; */
+  flex-shrink: 0;
   background-color: var(--yellow-vivid-100);
 }
 
@@ -416,6 +418,7 @@
 
 .midas-selection-busy {
   opacity: 0.4;
+  pointer-events: none;
 }
 
 #midas-resizer:hover {
