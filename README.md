@@ -3,11 +3,12 @@
 Midas is a Jupyter extension that augments your programming experience with interactive visualizations for data analysis.
 
 **Load dataframes to visualizations in a dashboard area that you can interact with**
-![demo image](https://drive.google.com/file/d/1CrtVu7-RApxZx2ph10RT1XpMP9Ni_Ce5/preview)
+
+![demo image](https://github.com/yifanwu/midas-exp-pub/blob/master/figs/demo.png?raw=true)
 
 **Using interactions to drive cell computation using _reactive cells_**
 
-![reactive demo](https://drive.google.com/file/d/1duwKa-Zh3DyFrxy0NRNqLEqXZr4tc6KG/preview)
+![reactive demo](https://github.com/yifanwu/midas-exp-pub/blob/master/figs/reactive_demo.png?raw=true)
 
 And more!  See [here](https://github.com/yifanwu/midas-exp-pub) for tutorials.
 
