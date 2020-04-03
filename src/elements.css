@@ -305,6 +305,7 @@
 .landing-card {
   background-color: white;
   color: var(--blue-600);
+  min-width: var(--size-10);
 }
 
 .midas-title {
