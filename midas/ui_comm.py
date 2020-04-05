@@ -23,9 +23,9 @@ from midas.state_types import DFName
 from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, VisualizedDFInfo, get_midas_code
 from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
-from .util.utils import sanitize_string_for_var_name, get_basic_group_vis
+from .util.utils import sanitize_string_for_var_name
 from .vis_types import EncodingSpec, FilterLabelOptions
-from .util.data_processing import dataframe_to_dict, get_numeric_distribution_code, get_datetime_distribution_code
+from .util.data_processing import dataframe_to_dict, get_numeric_distribution_code, get_datetime_distribution_code, get_basic_group_vis
 
 def logged(remove_on_chart_removal: bool):
     def wrapper_factory(f):
@@ -140,14 +140,14 @@ class UiComm(object):
                 if code:
                     if execute:
                         # creating new line so that the horizontal scroll wouldn't occlude the code
-                        self.create_cell(code + "\n", "query", True)
+                        self.create_cell(code, "query", True)
                     else:
                         self.send_column_click_error_msg(
                             f'We are not able to create a chart for {df_name}--{err_message}',
                             df_name,
                             column
                         )
-                        self.create_cell(code + "\n", "query", False)
+                        self.create_cell(code, "query", False)
                 return
             elif command == "remove_dataframe":
                 df_name = data["df_name"]
@@ -510,7 +510,7 @@ class UiComm(object):
             unique_vals = np.unique(col_value[~np.isnan(col_value)])
             current_max_bins = len(unique_vals)
             if (current_max_bins < MAX_BINS):
-                code = f"{new_name} = {df.df_name}.group('{col_name}').vis()"
+                code = get_basic_group_vis(new_name, df.df_name, col_name)
                 return (code, True, "")
             else:
                 return get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df.df_name, new_name, self.midas_instance_name)

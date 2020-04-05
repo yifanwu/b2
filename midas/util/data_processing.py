@@ -80,6 +80,11 @@ def static_vega_gen(encoding: EncodingSpec, df):
     else:
         return None
 
+
+def get_basic_group_vis(new_name, df_name, col_name):
+    return f"{new_name} = {df_name}.group('{col_name}')\n{new_name}.vis()"
+
+
 def create_binning_code(bound, col_name, df_name, new_name, midas_reference_name):
     bin_column_name = f"{col_name}_bin"
     # lambda n: int(n/5) * 5
@@ -89,9 +94,10 @@ def create_binning_code(bound, col_name, df_name, new_name, midas_reference_name
     else:
         binning_lambda = f"lambda x: 'null' if {midas_reference_name}.np.isnan(x) else int(x/{bound}) * {bound}"
     bin_transform = f"{df_name}['{bin_column_name}'] = {df_name}.apply({binning_lambda}, '{col_name}')"
-    grouping_transform = f"{new_name} = {df_name}.group('{bin_column_name}').vis()"
+    grouping_transform = get_basic_group_vis(new_name, df_name, bin_column_name)
     code = f"{bin_transform}\n{grouping_transform}"
     return code
+
 
 def try_parsing_date_time_level(ref, col_value, col_name, df_name):
     parsed = col_value.astype(f'datetime64[{ref[0]}]')
@@ -99,20 +105,22 @@ def try_parsing_date_time_level(ref, col_value, col_name, df_name):
     new_col_name = sanitize_string_for_var_name(f"{col_name}_{ref[1]}")
     if count > 1:
         new_column = f"{df_name}['{col_name}_{ref[1]}'] = {df_name}['{col_name}'].astype('datetime64[{ref[0]}]')"
+        new_name = f"{df_name}_{new_col_name}_dist"
         if count > MAX_BINS:
             bound = snap_to_nice_number(count/MAX_BINS)
             binning_lambda = f"lambda x: 'null' if np.isnan(x) else int(x/{bound}) * {bound}"
             bin_column_name = f"{new_col_name}_bin"
             bin_transform =  f"{df_name}['{bin_column_name}'] = {df_name}.apply({binning_lambda}, '{col_name}')"
-            grouping = f"{df_name}_{new_col_name}_dist = {df_name}.group('{new_col_name}').vis()"
+            grouping = get_basic_group_vis(new_name, df_name, new_col_name)
             code = f"{new_column}\n{bin_transform}\n{grouping}"
             return code
         else:
-            grouping = f"{df_name}_{new_col_name}_dist = {df_name}.group('{new_col_name}').vis()"
+            grouping = get_basic_group_vis(new_name, df_name, new_col_name)
             code = f"{new_column}\n{grouping}"
             return code
     else:
         return None
+
 
 # MidasDataFrame
 def get_datetime_distribution_code(col_name, df):

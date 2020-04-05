@@ -167,9 +167,6 @@ def get_random_string(stringLength=10):
     return ''.join(random.choice(letters) for i in range(stringLength))
 
 
-def get_basic_group_vis(new_name, df_name, col_name):
-    return f"{new_name} = {df_name}.group('{col_name}').vis()"    
-
 def _get_first_target_from_prev_line(stack):
     try:
         prev_line = stack[-3]

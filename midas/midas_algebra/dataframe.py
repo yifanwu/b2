@@ -462,7 +462,7 @@ class MidasDataFrame(object):
         if spec:
             sanity_check_spec_with_data(spec, self)
             self._rt_funcs.show_df(self, spec, True)
-        return self
+        return
 
 
     def static_vis(self, **kwargs):
