@@ -445,21 +445,19 @@ class MidasDataFrame(object):
 
     def vis(self, **kwargs):
         """Shows the visualization in the Midas pannel
-        Arguments:
-            mark {str} -- "bar" | "circle" | "line"
-            x {str} -- column for x axis
-            x_type {str} -- "ordinal" | "quantitative" | "temporal"
-            y {str} -- column for y axis
-            y_type {str} -- "ordinal" | "quantitative" | "temporal"
-            selection_type {str} -- "none", "multiclick", "brush"
-            selection_dimensions {str} -- "none", "multiclick", "brush"
-            sort {str} -- "", "x", "y", "-x", "-y"
-        Returns:
-            DataFrame (so you can chain your functions)
-        Raises:
-            UserError: wehen the keyword arguments do not match the expected EncodingSpec
+        Optional arguments (Midas will guess the rest)
+            mark -- "bar" | "circle" | "line"
+            x -- name of the column to be the x axis
+            x_type -- "ordinal" | "quantitative" | "temporal"
+            y -- name of the column to be the y axis
+            y_type -- "ordinal" | "quantitative" | "temporal"
+            selection_type -- "none" | "multiclick" | "brush"
+            selection_dimensions -- "" | "x" | "y" | "xy"
+            sort -- "" | "x" | "y" | "-x" | "-y"
+
+        No return values
         """
-        # if ISDEBUG: set_trace()
+
         spec = parse_encoding(kwargs, self)
         if spec:
             sanity_check_spec_with_data(spec, self)
@@ -469,7 +467,15 @@ class MidasDataFrame(object):
 
     def static_vis(self, **kwargs):
         """This function is called inplace of `vis` for reactive cells, whose participation in the event loop is different from the others.
-        # """
+
+        Optional arguments (Midas will guess the rest)
+            mark -- "bar" | "circle" | "line"
+            x -- name of the column to be the x axis
+            x_type -- "ordinal" | "quantitative" | "temporal"
+            y -- name of the column to be the y axis
+            y_type -- "ordinal" | "quantitative" | "temporal"
+            sort -- "" | "x" | "y" | "-x" | "-y"
+        """
         self._rt_funcs.log_entry("show_static_df", None)
 
         spec = parse_encoding(kwargs, self)
