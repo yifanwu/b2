@@ -3,7 +3,7 @@ import React from "react";
 import { ColumnItem } from "./ColumnItem";
 import { ProfileShelfLandingPage } from "./ProfileShelfLandingPage";
 import { LogDebug, addNotebookMenuBtn } from "../utils";
-import { TOGGLE_PANNEL_BUTTON, PROFILTER_SHELF_WIDTH, CONTAINER_INIT_WIDTHS } from "../constants";
+import { TOGGLE_PANE_BUTTON, PROFILTER_SHELF_WIDTH, CONTAINER_INIT_WIDTHS } from "../constants";
 
 interface ProfilerColumn {
   columnName: string;
@@ -33,13 +33,13 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
     super(props);
     this.columnClicked  = this.columnClicked.bind(this);
     this.toggleTable = this.toggleTable.bind(this);
-    this.togglePannel = this.togglePannel.bind(this);
+    this.togglePane = this.togglePane.bind(this);
     // this.drop = this.drop.bind(this);
     // this.dragEnd = this.dragEnd.bind(this);
     // this.dragStart = this.dragStart.bind(this);
     this.markAsSeen = this.markAsSeen.bind(this);
 
-    addNotebookMenuBtn(this.togglePannel, TOGGLE_PANNEL_BUTTON, "Toggle Columns", "Toggle the yellow column pannel");
+    addNotebookMenuBtn(this.togglePane, TOGGLE_PANE_BUTTON, "Toggle Columns", "Toggle the yellow column pane");
     this.state = {
       tables: {},
       isShown: {},
@@ -92,7 +92,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
     }
   }
 
-  togglePannel() {
+  togglePane() {
     this.setState(prevState => {
       const logEntryValue = prevState.isShownAll ? "hide_columns_pane" : "show_columns_pane";
       this.props.logEntry(logEntryValue, "");

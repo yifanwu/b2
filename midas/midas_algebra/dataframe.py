@@ -444,7 +444,7 @@ class MidasDataFrame(object):
 
 
     def vis(self, **kwargs):
-        """Shows the visualization in the Midas pannel
+        """Shows the visualization in the Midas pane
         Optional arguments (Midas will guess the rest)
             mark -- "bar" | "circle" | "line"
             x -- name of the column to be the x axis

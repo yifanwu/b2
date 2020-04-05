@@ -30,7 +30,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
     };
 
     this.toggle = this.toggle.bind(this);
-    addNotebookMenuBtn(this.toggle, TOGGLE_MIDAS_BUTTON, "Toggle Midas", "Toggle the Midas side area");
+    addNotebookMenuBtn(this.toggle, TOGGLE_MIDAS_BUTTON, "Toggle Midas", "Toggle the Midas pane");
 
     this.setMidasContainerRef = this.setMidasContainerRef.bind(this);
     this.setProfilerShelfRef = this.setProfilerShelfRef.bind(this);

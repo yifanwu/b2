@@ -17,11 +17,11 @@ export const ChartsViewLandingPage: React.StatelessComponent<{}> = () => {
         <p>
           By default, your interactions are executed via a "log" in a code cell to the left.  You can look at the code to get a sense of what you have interacted with.  You can also execute the code by uncommenting the relevant selections.
         </p>
-        <h4>Toggle and Resize Pannels</h4>
+        <h4>Toggle and Resize Panes</h4>
         <p>
-          To toggle this pannel (restoring the traditional notebook view), click on <b>Toggle Midas</b>, from the menu bar on the top. Similarly, you can click <b>Toggle Column Shelf</b> to just hide the pannel to the right.
+          To toggle this pane (restoring the traditional notebook view), click on <b>Toggle Midas</b>, from the menu bar on the top. Similarly, you can click <b>Toggle Column Shelf</b> to just hide the pane to the right.
         </p>
-        <p>To resize, you can also drag the left edge of the the main (blue)pannel---the resizer will be highlighted with a darker shade of blue when you hover over.</p>
+        <p>To resize, you can also drag the left edge of the the main (blue)pane---the resizer will be highlighted with a darker shade of blue when you hover over.</p>
         <br></br>
       </div>
     </div>

@@ -336,7 +336,7 @@ class Midas(object):
 
     # PUBLIC
     def sel(self, current_selections_list: Union[List[Dict], List[SelectionValue]]=[]):
-        """makes selections to visualizations in Midas panel
+        """makes selections to visualizations in Midas pane
         
         Arguments:
             current_selections_list {Union[List[Dict], List[SelectionValue]]} -- a list of either (1) dictionaries that describes the chart of the selection and the selection, or 
