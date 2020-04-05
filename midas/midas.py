@@ -260,9 +260,16 @@ class Midas(object):
         return self._ui_comm.vis_spec.get(DFName(df_name))
 
 
-    @staticmethod
-    def help():
-        print(HELP_INSTRUCTION)
+    def help(self, fun = None):
+        """pass in the function you want to learn about
+        """
+        if fun:
+            if fun.__doc__:
+                print(fun.__doc__)
+            else:
+                print("We are not able to find the documentation")
+        else:
+            print(HELP_INSTRUCTION)
 
 
     @property
