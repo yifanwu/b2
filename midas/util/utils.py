@@ -9,6 +9,7 @@ from re import sub
 import requests
 from pathlib import Path
 import time 
+import numpy as np
 from datetime import datetime
 
 from typing import Tuple, List, Optional
@@ -17,9 +18,47 @@ from IPython.core.debugger import set_trace
 
 from midas.constants import ISDEBUG
 from midas.util.errors import UserError, InternalLogicalError
+from datascience import are
 
 FG_BLUE = "\x1b[34m";
 RESET_PRINT = "\x1b[0m";
+
+
+def plot(v, center, zoom_start, radius):
+    import folium
+    import folium.plugins
+    locs = v.to_numpy()
+    us_map = folium.Map(location=center, zoom_start = zoom_start)
+    heatmap = folium.plugins.HeatMap(locs.tolist(), radius = radius)
+    us_map.add_child(heatmap)
+    return us_map
+
+def plot_heatmap(locs_df, zoom_start=12, radius=12):
+    """Plots a heatmap using the Folium library
+    
+    Arguments:
+        locs_df {MidasDatabFrame} -- Should contain lat, lon (in that order)
+    
+    Keyword Arguments:
+        zoom_start {int} -- the higher the value, the more zoomed out (default: {12})
+        radius {int} -- how to aggregate the heatmap (default: {12})
+    """
+    # basic data cleaning
+    # compute the center
+    center_lat = np.average(locs_df[locs_df.labels[0]])
+    center_lon = np.average(locs_df[locs_df.labels[1]])
+    if np.isnan(center_lat):
+        filtered = locs_df.where(locs_df.labels[0], lambda x: not np.isnan(x))
+        diff_len = len(locs_df) - len(filtered)
+        center_lat = np.average(filtered[filtered.labels[0]])
+        center_lon = np.average(filtered[filtered.labels[1]])
+        red_print(f"We filtered out {diff_len} NaN values.")
+        return plot(filtered, [center_lat, center_lon], zoom_start, radius)
+    else:
+        return plot(locs_df, [center_lat, center_lon], zoom_start, radius)
+
+
+
 
 def fetch_and_cache(data_url, file, data_dir="data", force=False):
     """

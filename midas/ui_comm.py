@@ -5,7 +5,7 @@ from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_an
 from ipykernel.comm import Comm # type: ignore
 import numpy as np
 # from json import loads
-from typing import Dict, Callable, Optional, List, Tuple, cast
+from typing import Dict, Callable, Optional, List, Tuple, Type, cast
 import json
 from pyperclip import copy
 import ast
@@ -23,7 +23,7 @@ from midas.state_types import DFName
 from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, VisualizedDFInfo, get_midas_code
 from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
-from .util.utils import sanitize_string_for_var_name
+from .util.utils import red_print, sanitize_string_for_var_name
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, get_numeric_distribution_code, get_datetime_distribution_code, get_basic_group_vis
 
@@ -491,9 +491,13 @@ class UiComm(object):
         new_name = sanitize_string_for_var_name(f"{col_name}_{df_name}_dist")
         if (is_string_dtype(col_value)):
             # we need to check the cardinarily
-            unique_vals = np.unique(col_value)
-            current_max_bins = len(unique_vals)
             code = get_basic_group_vis(new_name, df.df_name, col_name)
+            try:
+                unique_vals = np.unique(col_value)
+            except TypeError:
+                # with None value
+                return (code, False, f"Please handle None values from {col_name}!")
+            current_max_bins = len(unique_vals)
             if current_max_bins < MAX_BINS:
                 return (code, True, "")
             else:
