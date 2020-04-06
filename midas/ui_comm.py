@@ -23,7 +23,7 @@ from midas.state_types import DFName
 from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, VisualizedDFInfo, get_midas_code
 from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
-from .util.utils import red_print, sanitize_string_for_var_name
+from .util.utils import sanitize_string_for_var_name
 from .vis_types import EncodingSpec, FilterLabelOptions
 from .util.data_processing import dataframe_to_dict, get_numeric_distribution_code, get_datetime_distribution_code, get_basic_group_vis
 
@@ -111,19 +111,17 @@ class UiComm(object):
     def handle_msg(self, data_raw):
         data = data_raw["content"]["data"]
         self.tmp_log.append(data)
-        debug_log(f"got message {data}")
         if "command" in data:
             command = data["command"]
             if command == "cell-ran":
                 if "code" in data:
                     code = data["code"]
-                    # self.process_code(code)
-                    self.log_entry("code_execution", json.dumps(code))
+                    self.log_entry("code_execution", code)
                 return
             elif command == "markdown-cell-rendered":
                 if "code" in data:
                     code = data["code"]
-                    self.log_entry("markdown-rendered", json.dumps(code))
+                    self.log_entry("markdown-rendered", code)
                 return
             elif command == "get-visualization-code-clipboard":
                 df_name = data["df_name"]

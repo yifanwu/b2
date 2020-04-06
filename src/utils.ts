@@ -28,7 +28,12 @@ export function setupJupyterEvents(cellManager: CellManager, comm: any) {
     cellManager.updateLastExecutedCell(data.cell);
 
     // passed to Python for more logging
-    const code = data.cell.get_text();
+    const rawCode = data.cell.get_text();
+    let trimmedString = rawCode;
+    if (rawCode.includes("display(HTML(")) {
+      trimmedString = rawCode.replace(/display\(HTML\(.*\)\)/, "display(HTML(...))");
+    }
+    const code = JSON.stringify(trimmedString);
     comm.send({
       command: "cell-ran",
       code,

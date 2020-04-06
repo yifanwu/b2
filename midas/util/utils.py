@@ -167,13 +167,15 @@ def open_sqlite_for_logging(user_id: str, task_id: str, time_stamp: str):
     con.commit()
 
     def log_entry_to_db(fun_name: str, diff: float, optional_metadata: str):
+        # optional_metat_data might have signle quote, which is a problem for sqlite....
+        optional_metadata = optional_metadata.replace("'","\'\'")
         sql = f"INSERT INTO log VALUES ('{session_id}', '{fun_name}', {diff}, '{optional_metadata}');"
         try:
             cur.execute(sql)
             con.commit()
         # @type: ignore
         except sqlite3.OperationalError as error:
-            red_print(f"Tried to execute {sql}, but got {error}")
+            raise InternalLogicalError(f"SQL err: {error} for query: {sql}")
 
     return log_entry_to_db
 
