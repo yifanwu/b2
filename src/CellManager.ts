@@ -61,6 +61,12 @@ export default class CellManager {
     this.reactiveCellsReverse = new Map();
     this.showSelectionCells = true;
     this.logEntry = logEntry;
+
+    // make sure that there is currently no highlighted cellconst 
+    const allCells = Jupyter.notebook.get_cells();
+    allCells.forEach((c: any) => {
+      c.element.removeClass(MIDAS_CURRENT_CLASS);
+    });
   }
 
   setFocus(dfName?: string) {
