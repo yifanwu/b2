@@ -182,6 +182,8 @@ export function setUpCodeFolding(codecell: any, requirejs: any, configmod: any) 
       }
     }
 
+    // REDZONE: if anything else listens to create.Cell, gotta watch out
+    Jupyter.notebook.events.unbind("create.Cell");
     Jupyter.notebook.events.on("create.Cell", createCell);
   }
 

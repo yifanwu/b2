@@ -23,6 +23,11 @@ const CELL_EMOJI_ANNOTATION = {
  * set up the Jupyter event listeners
  */
 export function setupJupyterEvents(cellManager: CellManager, comm: any) {
+  // unbind is important
+  // - otherwise if midas is loaded again, both are registered
+  // - ok to remove all because there is no internal Jupyter consumers of this particular event
+  //   verified by a global grep on the repo, might not work nice with other extensions though
+  Jupyter.notebook.events.unbind("finished_execute.CodeCell");
   Jupyter.notebook.events.on("finished_execute.CodeCell", function(_: any, data: any) {
     // we also need to tell cell manager which one was the most recently ran!
     cellManager.updateLastExecutedCell(data.cell);
@@ -44,6 +49,7 @@ export function setupJupyterEvents(cellManager: CellManager, comm: any) {
   // - I cannot find the creation event
   // - rendered might be a better proxy since they might change the values
   // the only issue is if the people forget to render it, oh well : /
+  Jupyter.notebook.events.unbind("rendered.MarkdownCell");
   Jupyter.notebook.events.on("rendered.MarkdownCell", function(_: any, data: any) {
     // TODO
     cellManager.updateLastExecutedCell(data.cell);

@@ -32,9 +32,10 @@ __non_webpack_require__([
   "codemirror/addon/fold/indent-fold"
 ], function load_ipython_extension(requirejs: any, configmod: any, codecell: any) {
 
-  // __non_webpack_require__();
   setUpCodeFolding(codecell, requirejs, configmod);
 
+  // event listener also used in Jupyter's code
+  // cannot reset
   Jupyter.notebook.events.on("kernel_connected.Kernel", function() {
     tearDownMidasComponent();
   });
