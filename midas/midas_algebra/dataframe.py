@@ -18,7 +18,7 @@ from midas.constants import MAX_BINS, MAX_DOTS, ISDEBUG
 from midas.state_types import DFName
 from midas.vis_types import EncodingSpec
 from midas.util.errors import InternalLogicalError, UserError, NotAllCaseHandledError
-from midas.util.utils import find_name, find_tuple_name, get_random_string, red_print
+from midas.util.utils import find_name, find_tuple_name, get_random_string, plot_heatmap, red_print
 from midas.util.errors import type_check_with_warning, InternalLogicalError
 from midas.vis_types import EncodingSpec, ENCODING_COUNT
 from midas.showme import infer_encoding_helper
@@ -463,6 +463,9 @@ class MidasDataFrame(object):
             sanity_check_spec_with_data(spec, self)
             self._rt_funcs.show_df(self, spec, True)
         return
+
+    def plot_heatmap(self, zoom_start=None, radius=None):
+        return plot_heatmap(self, zoom_start, radius)
 
 
     def static_vis(self, **kwargs):
