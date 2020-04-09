@@ -38,7 +38,6 @@ export function setupJupyterEvents(cellManager: CellManager, logger: LoggerFunct
     if (rawCode.includes("display(HTML(")) {
       trimmedString = rawCode.replace(/display\(HTML\(.*\)\)/, "display(HTML(...))");
     }
-    // const code = JSON.stringify(trimmedString);
     const entry: LogCode = {
       action: "coding",
       code: trimmedString,
@@ -48,10 +47,6 @@ export function setupJupyterEvents(cellManager: CellManager, logger: LoggerFunct
       time: new Date()
     };
     logger(entry);
-    // comm.send({
-    //   command: "cell-ran",
-    //   code,
-    // });
   });
   // also need to instrument markdowncells
   // using "rendered.MarkdownCell" because
