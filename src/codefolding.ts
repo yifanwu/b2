@@ -231,17 +231,6 @@ export function setUpCodeFolding(codecell: any, requirejs: any, configmod: any) 
     }
   }
 
-  // function load_css(name: string) {
-  //   let link = document.createElement("link");
-  //   link.type = "text/css";
-  //   link.rel = "stylesheet";
-  //   link.href = requirejs.toUrl(name, "css");
-  //   document.getElementsByTagName("head")[0].appendChild(link);
-  // }
-  // Jupyter.notebook.events.one("notebook_loaded.Notebook", initExistingCells);
-  // Jupyter.notebook.events.on("create.Cell", createCell);
-  // first, check which view we're in, in order to decide whether to load
-  // define default config parameter values
   let params = {
     codefolding_hotkey : "Alt-f",
     init_delay : 1000
