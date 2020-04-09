@@ -463,7 +463,7 @@ class MidasDataFrame(object):
             self._rt_funcs.show_df(self, spec, True)
         return
 
-    def plot_heatmap(self, zoom_start=None, radius=None):
+    def plot_heatmap(self, zoom_start=12, radius=12):
         return plot_heatmap(self, zoom_start, radius)
 
 
