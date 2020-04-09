@@ -3,7 +3,8 @@ import React from "react";
 import { ColumnItem } from "./ColumnItem";
 import { ProfileShelfLandingPage } from "./ProfileShelfLandingPage";
 import { LogDebug, addNotebookMenuBtn } from "../utils";
-import { TOGGLE_PANE_BUTTON, PROFILTER_SHELF_WIDTH, CONTAINER_INIT_WIDTHS } from "../constants";
+import { TOGGLE_PANE_BUTTON } from "../constants";
+import { LoggerFunction, LogEntryBase } from "../logging";
 
 interface ProfilerColumn {
   columnName: string;
@@ -16,16 +17,11 @@ interface ProfilerShelfState {
   tables: { [index: string]: ProfilerColumn[] };
   isShown: { [index: string]: boolean; };
   isShownAll: boolean;
-  // dragged: boolean;
-  // oldX: number;
-  // oldY: number;
-  // x: number;
-  // y: number;
 }
 
 interface ProfilerShelfProps {
   columnSelectMsg: (columnName: string, tableName: string) => void;
-  logEntry: (action: string, metadata: string) => void;
+  logger: LoggerFunction;
 }
 
 export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerShelfState> {
@@ -34,9 +30,6 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
     this.columnClicked  = this.columnClicked.bind(this);
     this.toggleTable = this.toggleTable.bind(this);
     this.togglePane = this.togglePane.bind(this);
-    // this.drop = this.drop.bind(this);
-    // this.dragEnd = this.dragEnd.bind(this);
-    // this.dragStart = this.dragStart.bind(this);
     this.markAsSeen = this.markAsSeen.bind(this);
 
     addNotebookMenuBtn(this.togglePane, TOGGLE_PANE_BUTTON, "Toggle Columns", "Toggle the yellow column pane");
@@ -44,11 +37,6 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
       tables: {},
       isShown: {},
       isShownAll: true,
-      // dragged: false,
-      // oldX: 0,
-      // oldY: 0,
-      // x: CONTAINER_INIT_WIDTHS - PROFILTER_SHELF_WIDTH,
-      // y: 0,
     };
   }
 
@@ -94,8 +82,15 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
 
   togglePane() {
     this.setState(prevState => {
-      const logEntryValue = prevState.isShownAll ? "hide_columns_pane" : "show_columns_pane";
-      this.props.logEntry(logEntryValue, "");
+      const action = prevState.isShownAll
+        ? "hide_columns_pane"
+        : "show_columns_pane";
+      const entry: LogEntryBase = {
+        action,
+        actionKind: "uiControl",
+        time: new Date()
+      };
+      this.props.logger(entry);
       return { isShownAll: !prevState.isShownAll};
     });
   }

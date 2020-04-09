@@ -1,8 +1,8 @@
 import { PerChartSelectionValue, SelectionValue, FunKind, MidasContainerFunctions } from "./types";
 import { SelectionDimensions } from "./charts/vegaGen";
-import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG, TOGGLE_SELECTION_BUTTON, DELETE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS, INTERACT_EMOJI } from "./constants";
+import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG, TOGGLE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS, INTERACT_EMOJI } from "./constants";
 import CellManager from "./CellManager";
-import { LogEntryType } from "./comm";
+import { LoggerFunction, LogCode, LogDataframeInteraction } from "./logging";
 
 export const STRICT = true;
 
@@ -22,7 +22,7 @@ const CELL_EMOJI_ANNOTATION = {
 /**
  * set up the Jupyter event listeners
  */
-export function setupJupyterEvents(cellManager: CellManager, comm: any) {
+export function setupJupyterEvents(cellManager: CellManager, logger: LoggerFunction) {
   // unbind is important
   // - otherwise if midas is loaded again, both are registered
   // - ok to remove all because there is no internal Jupyter consumers of this particular event
@@ -38,11 +38,20 @@ export function setupJupyterEvents(cellManager: CellManager, comm: any) {
     if (rawCode.includes("display(HTML(")) {
       trimmedString = rawCode.replace(/display\(HTML\(.*\)\)/, "display(HTML(...))");
     }
-    const code = JSON.stringify(trimmedString);
-    comm.send({
-      command: "cell-ran",
-      code,
-    });
+    // const code = JSON.stringify(trimmedString);
+    const entry: LogCode = {
+      action: "coding",
+      code: trimmedString,
+      actionKind: "code",
+      cellId: data.cell.cell_id,
+      cellPos: Jupyter.notebook.find_cell_index(data.cell),
+      time: new Date()
+    };
+    logger(entry);
+    // comm.send({
+    //   command: "cell-ran",
+    //   code,
+    // });
   });
   // also need to instrument markdowncells
   // using "rendered.MarkdownCell" because
@@ -54,10 +63,19 @@ export function setupJupyterEvents(cellManager: CellManager, comm: any) {
     // TODO
     cellManager.updateLastExecutedCell(data.cell);
     const code = data.cell.get_text();
-    comm.send({
-      command: "markdown-cell-rendered",
+    const entry: LogCode = {
+      action: "markdown_rendered",
       code,
-    });
+      actionKind: "text",
+      cellId: data.cell.cell_id,
+      cellPos: Jupyter.notebook.find_cell_index(data.cell),
+      time: new Date()
+    };
+    logger(entry);
+    // comm.send({
+    //   command: "markdown-cell-rendered",
+    //   code,
+    // });
   });
   // // this is for dealing with concurrency.
   // Jupyter.notebook.events.on("kernel_idle.Kernel", function() {
@@ -87,15 +105,22 @@ export function disableMidasInteractions() {
 
 export function getContainerFunctions(
   comm: any,
-  logEntry: LogEntryType,
+  logger: LoggerFunction,
   setUIItxFocus: (dfName?: string) => void,
   executeCapturedCells: (div: string, comments: string) => void) {
 
   const removeDataFrameMsg = (dfName: string) => {
     comm.send({
-      "command": "remove_dataframe",
+      "command": "remove-dataframe",
       "df_name": dfName,
     });
+    const entry: LogDataframeInteraction = {
+      action: "remove_df",
+      actionKind: "uiControl",
+      dfName,
+      time: new Date(),
+    };
+    logger(entry);
   };
 
   const addCurrentSelectionMsg = (valueStr: string) => {
@@ -115,7 +140,7 @@ export function getContainerFunctions(
   const containerFunctions: MidasContainerFunctions = {
     removeDataFrameMsg,
     elementFunctions: {
-      logEntry,
+      logger,
       addCurrentSelectionMsg,
       setUIItxFocus,
       getChartCode,
@@ -264,24 +289,15 @@ export function isFirstSelectionContainedBySecond(s1?: PerChartSelectionValue, s
 }
 
 
-export function executeCellId(cellId: string) {
-  const idx = Jupyter.notebook.find_cell_index(cellId);
-  if (idx < 0) throw LogInternalError(`Was not able to find cell ${cellId}`);
-  Jupyter.notebook.select(idx);
-  const cell = Jupyter.notebook.get_cell(idx);
-  if (!cell) throw LogInternalError(`Was not able to find cell ${cellId}`);
-  // cell.code_mirror.display.lineDiv.scrollIntoView();
-  cell.execute();
-}
-
-
 export function selectCell(cell: any, scroll: boolean) {
   const currentIdx = Jupyter.notebook.find_cell_index(cell);
   if (!currentIdx) {
     LogInternalError(`Was not able to find cel`);
   } else {
     Jupyter.notebook.select(currentIdx);
-    if (scroll) cell.code_mirror.display.lineDiv.scrollIntoView({behavior: "smooth"});
+    if (scroll) {
+      cell.code_mirror.display.lineDiv.scrollIntoView({behavior: "smooth"});
+    }
   }
 }
 

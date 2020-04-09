@@ -126,59 +126,6 @@ CREATE TABLE session (
 );
 """
 
-def get_log_entry_fun(user_id: str, task_id: str):
-    start_time = datetime.now()
-    time_stamp = start_time.strftime("%Y%m%d-%H%M%S")
-    log_entry_to_db = open_sqlite_for_logging(user_id, task_id, time_stamp)
-    def log_entry(fun_name: str, optional_metadata: Optional[str]=None):
-        call_time = datetime.now()
-        diff = (call_time - start_time).total_seconds()
-        meta = optional_metadata if optional_metadata else ''
-        log_entry_to_db(fun_name, diff, meta)
-    return log_entry 
-
-def open_sqlite_for_logging(user_id: str, task_id: str, time_stamp: str):
-    """opens sqlite file for experuiment logging purpose
-    
-    Note that this is not associated with Midas operations.
-    
-    Arguments:
-        user_id {str} -- the id assigned to the experiment participant
-        time_stamp {[type]} -- [description]
-    
-    Returns:
-        [type] -- [description]
-    """
-    session_id = f'{user_id}_{task_id}_{time_stamp}'
-    # copy(LOG_DB_PATH, f'{LOG_DB_BACKUP_FOLDER}{session_id}.sqlite')
-    file_name = f"./experiment_log_{user_id}.sqlite"
-    should_execute_setup = not path.exists(file_name)
-    # check if it's there
-    # if not, do the initial setup
-    con = sqlite3.connect(file_name)
-    cur = con.cursor()
-
-    if should_execute_setup:
-        cur.execute(LOG_SQL_SETUP_LOG)
-        cur.execute(LOG_SQL_SETUP_SESSION)
-        con.commit()
-
-    cur.execute(f"INSERT INTO session VALUES ('{user_id}', '{task_id}', '{session_id}', '{time_stamp}')")
-    con.commit()
-
-    def log_entry_to_db(fun_name: str, diff: float, optional_metadata: str):
-        # optional_metat_data might have signle quote, which is a problem for sqlite....
-        optional_metadata = optional_metadata.replace("'","\'\'")
-        sql = f"INSERT INTO log VALUES ('{session_id}', '{fun_name}', {diff}, '{optional_metadata}');"
-        try:
-            cur.execute(sql)
-            con.commit()
-        # @type: ignore
-        except sqlite3.OperationalError as error:
-            raise InternalLogicalError(f"SQL err: {error} for query: {sql}")
-
-    return log_entry_to_db
-
 
 def abs_path(p: str):
     """Make path absolute."""

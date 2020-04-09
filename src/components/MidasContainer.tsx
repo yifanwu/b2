@@ -9,6 +9,7 @@ import { SNAPSHOT_BUTTON, MIDAS_CONTAINER_ID } from "../constants";
 
 import { ChartsViewLandingPage } from "./ChartsViewLangingPage";
 import MidasElement from "./MidasElement";
+import { LogEntryBase } from "../logging";
 
 // Mappings
 //  this stores the information connecting the cells to
@@ -112,7 +113,12 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     const comments = "# Current snapshot queries:\n" + allCodeStrs.join("\n");
     // this bleads the abstraction a little
     this.props.containerFunctions.elementFunctions.executeCapturedCells(`<div>${combined}<div>`, comments);
-    this.props.containerFunctions.elementFunctions.logEntry("snapshot_all", "");
+    const entry: LogEntryBase = {
+      action: "snapshot_all",
+      actionKind: "interaction2coding",
+      time: new Date()
+    };
+    this.props.containerFunctions.elementFunctions.logger(entry);
   }
 
   drawBrush(selectionArrayStr: string) {

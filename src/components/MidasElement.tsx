@@ -13,6 +13,7 @@ import { makeElementId } from "../config";
 import { BRUSH_SIGNAL, DEFAULT_DATA_SOURCE, DEBOUNCE_RATE, MIN_BRUSH_PX, BRUSH_X_SIGNAL, BRUSH_Y_SIGNAL, MULTICLICK_SIGNAL, MULTICLICK_TOGGLE, MULTICLICK_PIXEL_SIGNAL, EmbedConfig } from "../constants";
 import { PerChartSelectionValue, MidasElementFunctions } from "../types";
 import { LogDebug, LogInternalError, getDfId, getDigitsToRound, navigateToNotebookCell, isFirstSelectionContainedBySecond, getMultiClickValue, copyTextToClipboard, getChartDetailId, disableMidasInteractions } from "../utils";
+import { LogDataframeInteraction, LogSelection } from "../logging";
 
 const DetailButton = <svg viewBox="0 0 16 16" fill="currentColor" stroke="none" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
   <circle r="2" cy="8" cx="2"></circle>
@@ -67,14 +68,11 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.changeVisual = this.changeVisual.bind(this);
     this.toggleHiddenStatus = this.toggleHiddenStatus.bind(this);
     this.snapToCell = this.snapToCell.bind(this);
-    this.moveLeft = this.moveLeft.bind(this);
-    this.moveRight = this.moveRight.bind(this);
+    this.move = this.move.bind(this);
     this.getCode = this.getCode.bind(this);
     this.toggleBaseData = this.toggleBaseData.bind(this);
-    // this.shouldActivateSignal = this.shouldActivateSignal.bind(this);
 
     this.myRef = React.createRef<HTMLDivElement>();
-    // this.activateSignalFlag = true; // hack
     const elementId = makeElementId(this.props.dfName, false);
     this.state = {
       hidden: false,
@@ -108,18 +106,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     return this.props.encoding.selectionType === "multiclick";
   }
 
-  // shouldActivateSignal() {
-  //   return this.activateSignalFlag;
-  // }
 
   async updateSelectionMarks(selection: PerChartSelectionValue) {
-    if (isFirstSelectionContainedBySecond(selection, this.state.currentBrush) ) {
-      // LogDebug("BRUSH NOOP", [selection, this.state.currentBrush]);
+    if (isFirstSelectionContainedBySecond(selection, this.state.currentBrush)) {
       return;
     }
 
     this.setState({ currentBrush: selection });
-    // this.activateSignalFlag = false;
     this.updatedSelection = selection;
     const signal = this.state.view.signal.bind(this.state.view);
     const runAsync = this.state.view.runAsync.bind(this.state.view);
@@ -131,10 +124,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         signal(BRUSH_X_SIGNAL, [0, 0]);
       }
       await runAsync();
-      // this.activateSignalFlag = true;
       return;
     }
-    // LogDebug(`BRUSHING`, [selection, this.state.currentBrush]);
     // @ts-ignore because the vega view API is not fully TS typed.
     const scale = this.state.view.scale.bind(this.state.view);
     const encoding = this.props.encoding;
@@ -178,8 +169,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     if (!hasModified) {
       LogInternalError(`Draw brush didn't modify any scales for selection ${selection}`);
     }
-    // this.activateSignalFlag = true;
-    // LogDebug("setting flag to true");
     return;
   }
 
@@ -199,15 +188,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   getDebouncedFunction(dfName: string) {
     const callback = (signalName: string, value: any) => {
-      // also need to call into python state...
-      // LogDebug("activateSignalFlag", this.activateSignalFlag);
-      // if (!this.shouldActivateSignal()) {
-      //   LogDebug("activateSignalFlag set to false, no-op");
-      //   return;
-      // }
       let processedValue = {};
       let cleanValue = {};
-      // const selectedField = multiSelectedField(this.props.encoding);
       // weird, includes vlMulti
       if (!this.isMultiSelect()) {
         cleanValue = this.roundIfPossible(value);
@@ -224,6 +206,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       valueStr = (valueStr === "null") ? "None" : valueStr;
       // we have to disable here, and wait for kernel_idle to release it
       disableMidasInteractions();
+      const entry: LogSelection = {
+        action: "ui_selection",
+        actionKind: "selection",
+        dfName: this.props.dfName,
+        time: new Date(),
+        selection: cleanValue
+      };
+      this.props.functions.logger(entry);
       this.props.functions.addCurrentSelectionMsg(valueStr);
       this.setState({ currentBrush: cleanValue });
       LogDebug(`Chart causing selection ${valueStr}`);
@@ -238,7 +228,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       let l = (window as any).lastInvoked;
       (window as any).lastInvoked = n;
       if (!l) {
-        // initially
+        // initial case
         l = n;
       }
       if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
@@ -273,8 +263,14 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   toggleHiddenStatus() {
     this.setState(prevState => {
-      const logEntryValue = prevState.hidden ? "show_chart" : "hide_chart";
-      this.props.functions.logEntry(logEntryValue, this.props.dfName);
+      const action = prevState.hidden ? "show_chart" : "hide_chart";
+      const entry: LogDataframeInteraction = {
+        action,
+        actionKind: "uiControl",
+        dfName:  this.props.dfName,
+        time: new Date()
+      };
+      this.props.functions.logger(entry);
       return {
         hidden: !prevState.hidden,
         // isOpen: false
@@ -284,16 +280,20 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
 
   toggleBaseData() {
     this.setState(prevState => {
+      const entry: LogDataframeInteraction = {
+        action: prevState.isBaseShown ? "hide_midas" : "show_midas",
+        actionKind: "uiControl",
+        dfName:  this.props.dfName,
+        time: new Date()
+      };
+      this.props.functions.logger(entry);
       if (prevState.isBaseShown) {
-        // remove it
-        this.props.functions.logEntry("hide_midas", this.props.dfName);
         const changeSet = this.state.view
           .changeset()
           .remove((datum: any) => { return datum.is_overview === true; });
         this.state.view.change(DEFAULT_DATA_SOURCE, changeSet).runAsync();
         return {isBaseShown: false};
       } else {
-        this.props.functions.logEntry("show_midas", this.props.dfName);
         const changeSet = this.state.view
           .changeset()
           .insert(this.props.data);
@@ -311,7 +311,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   changeVisual() {
     // this.props.functions.getChartCode(this.props.dfName);
     navigateToNotebookCell(this.props.cellId);
-    this.props.functions.logEntry("navigate_to_definition_cell", this.props.dfName);
+    const entry: LogDataframeInteraction = {
+      action: "navigate_to_definition_cell",
+      actionKind: "interaction2coding",
+      dfName: this.props.dfName,
+      time: new Date()
+    };
+    this.props.functions.logger(entry);
   }
 
   /**
@@ -321,7 +327,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     const code = this.state.code
       ? this.state.code
       : this.props.code;
-    // this.props.functions.logEntry("get_code", code);
     return code;
   }
 
@@ -329,7 +334,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     // this.props.functions.getCode(this.props.dfName);
     // adding a new line because in the cell new line is annoying
     copyTextToClipboard(this.getCode() + "\n");
-    this.props.functions.logEntry("get_code", this.props.dfName);
+    const entry: LogDataframeInteraction = {
+      action: "get_code",
+      actionKind: "interaction2coding",
+      dfName: this.props.dfName,
+      time: new Date()
+    };
+    this.props.functions.logger(entry);
   }
 
   getSvg(): Promise<string> {
@@ -341,7 +352,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     // lame comments for now (maybe: code and selection, for the future)
     const executeCapturedCells = this.props.functions.executeCapturedCells;
     const comments = this.props.dfName;
-    this.props.functions.logEntry("snapshot_single", this.props.dfName);
+    const entry: LogDataframeInteraction = {
+      action: "snapshot_single",
+      actionKind: "interaction2coding",
+      dfName: this.props.dfName,
+      time: new Date()
+    };
+    this.props.functions.logger(entry);
 
     this.state.view.toSVG()
       .then(function(svg) {
@@ -378,15 +395,17 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     });
   }
 
-  moveLeft() {
-    this.props.moveElement("left");
-    this.props.functions.logEntry("move_chart", this.props.dfName);
+  move(direction: "left" | "right") {
+    this.props.moveElement(direction);
+    const entry: LogDataframeInteraction = {
+      action: "move_chart",
+      actionKind: "uiControl",
+      dfName: this.props.dfName,
+      time: new Date()
+    };
+    this.props.functions.logger(entry);
   }
 
-  moveRight() {
-    this.props.moveElement("right");
-    this.props.functions.logEntry("move_chart", this.props.dfName);
-  }
 
   hasSelection() {
     return (this.state.currentBrush) && (Object.keys(this.state.currentBrush).length > 0);
@@ -426,8 +445,8 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
               <a title="Snap an image of chat to notebook" onClick={() => this.snapToCell()}>📷 snapshot to notebook</a>
               <a title="Copy data query code to clopboard" onClick={() => this.copyCodeToClipboard()}>📋 copy code to clipboard</a>
               <a title="Copy visual code definitions to clippboard" onClick={() => this.changeVisual()}>📊 find defining cell</a>
-              <a title="Move chart left" onClick={this.moveLeft}>⬅️ move left</a>
-              <a title="Move chart right" onClick={this.moveRight}>➡️ move right</a>
+              <a title="Move chart left" onClick={() => this.move("left")}>⬅️ move left</a>
+              <a title="Move chart right" onClick={() => this.move("right")}>➡️ move right</a>
               <a title={this.state.hidden ? "Open the chart" : "Fold the chart"} onClick={() => this.toggleHiddenStatus()}>{this.state.hidden ? "➕ maximize chart" : "➖ minimize chart"} </a>
               <a title="Remove the chart" onClick={() => this.props.removeChart()}>❌ delete chart</a>
             </div>

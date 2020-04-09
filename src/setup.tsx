@@ -4,6 +4,7 @@ import ReactDOM from "react-dom";
 import { MidasSidebar } from "./components/MidasSidebar";
 import { MidasContainerFunctions } from "./types";
 import { MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW } from "./constants";
+import { LogEntry, LogResize } from "./logging";
 
 const SIDEBAR_ID = "midas-sidebar-wrapper";
 const SIDEBAR_SELECTOR = `#${SIDEBAR_ID}`;
@@ -16,7 +17,7 @@ const SIDE_INSIDE_SELECTOR = "#midas-inside";
 let dragging = false;
 function makeResizer(
   onChange: (delta: number) => void,
-  logEntryForResizer: (metadata: string) => void) {
+  logger: (log: LogEntry) => void) {
   let resizer = $("#midas-resizer");
   resizer.on("mousedown", (e) => {
     const x = e.clientX;
@@ -37,7 +38,14 @@ function makeResizer(
       // check the size of the new div, if it's large enough, change the css
       const currentWidth = $("#midas-sidebar-wrapper").width();
       const docWidth = $(window).width();
-      logEntryForResizer(`(${currentWidth}, ${docWidth})`);
+      const logResize: LogResize = {
+        action: "resize_midas_area",
+        actionKind: "uiControl",
+        time: new Date(),
+        docWidth,
+        currentWidth
+      };
+      logger(logResize);
       if (currentWidth > MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW) {
         $(".midas-element").css({
           "display": "inline-flex",
@@ -63,7 +71,7 @@ export function tearDownMidasComponent() {
 
 export function createMidasComponent(
   columnSelectMsg: (col: string, table: string) => void,
-  logEntryForResizer: (metadata: string) => void,
+  logger: (entry: LogEntry) => void,
   containerFunctions: MidasContainerFunctions
 ): MidasSidebar {
   if ($(SIDEBAR_SELECTOR).length === 0) {
@@ -74,7 +82,7 @@ export function createMidasComponent(
     $("#notebook").append(midasSideBarDiv);
   }
 
-let midasRef;
+  let midasRef;
   ReactDOM.render(<MidasSidebar
     ref={(comp) => midasRef = comp}
     columnSelectMsg={columnSelectMsg}
@@ -87,8 +95,8 @@ let midasRef;
     $(SIDEBAR_SELECTOR).width(oldWidth + delta);
     syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
   };
-  makeResizer(resizeOnChange, logEntryForResizer);
 
+  makeResizer(resizeOnChange, logger);
   syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
 
   return midasRef;

@@ -21,7 +21,7 @@ from midas.constants import ISDEBUG
 from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType, find_selections_with_df_name
 from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
 from .util.errors import InternalLogicalError, UserError
-from .util.utils import get_log_entry_fun, red_print, get_log_entry_fun, isnotebook, find_name
+from .util.utils import red_print, isnotebook, find_name
 from .vis_types import EncodingSpec
 from .state_types import DFName
 from .ui_comm import UiComm
@@ -69,25 +69,21 @@ class Midas(object):
         if assigned_name is None:
             raise UserError("must assign a name")
         self._assigned_name = assigned_name
+        logger_id = ""
         if user_id and task_id:
-            self.log_entry = get_log_entry_fun(user_id, task_id)
-            do_logging = True
-        else:
-            self.log_entry = lambda fun_name, optional_metadata=None: None
-            do_logging = False
-
-        self.config = MidasConfig(True, do_logging)
+            logger_id = user_id + "_"+ task_id
+        
+        self.config = MidasConfig(True)
 
         ui_comm = UiComm(
             is_in_ipynb,
             assigned_name,
-            do_logging,
+            logger_id,
             self._i_get_df_info,
             self.remove_df,
             self.from_ops,
             self._add_selection,
             self._get_filtered_code,
-            self.log_entry
         )
         self._ui_comm = ui_comm
         self.df_info_store = {}
@@ -108,7 +104,6 @@ class Midas(object):
             self._get_filtered_df,
             self._context.apply_selection,
             self.add_join_info,
-            self.log_entry
         )
 
 
@@ -148,7 +143,6 @@ class Midas(object):
 
 
     def _show_df(self, mdf: MidasDataFrame, spec: EncodingSpec, trigger_filter=True):
-        self.log_entry("show_df", mdf.df_name)
         if mdf.df_name is None:
             raise InternalLogicalError("df should have a name to be updated")
         df_name = mdf.df_name
@@ -158,7 +152,6 @@ class Midas(object):
             # FIXMENOW & shoud share logic with the remove_df
             self._add_selection([EmptySelection(ColumnRef(spec.x, df_name))])
         self.df_info_store[df_name] = VisualizedDFInfo(mdf)
-        # if ISDEBUG: set_trace()
         self._ui_comm.create_chart(mdf, spec)
         # now we need to see if we need to apply selection,
         # need to know if this came from a reactive cell
@@ -211,7 +204,6 @@ class Midas(object):
         self.df_info_store.pop(df_name)
 
     def create_with_table_wrap(self, table, df_name):
-        self.log_entry("load_data", df_name)
         df = MidasDataFrame.create_with_table(table, df_name, self._rt_funcs)
         self.show_profile(df)
         return df
@@ -252,7 +244,6 @@ class Midas(object):
 
 
     def add_join_info(self, join_info: JoinInfo):
-        self.log_entry("add_join_info")
         self._context.add_join_info(join_info)
 
 
@@ -351,7 +342,6 @@ class Midas(object):
             # this is a reset!
             self.current_selection = []
             self.__tick()
-            self.log_entry("code_selection", "[]")
         else:
             # have to ignore because the type checker is dumb
             current_selection: List[SelectionValue] = []
@@ -375,7 +365,6 @@ class Midas(object):
             if len(self.immediate_interaction_selection)> 0:
                 df_involved = self.immediate_interaction_selection[0].column.df_name
             self.__tick(current_selection)
-            self.log_entry("code_selection", dumps([s.to_str() for s in self.current_selection]))
 
         self._ui_comm.after_selection(current_selections_list, df_involved, len(self.all_selections))
         self.all_selections.append(self.current_selection)

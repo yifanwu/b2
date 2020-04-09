@@ -61,25 +61,23 @@ class UiComm(object):
     def __init__(self,
         is_in_ipynb: bool,
         midas_instance_name: str,
-        do_logging: bool,
+        logger_id: str,
         get_df_fun: Callable[[DFName], Optional[DFInfo]],
         remove_df_fun: Callable[[DFName], None],
         create_df_from_ops: Callable[[RelationalOp], MidasDataFrame],
         add_selection: Callable[[List[SelectionValue]], List[SelectionValue]],
-        get_filtered_code: Callable[[str], str],
-        log_entry: Callable[[str, Optional[str]], None]):
+        get_filtered_code: Callable[[str], str]):
 
         # functions passed at creation time
         self.is_in_ipynb = is_in_ipynb
         self.midas_instance_name = midas_instance_name
-        self.set_comm(midas_instance_name, do_logging)
-        self.register_recovery_comm(midas_instance_name, do_logging)
+        self.set_comm(midas_instance_name, logger_id)
+        self.register_recovery_comm(midas_instance_name, logger_id)
         self.get_df = get_df_fun
         self.remove_df_fun = remove_df_fun
         self.create_df_from_ops = create_df_from_ops
         self.add_selection = add_selection
         self.get_filtered_code = get_filtered_code
-        self.log_entry = log_entry
 
         # internal state
         self.next_id = 0
@@ -90,7 +88,6 @@ class UiComm(object):
         self.tmp_log = []
 
     def log(self, function, args, kwargs, associated_df_name: str):
-        # , fun_name: str
         self.logged_comms.append((
             function,           # 0
             args,               # 1
@@ -116,12 +113,10 @@ class UiComm(object):
             if command == "cell-ran":
                 if "code" in data:
                     code = data["code"]
-                    self.log_entry("code_execution", code)
                 return
             elif command == "markdown-cell-rendered":
                 if "code" in data:
                     code = data["code"]
-                    self.log_entry("markdown-rendered", code)
                 return
             elif command == "get-visualization-code-clipboard":
                 df_name = data["df_name"]
@@ -134,7 +129,6 @@ class UiComm(object):
                 df_name = DFName(data["df_name"])
                 self.tmp = f"{column}_{df_name}"
                 code, execute, err_message = self.create_distribution_query(column, df_name)
-                self.log_entry("column_click", df_name)
                 if code:
                     if execute:
                         # creating new line so that the horizontal scroll wouldn't occlude the code
@@ -147,11 +141,9 @@ class UiComm(object):
                         )
                         self.create_cell(code, "query", False)
                 return
-            elif command == "remove_dataframe":
+            elif command == "remove-dataframe":
                 df_name = data["df_name"]
                 self.remove_df_fun(df_name)
-                self.log_entry("remove_df", df_name)
-                # local store
                 del self.vis_spec[df_name]
                 self.remove_df_from_log(df_name)
                 return
@@ -162,16 +154,12 @@ class UiComm(object):
                 debug_log(f"add_current_selection {s}")
                 self.handle_add_current_selection(value)
                 return
-            elif command == "log_entry":
-                try:
-                    self.log_entry(data["action"], data["metadata"])
-                except KeyError as err:
-                    self.send_debug_msg(f"Logging error {json.dumps(data)}")
             else:
                 m = f"Command {command} not handled!"
                 raise NotAllCaseHandledError(m)
         else:
             debug_log(f"Got message from JS Comm: {data}")
+
 
     def internal_current_selection(self, selections: List[SelectionValue], df_name):
         all_predicate = self.add_selection(selections)
@@ -181,45 +169,28 @@ class UiComm(object):
             predicates = ", ".join(list(map(lambda v: v.to_str() if v.to_str() else "", all_predicate)))
             param_str = f"[{predicates}]"
         self.execute_selection(param_str, df_name)
-        self.log_entry("ui_selection", df_name)
 
 
     # note that this is extracted out for better debugging.
     def handle_add_current_selection(self, value: Dict):
         selections, df_name = self.get_predicate_info(value)
         self.internal_current_selection(selections, df_name)
-        
-
-    # def process_code(self, code: str):
-    #     assigned_dfs = self.get_dfs_from_code_str(code)
-    #     if len(assigned_dfs) == 0:
-    #         # do nothing
-    #         debug_log("no df to process")
-    #         return
-    #     # code_lines = []
-    #     for df in assigned_dfs:
-    #         if df.is_base_df:
-    #             # just execute it! since there is no configuration
-    #             df.show_profile()
-    #         else:
-    #             encoding = infer_encoding(df).__dict__
-    #             df.show(**encoding)
 
 
-    def set_comm(self, midas_instance_name: str, do_logging: bool):
+    def set_comm(self, midas_instance_name: str, logger_id: str):
         if self.is_in_ipynb:
             self.comm = Comm(target_name = MIDAS_CELL_COMM_NAME)
             self.comm.send({
                 "type": "initialize",
                 "name": midas_instance_name,
-                "doLogging": do_logging
+                "loggerId": logger_id
             })
             self.comm.on_msg(self.handle_msg)
         else:
             self.comm = MockComm()
 
 
-    def register_recovery_comm(self, midas_instance_name: str, do_logging: bool):
+    def register_recovery_comm(self, midas_instance_name: str, logger_id: str):
         def target_func(comm, open_msg):
             # comm is the kernel Comm instance
             # msg is the comm_open message
@@ -232,7 +203,7 @@ class UiComm(object):
                     return
                 else:
                     debug_log("Received recovery request. Reopening comm...")
-                    self.set_comm(self.midas_instance_name, do_logging)
+                    self.set_comm(self.midas_instance_name, logger_id)
                     debug_log("Clearing stored visualizations...")
                     self.vis_spec = {}
                     debug_log("Comm reopened. Rerunning logged commands...")

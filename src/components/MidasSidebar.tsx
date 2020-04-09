@@ -1,10 +1,10 @@
 import React from "react";
 import MidasContainer from "./MidasContainer";
-import { SelectionShelf } from "./SelectionShelf";
 import { ProfilerShelf } from "./ProfilerShelf";
 import { MidasContainerFunctions } from "../types";
 import { TOGGLE_MIDAS_BUTTON } from "../constants";
 import { addNotebookMenuBtn } from "../utils";
+import { LogEntryBase } from "../logging";
 
 interface MidasSidebarProps {
   columnSelectMsg: (col: string, table: string) => void;
@@ -38,15 +38,23 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
 
   toggle() {
     this.setState(prevState => {
+      const action = prevState.isShown
+        ? "hide_midas"
+        : "show_midas"
+        ;
+      const entry: LogEntryBase = {
+        action,
+        actionKind: "uiControl",
+        time: new Date(),
+      };
+      this.props.midasElementFunctions.elementFunctions.logger(entry);
       if (prevState.isShown) {
         const curWidth = $("#midas-sidebar-wrapper").width();
-        this.props.midasElementFunctions.elementFunctions.logEntry("hide_midas", "");
         return {
           isShown: !prevState.isShown,
           curWidth
         };
       } else {
-        this.props.midasElementFunctions.elementFunctions.logEntry("show_midas", "");
         return {
           isShown: !prevState.isShown,
           curWidth: prevState.curWidth
@@ -94,7 +102,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
           <ProfilerShelf
             ref={this.setProfilerShelfRef}
             columnSelectMsg={this.props.columnSelectMsg}
-            logEntry={this.props.midasElementFunctions.elementFunctions.logEntry}
+            logger={this.props.midasElementFunctions.elementFunctions.logger}
           />
         </div></>
     );

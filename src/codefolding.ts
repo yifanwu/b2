@@ -270,20 +270,20 @@ export function setUpCodeFolding(codecell: any, requirejs: any, configmod: any) 
     regBlockHelper();
     /* require our additional custom codefolding modes before initialising fully */
     if (Jupyter.notebook._fully_loaded) {
-    setTimeout(function () {
-      console.log("Codefolding: Wait for", params.init_delay, "ms");
-      initExistingCells();
-    }, params.init_delay);
+      setTimeout(function () {
+        console.log("Codefolding: Wait for", params.init_delay, "ms");
+        initExistingCells();
+      }, params.init_delay);
     }
     else {
-    Jupyter.notebook.events.one("notebook_loaded.Notebook", initExistingCells);
+      Jupyter.notebook.events.one("notebook_loaded.Notebook", initExistingCells);
     }
   }
   else {
     activate_cm_folding(Jupyter.editor.codemirror);
     setTimeout(function () {
-    console.log("Codefolding: Wait for", params.init_delay, "ms");
-    Jupyter.editor.codemirror.refresh();
+      console.log("Codefolding: Wait for", params.init_delay, "ms");
+      Jupyter.editor.codemirror.refresh();
     }, params.init_delay);
   }
 }

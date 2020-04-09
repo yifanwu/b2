@@ -5,8 +5,7 @@ import { createMidasComponent } from "./setup";
 import { AlertType, FunKind } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
 import CellManager from "./CellManager";
-
-export type LogEntryType = (action: string, metadata?: string) => void;
+import { setupLogger, LoggerFunction, LogEntryBase, LogTask, LogDataframeInteraction } from "./logging";
 
 type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
@@ -14,7 +13,7 @@ type BasicLoad = { type: string; value: string };
 type InitLoad = {
   type: string; // initialize
   name: string;
-  doLogging: boolean;
+  loggerId: string;
 };
 
 type ExecuteCodeLoad = {
@@ -126,25 +125,18 @@ export function makeComm(is_first_time = true) {
       comm.on_msg((msg: any) => {
         const load = msg.content.data as InitLoad;
         const midasInstanceName = load.name;
-        const doLogging = load.doLogging;
+        const loggerId = load.loggerId;
         if (load.type !== "initialize") {
           throw LogInternalError("Should send intiialize message first!");
         }
-        let logEntry = (action: string, metadata: string) => {};
-        if (doLogging) {
-          logEntry = (action: string, metadata: string) => {
-            comm.send({
-              "command": "log_entry",
-              "action": action,
-              "metadata": metadata
-            });
-          };
-        }
-        const cellManager = new CellManager(midasInstanceName, logEntry);
+
+        const logger = setupLogger(loggerId);
+
+        const cellManager = new CellManager(midasInstanceName, logger);
         const setUIItxFocus = cellManager.setFocus.bind(cellManager);
         const executeCapturedCells = cellManager.executeCapturedCells.bind(cellManager);
         setupCellManagerUIChanges(cellManager);
-        const containerFunctions = getContainerFunctions(comm, logEntry, setUIItxFocus, executeCapturedCells);
+        const containerFunctions = getContainerFunctions(comm, logger, setUIItxFocus, executeCapturedCells);
 
         const columnSelectMsg = (column: string, tableName: string) => {
           const payload = {
@@ -152,31 +144,28 @@ export function makeComm(is_first_time = true) {
             column,
             df_name: tableName,
           };
+          const entry: LogDataframeInteraction = {
+            action: "column_click",
+            actionKind: "selection",
+            dfName: tableName,
+            time: new Date()
+          };
+          logger(entry);
           comm.send(payload);
         };
 
-        let logEntryForResizer = (metadata: string) => {};
-        if (doLogging) {
-          logEntryForResizer = (metadata: string) => {
-            comm.send({
-              "command": "log_entry",
-              "action": "resize_midas_area",
-              "metadata": metadata
-            });
-          };
-        }
 
         const ref = createMidasComponent(
           columnSelectMsg,
-          logEntryForResizer,
+          logger,
           containerFunctions
         );
 
-        const on_msg = makeOnMsg(ref, cellManager);
+        const on_msg = makeOnMsg(ref, cellManager, logger);
         set_on_msg(on_msg);
 
         if (is_first_time) {
-          setupJupyterEvents(cellManager, comm);
+          setupJupyterEvents(cellManager, logger);
         }
       });
 
@@ -187,14 +176,11 @@ export function makeComm(is_first_time = true) {
 }
 
 
-function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
-
+function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager, logger: LoggerFunction) {
   let refToMidas = refToSidebar.getMidasContainerRef();
   let refToProfilerShelf = refToSidebar.getProfilerShelfRef();
-  // let refToSelectionShelf = refToSidebar.getSelectionShelfRef();
 
   return function on_msg(msg: any) {
-    // LogSteps("on_msg", JSON.stringify(msg));
     const load = msg.content.data as MidasCommLoad;
     switch (load.type) {
       case "notification": {
@@ -214,12 +200,17 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager) {
         enableMidasInteractions();
         return;
       }
-      // case "add_selection_to_shelf": {
-      //   const selectionLoad = load as BasicLoad;
-      //   refToSelectionShelf.addSelectionItem(selectionLoad.value);
-      //   refToMidas.drawBrush(selectionLoad.value);
-      //   break;
-      // }
+      case "taskStart": {
+        const loggerLoad = load as BasicLoad;
+        const entry: LogTask = {
+          action: "taskStart",
+          actionKind: "taskStart",
+          taskId: loggerLoad.value,
+          time: new Date(),
+        };
+        logger(entry);
+        return;
+      }
       case "reactive": {
         const cellId = msg.parent_header.msg_id;
         const reactiveLoad = load as AddReactiveCell;

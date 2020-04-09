@@ -1,3 +1,5 @@
+import { LoggerFunction } from "./logging";
+
 export enum AlertType {
   error = "error",
   debug = "debug",
@@ -11,7 +13,7 @@ export type PerChartSelectionValue = {[index: string]: SelectionValue};
 
 export interface MidasElementFunctions {
   addCurrentSelectionMsg: (valueStr: string) => void;
-  logEntry: (action: string, metadata: string) => void;
+  logger: LoggerFunction;
   // getCode: (dataFrame: string) => void;
   setUIItxFocus: (dataFrame?: string) => void;
   getChartCode: (dataFrame: string) => void;

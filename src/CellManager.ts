@@ -1,14 +1,7 @@
 import { LogDebug, commentUncommented, LogSteps, getEmojiEnnotatedComment, foldCode, showOrHideSelectionCells, findQueryCell, selectCell, deleteAllSelectionCells } from "./utils";
 import { MIDAS_SELECTION_FUN, CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, MIDAS_CURRENT_CLASS } from "./constants";
 import { FunKind } from "./types";
-import { LogEntryType } from "./comm";
-
-
-// interface CellMetaData {
-//   funName: string;
-//   // without the comment
-//   params: string;
-// }
+import { LoggerFunction, LogEntryBase } from "./logging";
 
 interface SingleCell {
   code: string;
@@ -16,26 +9,10 @@ interface SingleCell {
   time: Date;
   step: number;
   funKind: FunKind;
-  // metadata?: CellMetaData;
 }
 
-// interface ReactiveCell {
-//   cellPos: number;
-//   appendFlag: boolean;
-// }
 
 export default class CellManager {
-  /**
-   * there is a mini state machine w.r.t how the brushes are fired on the boolean value of shouldDrawBrush
-   * true ---> (itx) false
-   * false ---> (drawBrush) true
-   *
-   * current focus is set to the dataframe that currently has the focus
-     if it is null, that means no one has the focus
-     when new selections are made, they will replace the old one if the focus has NOT changed or switched to null.
-      we need current and prev because otherwise
-   */
-
   currentStep: number;
   cellsCreated: SingleCell[];
   midasInstanceName: string;
@@ -45,9 +22,9 @@ export default class CellManager {
   reactiveCells: Map<string, Set<number>>;
   reactiveCellsReverse: Map<number, string>;
   showSelectionCells: boolean;
-  logEntry: LogEntryType;
+  logger: LoggerFunction;
 
-  constructor(midasInstanceName: string, logEntry: LogEntryType) {
+  constructor(midasInstanceName: string, logger: LoggerFunction) {
     this.recordReactiveCell = this.recordReactiveCell.bind(this);
     this.toggleSelectionCells = this.toggleSelectionCells.bind(this);
 
@@ -60,7 +37,7 @@ export default class CellManager {
     this.reactiveCells = new Map();
     this.reactiveCellsReverse = new Map();
     this.showSelectionCells = true;
-    this.logEntry = logEntry;
+    this.logger = logger;
 
     // make sure that there is currently no highlighted cellconst 
     const allCells = Jupyter.notebook.get_cells();
@@ -230,8 +207,13 @@ export default class CellManager {
   toggleSelectionCells() {
     this.showSelectionCells = !this.showSelectionCells;
     showOrHideSelectionCells(this.showSelectionCells);
-    const logValue = this.showSelectionCells ? "show_selection_cells" : "hide_selection_cells";
-    this.logEntry(logValue);
+    const action = this.showSelectionCells ? "show_selection_cells" : "hide_selection_cells";
+    const entry: LogEntryBase = {
+      action,
+      actionKind: "uiControl",
+      time: new Date()
+    };
+    this.logger(entry);
   }
 
   deleteAllSelectionCells() {

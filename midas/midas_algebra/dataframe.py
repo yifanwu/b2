@@ -112,7 +112,6 @@ class RuntimeFunctions(NamedTuple):
     # get_stream: Callable[[DFName], MidasSelectionStream] 
     apply_other_selection: Callable[['MidasDataFrame', List[SelectionValue]], Optional['MidasDataFrame']]
     add_join_info: Callable[[JoinInfo], None]
-    log_entry: Optional[Callable[[str, Optional[str]], None]]
 
 
 class NotInRuntime():
@@ -479,7 +478,6 @@ class MidasDataFrame(object):
             y_type -- "ordinal" | "quantitative" | "temporal"
             sort -- "" | "x" | "y" | "-x" | "-y"
         """
-        self._rt_funcs.log_entry("show_static_df", None)
 
         spec = parse_encoding(kwargs, self)
         if spec:
