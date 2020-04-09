@@ -5,6 +5,7 @@ import { MidasSidebar } from "./components/MidasSidebar";
 import { MidasContainerFunctions } from "./types";
 import { MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW } from "./constants";
 import { LogEntry, LogResize } from "./logging";
+import { enableMidasInteractions } from "./utils";
 
 const SIDEBAR_ID = "midas-sidebar-wrapper";
 const SIDEBAR_SELECTOR = `#${SIDEBAR_ID}`;
@@ -98,6 +99,6 @@ export function createMidasComponent(
 
   makeResizer(resizeOnChange, logger);
   syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
-
+  (window as any).enableMidasInteractions = enableMidasInteractions;
   return midasRef;
 }
