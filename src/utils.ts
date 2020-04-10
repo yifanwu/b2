@@ -55,7 +55,6 @@ export function setupJupyterEvents(cellManager: CellManager, logger: LoggerFunct
   // the only issue is if the people forget to render it, oh well : /
   Jupyter.notebook.events.unbind("rendered.MarkdownCell");
   Jupyter.notebook.events.on("rendered.MarkdownCell", function(_: any, data: any) {
-    // TODO
     cellManager.updateLastExecutedCell(data.cell);
     const code = data.cell.get_text();
     const entry: LogCode = {
@@ -67,25 +66,14 @@ export function setupJupyterEvents(cellManager: CellManager, logger: LoggerFunct
       time: new Date()
     };
     logger(entry);
-    // comm.send({
-    //   command: "markdown-cell-rendered",
-    //   code,
-    // });
   });
-  // // this is for dealing with concurrency.
-  // Jupyter.notebook.events.on("kernel_idle.Kernel", function() {
-  //   window.setTimeout(enableMidasInteractions, 1000);
-  // });
-
-  // Jupyter.notebook.events.on("kernel_busy.Kernel", function() {
-  //   window.setTimeout(disableMidasInteractions, 1000);
-  // });
 }
 
 export function enableMidasInteractions() {
   const container = document.getElementById(MIDAS_CONTAINER_ID);
     if (container) {
-      // container.style.pointerEvents = "auto";
+      // also set the global flag
+      (window as any).midasSelectionEnabled = true;
       container.classList.remove(MIDAS_BUSY_CLASS);
     }
 }
@@ -93,7 +81,7 @@ export function enableMidasInteractions() {
 export function disableMidasInteractions() {
   const container = document.getElementById(MIDAS_CONTAINER_ID);
   if (container) {
-    // container.style.pointerEvents = "none";
+    (window as any).midasSelectionEnabled = false;
     container.classList.add(MIDAS_BUSY_CLASS);
   }
 }

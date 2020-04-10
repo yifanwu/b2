@@ -234,7 +234,13 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       if ((n.getTime() - l.getTime()) < DEBOUNCE_RATE) {
         clearTimeout((window as any).lastInvokedTimer);
       }
-      (window as any).lastInvokedTimer = setTimeout(() => callback(name, value), DEBOUNCE_RATE);
+      (window as any).lastInvokedTimer = setTimeout(() => {
+        if ((window as any).midasSelectionEnabled) {
+          callback(name, value);
+        } else {
+          LogDebug("Cannot execute when kernel is busy!");
+        }
+      }, DEBOUNCE_RATE);
     };
     return wrapped;
   }

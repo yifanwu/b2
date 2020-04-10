@@ -100,5 +100,6 @@ export function createMidasComponent(
   makeResizer(resizeOnChange, logger);
   syncWidth(SIDEBAR_SELECTOR, SIDE_INSIDE_SELECTOR, 10 * 2);
   (window as any).enableMidasInteractions = enableMidasInteractions;
+  enableMidasInteractions();
   return midasRef;
 }
