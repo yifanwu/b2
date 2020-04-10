@@ -344,6 +344,7 @@ class UiComm(object):
             # "appendFlag": 1 if do_append else 0
         })
 
+
     def execute_selection(self, params: str, df_name: str):
         self.comm.send({
             "type": "execute_selection",
@@ -374,6 +375,11 @@ class UiComm(object):
             "columnName": column_name,
         })
 
+    def log_start_task(self, task_id: str):
+        self.comm.send({
+            "type": "task-start",
+            "value": task_id
+        })
 
     def get_predicate_info(self, selections: Dict) -> Tuple[List[SelectionValue], str]:
         """[summary]

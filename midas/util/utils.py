@@ -22,7 +22,7 @@ from datascience import are
 
 FG_BLUE = "\x1b[34m";
 RESET_PRINT = "\x1b[0m";
-
+FG_PURPLE = "\x1b[035m"
 
 def plot(v, center, zoom_start, radius):
     import folium
@@ -52,7 +52,7 @@ def plot_heatmap(locs_df, zoom_start=12, radius=12):
         diff_len = len(locs_df) - len(filtered)
         center_lat = np.average(filtered[filtered.labels[0]])
         center_lon = np.average(filtered[filtered.labels[1]])
-        red_print(f"We filtered out {diff_len} NaN values.")
+        print(f"{FG_PURPLE}[Notification] Filtered out {diff_len} NaN values.{RESET_PRINT}")
         return plot(filtered, [center_lat, center_lon], zoom_start, radius)
     else:
         return plot(locs_df, [center_lat, center_lon], zoom_start, radius)

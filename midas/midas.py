@@ -370,6 +370,8 @@ class Midas(object):
         self.all_selections.append(self.current_selection)
         return
 
+    def log_start_task(self, task_id: str):
+        self._ui_comm.log_start_task(task_id)
 
     def _get_filtered_code(self, df_name: str):
         df = self._i_get_df(df_name)

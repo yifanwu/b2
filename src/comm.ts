@@ -200,7 +200,7 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager, logger:
         enableMidasInteractions();
         return;
       }
-      case "taskStart": {
+      case "task-start": {
         const loggerLoad = load as BasicLoad;
         const entry: LogTask = {
           action: "taskStart",
