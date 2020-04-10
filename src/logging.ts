@@ -15,7 +15,9 @@ export interface LogEntryBase {
   | "markdown_rendered"
   | "taskStart"
   | "scroll"
-  | "new_midas_instance";
+  | "new_midas_instance"
+  | "view_page"
+  | "leave_page";
   actionKind: "code" | "selection" | "text"
   | "uiControl" | "interaction2coding"
   | "coding2interaction" | "taskStart";
@@ -115,6 +117,22 @@ export function setupLogger(loggerId: string) {
     doLogEntry(entry);
   }
   window.addEventListener("scroll", throttle(logScroll, 3000), true);
+
+  document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === "visible") {
+      const entry: LogEntryBase = {
+        action: "view_page",
+        actionKind: "uiControl",
+      };
+      doLogEntry(entry);
+    } else {
+      const entry: LogEntryBase = {
+        action: "leave_page",
+        actionKind: "uiControl",
+      };
+      doLogEntry(entry);
+      }
+  });
 
   const entry: LogEntryBase = {
     action: "new_midas_instance",
