@@ -2,7 +2,7 @@ import { PerChartSelectionValue, SelectionValue, FunKind, MidasContainerFunction
 import { SelectionDimensions } from "./charts/vegaGen";
 import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG, TOGGLE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS, INTERACT_EMOJI, BUTTON_GROUP_ID } from "./constants";
 import CellManager from "./CellManager";
-import { LoggerFunction, LogCode, LogDataframeInteraction } from "./logging";
+import { LoggerFunction, LogCode, LogDataframeInteraction, ActionKind } from "./logging";
 
 export const STRICT = true;
 
@@ -109,7 +109,7 @@ export function getContainerFunctions(
     });
     const entry: LogDataframeInteraction = {
       action: "remove_df",
-      actionKind: "uiControl",
+      actionKind: "ui_control",
       dfName,
     };
     logger(entry);
@@ -343,7 +343,7 @@ function commentIfNot(l: string) {
 }
 
 /**
- * 
+ *
  * @param code
  * @param newLine
  */

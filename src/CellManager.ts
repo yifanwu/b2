@@ -211,7 +211,7 @@ export default class CellManager {
     const action = this.showSelectionCells ? "show_selection_cells" : "hide_selection_cells";
     const entry: LogEntryBase = {
       action,
-      actionKind: "uiControl",
+      actionKind: "ui_control",
     };
     this.logger(entry);
   }

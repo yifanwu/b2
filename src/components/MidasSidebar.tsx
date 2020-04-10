@@ -44,7 +44,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
         ;
       const entry: LogEntryBase = {
         action,
-        actionKind: "uiControl",
+        actionKind: "ui_control",
       };
       this.props.midasElementFunctions.elementFunctions.logger(entry);
       if (prevState.isShown) {

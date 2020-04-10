@@ -41,7 +41,7 @@ function makeResizer(
       const docWidth = $(window).width();
       const logResize: LogResize = {
         action: "resize_midas_area",
-        actionKind: "uiControl",
+        actionKind: "ui_control",
         docWidth,
         currentWidth
       };

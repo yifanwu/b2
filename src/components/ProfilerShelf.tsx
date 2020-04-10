@@ -87,7 +87,7 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
         : "show_columns_pane";
       const entry: LogEntryBase = {
         action,
-        actionKind: "uiControl",
+        actionKind: "ui_control",
       };
       this.props.logger(entry);
       return { isShownAll: !prevState.isShownAll};

@@ -1,5 +1,10 @@
 import { throttle } from "./utils";
 
+export type ActionKind = "code" | "ui_support_code"
+| "selection" | "text"
+| "ui_control" | "interaction2coding"
+| "coding2interaction" | "task_start";
+
 export interface LogEntryBase {
   action: "coding"
   | "snapshot_single" | "snapshot_all"
@@ -13,14 +18,12 @@ export interface LogEntryBase {
   | "show_selection_cells" | "hide_selection_cells"
   | "navigate_to_original_cell"
   | "markdown_rendered"
-  | "taskStart"
+  | "task_start"
   | "scroll"
   | "new_midas_instance"
   | "view_page"
   | "leave_page";
-  actionKind: "code" | "selection" | "text"
-  | "uiControl" | "interaction2coding"
-  | "coding2interaction" | "taskStart";
+  actionKind: ActionKind;
 }
 
 export interface LogCode extends LogEntryBase {
@@ -84,7 +87,7 @@ export function setupLogger(loggerId: string) {
 
   function doLogEntry(newItem: LogEntry) {
     // modify state here
-    if (newItem.action === "taskStart") {
+    if (newItem.action === "task_start") {
       currentTask = (newItem as LogTask).taskId;
     }
 
@@ -92,6 +95,12 @@ export function setupLogger(loggerId: string) {
     newItem["time"] = new Date();
     newItem["taskId"] = currentTask;
     newItem["loggerId"] = loggerId;
+
+    // process code
+    if (newItem.action === "coding") {
+      const actionKind = getActionKindFromCode((newItem as LogCode).code);
+      newItem["actionKind"] = actionKind;
+    }
 
     // push
     if (Jupyter.notebook.metadata.hasOwnProperty("history")) {
@@ -112,7 +121,7 @@ export function setupLogger(loggerId: string) {
   function logScroll() {
     const entry: LogEntryBase = {
       action: "scroll",
-      actionKind: "uiControl",
+      actionKind: "ui_control",
     };
     doLogEntry(entry);
   }
@@ -122,13 +131,13 @@ export function setupLogger(loggerId: string) {
     if (document.visibilityState === "visible") {
       const entry: LogEntryBase = {
         action: "view_page",
-        actionKind: "uiControl",
+        actionKind: "ui_control",
       };
       doLogEntry(entry);
     } else {
       const entry: LogEntryBase = {
         action: "leave_page",
-        actionKind: "uiControl",
+        actionKind: "ui_control",
       };
       doLogEntry(entry);
       }
@@ -142,3 +151,36 @@ export function setupLogger(loggerId: string) {
   return doLogEntry;
 }
 
+
+function getActionKindFromCode(code: string): ActionKind {
+  if (code.includes("display(HTML(")) {
+    // already logged in the UI interaction
+    return "ui_support_code";
+  }
+  const itx2code = [
+    ".get_filtered_data",
+    ".current_selection",
+    ".immediate_interaction_value",
+    ".immediate_interaction",
+    "%%reactive"
+  ];
+  for (let i of itx2code) {
+    if (code.includes(i)) {
+      return "interaction2coding";
+    }
+  }
+  if (code.includes(".sel([")) {
+    // if prev action was "ui_selection"
+    const len = Jupyter.notebook.metadata.history.length;
+    if (Jupyter.notebook.metadata.history[len - 1].action === "ui_selection") {
+      return "ui_support_code";
+    }
+  }
+  if (code.includes(".vis(")) {
+    const len = Jupyter.notebook.metadata.history.length;
+    if (Jupyter.notebook.metadata.history[len - 1].action === "column_click") {
+      return "ui_support_code";
+    }
+  }
+  return "code";
+}

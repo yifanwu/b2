@@ -271,7 +271,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       const action = prevState.hidden ? "show_chart" : "hide_chart";
       const entry: LogDataframeInteraction = {
         action,
-        actionKind: "uiControl",
+        actionKind: "ui_control",
         dfName:  this.props.dfName,
       };
       this.props.functions.logger(entry);
@@ -286,7 +286,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.setState(prevState => {
       const entry: LogDataframeInteraction = {
         action: prevState.isBaseShown ? "hide_midas" : "show_midas",
-        actionKind: "uiControl",
+        actionKind: "ui_control",
         dfName:  this.props.dfName,
       };
       this.props.functions.logger(entry);
@@ -399,7 +399,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
     this.props.moveElement(direction);
     const entry: LogDataframeInteraction = {
       action: "move_chart",
-      actionKind: "uiControl",
+      actionKind: "ui_control",
       dfName: this.props.dfName,
     };
     this.props.functions.logger(entry);
