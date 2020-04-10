@@ -1,6 +1,6 @@
 import { PerChartSelectionValue, SelectionValue, FunKind, MidasContainerFunctions } from "./types";
 import { SelectionDimensions } from "./charts/vegaGen";
-import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG, TOGGLE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS, INTERACT_EMOJI } from "./constants";
+import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG, TOGGLE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS, INTERACT_EMOJI, BUTTON_GROUP_ID } from "./constants";
 import CellManager from "./CellManager";
 import { LoggerFunction, LogCode, LogDataframeInteraction } from "./logging";
 
@@ -133,6 +133,7 @@ export function getContainerFunctions(
   return containerFunctions;
 }
 
+
 export function setupCellManagerUIChanges(cellManager: CellManager) {
   addNotebookMenuBtn(
     cellManager.toggleSelectionCells,
@@ -157,20 +158,30 @@ export function LogInternalError(message: string): null {
   return null;
 }
 
+export function createMenuBtnGroup() {
+  if ($(`#${BUTTON_GROUP_ID}`).length > 0) {
+    return;
+  }
+  const newButtonGroup = `<div class="btn-group" id="${BUTTON_GROUP_ID}"></div>`;
+  $("#maintoolbar-container").append(newButtonGroup);
+}
 
 export function addNotebookMenuBtn(onClick: () => void, btnId: string, btnText: string, btnTitle: string) {
-  if (!$(`#${btnId}`).length) {
-    // create if does not exist
-    const newButton = `<div class="btn-group">
-      <button
-        id="${btnId}"
-        class="btn btn-default one-time-animation"
-        title=${btnTitle}
-      >${btnText}</button>
-    </div>`;
-    $("#maintoolbar-container").append(newButton);
-    $(`#${btnId}`).click(() => onClick());
+
+  // create if does not exist
+  const newButton = `<button
+      id="${btnId}"
+      class="btn btn-default one-time-animation"
+      title=${btnTitle}
+    >${btnText}</button>`;
+
+  if ($(`#${btnId}`).length > 0) {
+    $(`#${btnId}`).off("click");
+    // $(`#${btnId}`).replaceWith(newButton);
+  } else {
+    $(`#${BUTTON_GROUP_ID}`).append(newButton);
   }
+  $(`#${btnId}`).click(() => onClick());
 }
 
 export function getEmojiEnnotatedComment(funKind: FunKind) {

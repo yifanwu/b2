@@ -52,6 +52,7 @@ export const DELETE_SELECTION_BUTTON = "midas-delete-selection-btn";
 export const SNAPSHOT_BUTTON = "midas-snap-shot-all";
 export const TOGGLE_PANE_BUTTON = "midas-toggle-pane";
 export const TOGGLE_MIDAS_BUTTON = "midas-toggle-all";
+export const BUTTON_GROUP_ID = "midas-menu-btn-group";
 
 export const MIDAS_COLAPSE_CELL_CLASS = "midas-collapse-cell";
 export const MIDAS_CURRENT_CLASS = "midas-current-cell";

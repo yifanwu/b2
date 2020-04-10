@@ -1,11 +1,11 @@
 /// <reference path="./external/Jupyter.d.ts" />
 import { MIDAS_CELL_COMM_NAME, MIDAS_RECOVERY_COMM_NAME, MIDAS_SELECTION_FUN } from "./constants";
-import { LogSteps, LogDebug, LogInternalError, setupCellManagerUIChanges, getContainerFunctions, setupJupyterEvents, enableMidasInteractions } from "./utils";
+import { LogSteps, LogDebug, LogInternalError, setupCellManagerUIChanges, getContainerFunctions, setupJupyterEvents, enableMidasInteractions, createMenuBtnGroup } from "./utils";
 import { createMidasComponent } from "./setup";
 import { AlertType, FunKind } from "./types";
 import { MidasSidebar } from "./components/MidasSidebar";
 import CellManager from "./CellManager";
-import { setupLogger, LoggerFunction, LogEntryBase, LogTask, LogDataframeInteraction } from "./logging";
+import { setupLogger, LoggerFunction, LogTask, LogDataframeInteraction } from "./logging";
 
 type CommandLoad = { type: string };
 type BasicLoad = { type: string; value: string };
@@ -131,6 +131,7 @@ export function makeComm(is_first_time = true) {
         }
 
         const logger = setupLogger(loggerId);
+        createMenuBtnGroup();
 
         const cellManager = new CellManager(midasInstanceName, logger);
         const setUIItxFocus = cellManager.setFocus.bind(cellManager);
