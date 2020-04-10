@@ -98,16 +98,12 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     let allCodeStrs: string[] = [];
     for (let key in this.refsCollection) {
       const element = this.refsCollection[key];
-      if (element) {
+      if (element && (!element.state.hidden)) {
         const svg = await element.getSvg();
         allSvgStrs.push(svg);
         const code = element.getCode();
         allCodeStrs.push(`# ${code}`);
       }
-      // try {
-      // } catch (err) {
-      //   LogInternalError(`Cannot create svg for element, with error: ${err}`);
-      // }
     }
     const combined = allSvgStrs.join("");
     const comments = "# Current snapshot queries:\n" + allCodeStrs.join("\n");
