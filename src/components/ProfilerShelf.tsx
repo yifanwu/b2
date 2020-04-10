@@ -88,7 +88,6 @@ export class ProfilerShelf extends React.Component<ProfilerShelfProps, ProfilerS
       const entry: LogEntryBase = {
         action,
         actionKind: "uiControl",
-        time: new Date()
       };
       this.props.logger(entry);
       return { isShownAll: !prevState.isShownAll};

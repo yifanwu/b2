@@ -149,7 +149,6 @@ export function makeComm(is_first_time = true) {
             action: "column_click",
             actionKind: "selection",
             dfName: tableName,
-            time: new Date()
           };
           logger(entry);
           comm.send(payload);
@@ -207,7 +206,6 @@ function makeOnMsg(refToSidebar: MidasSidebar, cellManager: CellManager, logger:
           action: "taskStart",
           actionKind: "taskStart",
           taskId: loggerLoad.value,
-          time: new Date(),
         };
         logger(entry);
         return;

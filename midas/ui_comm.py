@@ -380,6 +380,7 @@ class UiComm(object):
             "type": "task-start",
             "value": task_id
         })
+        print("Task logged", task_id)
 
     def get_predicate_info(self, selections: Dict) -> Tuple[List[SelectionValue], str]:
         """[summary]

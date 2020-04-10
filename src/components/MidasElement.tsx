@@ -210,7 +210,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         action: "ui_selection",
         actionKind: "selection",
         dfName: this.props.dfName,
-        time: new Date(),
         selection: cleanValue
       };
       this.props.functions.logger(entry);
@@ -274,7 +273,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         action,
         actionKind: "uiControl",
         dfName:  this.props.dfName,
-        time: new Date()
       };
       this.props.functions.logger(entry);
       return {
@@ -290,7 +288,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
         action: prevState.isBaseShown ? "hide_midas" : "show_midas",
         actionKind: "uiControl",
         dfName:  this.props.dfName,
-        time: new Date()
       };
       this.props.functions.logger(entry);
       if (prevState.isBaseShown) {
@@ -321,7 +318,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       action: "navigate_to_definition_cell",
       actionKind: "interaction2coding",
       dfName: this.props.dfName,
-      time: new Date()
     };
     this.props.functions.logger(entry);
   }
@@ -344,7 +340,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       action: "get_code",
       actionKind: "interaction2coding",
       dfName: this.props.dfName,
-      time: new Date()
     };
     this.props.functions.logger(entry);
   }
@@ -362,7 +357,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       action: "snapshot_single",
       actionKind: "interaction2coding",
       dfName: this.props.dfName,
-      time: new Date()
     };
     this.props.functions.logger(entry);
 
@@ -407,7 +401,6 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
       action: "move_chart",
       actionKind: "uiControl",
       dfName: this.props.dfName,
-      time: new Date()
     };
     this.props.functions.logger(entry);
   }

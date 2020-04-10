@@ -19,6 +19,18 @@ const CELL_EMOJI_ANNOTATION = {
   "interaction": INTERACT_EMOJI,
 };
 
+
+export function throttle(fn: any, wait: number) {
+  let time = Date.now();
+  return function() {
+    if ((time + wait - Date.now()) < 0) {
+      fn();
+      time = Date.now();
+    }
+  };
+}
+
+
 /**
  * set up the Jupyter event listeners
  */
@@ -44,7 +56,6 @@ export function setupJupyterEvents(cellManager: CellManager, logger: LoggerFunct
       actionKind: "code",
       cellId: data.cell.cell_id,
       cellPos: Jupyter.notebook.find_cell_index(data.cell),
-      time: new Date()
     };
     logger(entry);
   });
@@ -63,7 +74,6 @@ export function setupJupyterEvents(cellManager: CellManager, logger: LoggerFunct
       actionKind: "text",
       cellId: data.cell.cell_id,
       cellPos: Jupyter.notebook.find_cell_index(data.cell),
-      time: new Date()
     };
     logger(entry);
   });
@@ -101,7 +111,6 @@ export function getContainerFunctions(
       action: "remove_df",
       actionKind: "uiControl",
       dfName,
-      time: new Date(),
     };
     logger(entry);
   };

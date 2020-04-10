@@ -112,7 +112,6 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
     const entry: LogEntryBase = {
       action: "snapshot_all",
       actionKind: "interaction2coding",
-      time: new Date()
     };
     this.props.containerFunctions.elementFunctions.logger(entry);
   }

@@ -42,7 +42,6 @@ function makeResizer(
       const logResize: LogResize = {
         action: "resize_midas_area",
         actionKind: "uiControl",
-        time: new Date(),
         docWidth,
         currentWidth
       };

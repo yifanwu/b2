@@ -183,12 +183,13 @@ export default class CellManager {
     // modify content
     const comment = getEmojiEnnotatedComment(funKind);
     cell.set_text(comment + "\n" + code);
-    // make sure that the notebook cell is selected
+
     // if we need to hide it
     if ((funKind === "interaction") && (!this.showSelectionCells)) {
       cell.element.addClass(MIDAS_COLAPSE_CELL_CLASS);
     }
 
+    // update internal state
     this.cellsCreated.push({
       code,
       funKind,
@@ -211,7 +212,6 @@ export default class CellManager {
     const entry: LogEntryBase = {
       action,
       actionKind: "uiControl",
-      time: new Date()
     };
     this.logger(entry);
   }
