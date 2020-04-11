@@ -59,6 +59,12 @@ export function setupJupyterEvents(cellManager: CellManager, logger: LoggerFunct
     };
     logger(entry);
   });
+  // handle deletes
+  Jupyter.notebook.events.unbind("delete.Cell");
+  Jupyter.notebook.events.on("delete.Cell", function(_: any, cellData: any) {
+    cellManager.updateLastExecutedCellPos(cellData.index);
+  });
+
   // also need to instrument markdowncells
   // using "rendered.MarkdownCell" because
   // - I cannot find the creation event

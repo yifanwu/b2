@@ -19,6 +19,7 @@ export default class CellManager {
   prevFocus?: string;
   currentFocus?: string;
   lastExecutedCell?: any;
+  lastExecutedCellPos?: number;
   reactiveCells: Map<string, Set<number>>;
   reactiveCellsReverse: Map<number, string>;
   showSelectionCells: boolean;
@@ -34,6 +35,7 @@ export default class CellManager {
     this.prevFocus = undefined;
     this.currentFocus = undefined;
     this.lastExecutedCell = null;
+    this.lastExecutedCellPos = null;
     this.reactiveCells = new Map();
     this.reactiveCellsReverse = new Map();
     this.showSelectionCells = true;
@@ -143,7 +145,11 @@ export default class CellManager {
 
   getLastExecutedCellIdx() {
     if (this.lastExecutedCell) {
-      return Jupyter.notebook.find_cell_index(this.lastExecutedCell);
+      const idx = Jupyter.notebook.find_cell_index(this.lastExecutedCell);
+      if (idx !== null) {
+        return idx;
+      }
+      return this.lastExecutedCellPos;
     }
   }
 
@@ -250,5 +256,8 @@ export default class CellManager {
     this.lastExecutedCell = cell;
     // add new
     cell.element.addClass(MIDAS_CURRENT_CLASS);
+  }
+  updateLastExecutedCellPos(idx: number) {
+    this.lastExecutedCellPos = idx;
   }
 }
