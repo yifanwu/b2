@@ -48,10 +48,8 @@ def static_vega_gen(encoding: EncodingSpec, df):
                 },
             }
         }
-        print("static sort", encoding.sort)
         if encoding.sort != "":
             barSpec["encoding"]["x"]["sort"] = encoding.sort
-            print("static spec", barSpec)
         return barSpec
     elif encoding.mark == "circle":
         scatterSpec = {
