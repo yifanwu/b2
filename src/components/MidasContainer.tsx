@@ -311,6 +311,7 @@ export default class MidasContainer extends React.Component<ContainerProps, Cont
         : "midas-alerts-debug";
         const newDiv = <div
           className={`midas-alert ${className}`}
+          key={`midas-alert-${i}`}
         >
         <CloseButton
           onClick={() => this.removeAlert(i)}

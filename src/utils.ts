@@ -299,7 +299,12 @@ export function selectCell(cell: any, scroll: boolean) {
   } else {
     Jupyter.notebook.select(currentIdx);
     if (scroll) {
-      cell.code_mirror.display.lineDiv.scrollIntoView({behavior: "smooth"});
+      setTimeout(() => {
+        // without this timeout, there was some weird concurrency issue that 
+        // disables the scrolling
+        // console.log("scrolling", JSON.stringify(cell.code_mirror.display.lineDiv), cell.code_mirror.display.lineDiv);
+        cell.code_mirror.display.lineDiv.scrollIntoView({behavior: "smooth"});
+      }, 500);
     }
   }
 }
