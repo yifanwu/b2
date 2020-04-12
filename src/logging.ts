@@ -175,12 +175,14 @@ function getActionKindFromCode(code: string): ActionKind {
     if (Jupyter.notebook.metadata.history[len - 1].action === "ui_selection") {
       return "ui_support_code";
     }
+    return "coding2interaction";
   }
   if (code.includes(".vis(")) {
     const len = Jupyter.notebook.metadata.history.length;
     if (Jupyter.notebook.metadata.history[len - 1].action === "column_click") {
       return "ui_support_code";
     }
+    return "coding2interaction";
   }
   return "code";
 }
