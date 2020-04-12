@@ -9,7 +9,7 @@ export interface LogEntryBase {
   action: "coding"
   | "snapshot_single" | "snapshot_all"
   | "move_chart" | "resize_midas_area"
-  | "hide_midas" | "show_midas"
+  | "hide_base_data" | "show_base_data"
   | "hide_columns_pane" | "show_columns_pane"
   | "show_chart" | "hide_chart"
   | "column_click" | "ui_selection"
@@ -172,7 +172,8 @@ function getActionKindFromCode(code: string): ActionKind {
   if (code.includes(".sel([")) {
     // if prev action was "ui_selection"
     const len = Jupyter.notebook.metadata.history.length;
-    if (Jupyter.notebook.metadata.history[len - 1].action === "ui_selection") {
+    const prevAction = Jupyter.notebook.metadata.history[len - 1].action;
+    if (( prevAction === "ui_selection") || (prevAction === "remove_df")) {
       return "ui_support_code";
     }
     return "coding2interaction";

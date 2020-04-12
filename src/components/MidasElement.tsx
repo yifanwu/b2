@@ -285,7 +285,9 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
   toggleBaseData() {
     this.setState(prevState => {
       const entry: LogDataframeInteraction = {
-        action: prevState.isBaseShown ? "hide_midas" : "show_midas",
+        action: prevState.isBaseShown
+          ? "hide_base_data"
+          : "show_base_data",
         actionKind: "ui_control",
         dfName:  this.props.dfName,
       };

@@ -203,9 +203,11 @@ export default class CellManager {
       step: this.currentStep,
       time: new Date()
     });
+
     if (shouldExecute) {
       this.executeCell(cell, funKind);
     } else {
+      // FIXME: this shouldn't even happen...
       selectCell(cell, false);
     }
     return cell;
