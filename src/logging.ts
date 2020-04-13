@@ -153,6 +153,7 @@ export function setupLogger(loggerId: string) {
 
 
 function getActionKindFromCode(code: string): ActionKind {
+  const history = Jupyter.notebook.metadata.history;
   if (code.includes("display(HTML(")) {
     // already logged in the UI interaction
     return "ui_support_code";
@@ -171,17 +172,23 @@ function getActionKindFromCode(code: string): ActionKind {
   }
   if (code.includes(".sel([")) {
     // if prev action was "ui_selection"
-    const len = Jupyter.notebook.metadata.history.length;
-    const prevAction = Jupyter.notebook.metadata.history[len - 1].action;
+    const len = history.length;
+    const prevAction = history[len - 1].action;
     if (( prevAction === "ui_selection") || (prevAction === "remove_df")) {
       return "ui_support_code";
     }
     return "coding2interaction";
   }
   if (code.includes(".vis(")) {
-    const len = Jupyter.notebook.metadata.history.length;
-    if (Jupyter.notebook.metadata.history[len - 1].action === "column_click") {
+    const len = history.length;
+    if (history[len - 1].action === "column_click") {
       return "ui_support_code";
+    }
+    // sometimes there is a scroll if the cell has been created before
+    if ((len > 1)
+      && (history[len - 2].action === "column_click")
+      && (history[len - 1].action === "scroll")) {
+        return "ui_support_code";
     }
     return "coding2interaction";
   }
