@@ -675,37 +675,44 @@ class VisualizedDFInfo(DFInfo):
 
 
 
-def get_midas_code(op: RelationalOp) -> str:
+def get_midas_code(op: RelationalOp, midas_reference_name: str) -> str:
     if op.op_type == RelationalOpType.base:
          b_op = cast(BaseOp, op)
          return b_op.df_name
     else:
-        prev_table = get_midas_code(op.child)
+        prev_table = get_midas_code(op.child, midas_reference_name)
 
         if op.op_type == RelationalOpType.where:
             s_op = cast(Where, op)
             col_or_label = convert_value_or_predicate(
-              s_op.predicate.column_or_label
+              s_op.predicate.column_or_label,
+              midas_reference_name
             )
 
             val_or_pred = convert_value_or_predicate(
-              s_op.predicate.value_or_predicate
+              s_op.predicate.value_or_predicate,
+              midas_reference_name
             )
 
-            other = convert_value_or_predicate(
-              s_op.predicate.other
-            )
-
-            new_table = f"{prev_table}.where({col_or_label}, {val_or_pred}, {other})"
-            return new_table
+            if s_op.predicate.other is None:
+                return f"{prev_table}.where({col_or_label}, {val_or_pred})"
+            else:
+                other = convert_value_or_predicate(
+                    s_op.predicate.other,
+                    midas_reference_name
+                )
+                return f"{prev_table}.where({col_or_label}, {val_or_pred}, {other})"
         if op.op_type == RelationalOpType.project:
             p_op = cast(Select, op)
             new_table = f"{prev_table}.select({p_op.columns!r})"
             return new_table
         if op.op_type == RelationalOpType.groupby:
             g_op = cast(GroupBy, op)
-            new_table = f"{prev_table}.group({g_op.columns!r}, {get_lambda_declaration_or_fn_name(g_op.collect)})"
-            return new_table
+            if g_op.collect is None:
+                return f"{prev_table}.group({g_op.columns!r})"
+            else:
+                group_fun = get_lambda_declaration_or_fn_name(g_op.collect)
+                return f"{prev_table}.group({g_op.columns!r}, {group_fun})"
         if op.op_type == RelationalOpType.join:
             j_op = cast(Join, op)
             join_prep_code = ""
@@ -737,7 +744,8 @@ def convert_value_or_predicate(val_or_pred, midas_reference_name) -> str:
         closure_vars = inspect.getclosurevars(val_or_pred.f).nonlocals
 
         # Create the assignment of parameters
-        assignments = ", ".join(f"{k}={v}" for k, v in closure_vars.items())
+        # assignments = ", ".join(f"{k}={v}" for k, v in closure_vars.items())
+        assignments = ", ".join(f"{v}" for _, v in closure_vars.items())
 
         _, line_no = inspect.getsourcelines(val_or_pred)
         lines, _ = inspect.findsource(inspect.getmodule(val_or_pred))
