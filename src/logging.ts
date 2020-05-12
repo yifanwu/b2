@@ -7,6 +7,7 @@ export type ActionKind = "code" | "ui_support_code"
 
 export interface LogEntryBase {
   action: "coding"
+  | "typing"
   | "snapshot_single" | "snapshot_all"
   | "move_chart" | "resize_midas_area"
   | "hide_base_data" | "show_base_data"
@@ -24,6 +25,10 @@ export interface LogEntryBase {
   | "view_page"
   | "leave_page";
   actionKind: ActionKind;
+}
+
+export interface LogKeyStroke extends LogEntryBase {
+  keyStroke: string;
 }
 
 export interface LogCode extends LogEntryBase {
@@ -125,7 +130,17 @@ export function setupLogger(loggerId: string) {
     };
     doLogEntry(entry);
   }
+
+  function logTyping(event: any) {
+    const entry: LogKeyStroke = {
+      action: "typing",
+      actionKind: "code",
+      keyStroke: String.fromCharCode(event.keyCode)
+    };
+    doLogEntry(entry);
+  }
   window.addEventListener("scroll", throttle(logScroll, 3000), true);
+  window.addEventListener("keydown", logTyping, true);
 
   document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === "visible") {
@@ -163,6 +178,7 @@ function getActionKindFromCode(code: string): ActionKind {
     ".current_selection",
     ".immediate_interaction_value",
     ".immediate_interaction",
+    ".all_selections",
     "%%reactive"
   ];
   for (let i of itx2code) {
