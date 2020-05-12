@@ -1,17 +1,18 @@
 import React from "react";
+import { SYS_NAME } from "../constants";
 
 export const ChartsViewLandingPage: React.StatelessComponent<{}> = () => {
   return <>
     <div className="card landing-card">
       <div>
         <h4>Load Data</h4>
-        <p>To load data, use <span className="code">m.from_file("path/to/your_data.csv")</span>, the columns will show up to the right.</p>
+        <p>To load data, use <span className="code">.from_file("path/to/your_data.csv")</span>, the columns will show up to the right.</p>
         <h4>Load Charts</h4>
         <p>For any dataframes, you can visualize it here with <span className="code">.vis()</span>.</p>
         <h4>Making Interactions</h4>
         <p>
-          All the loaded charts by default are augmented with interactivity. You can <b>zoom</b> by <span className="action-instruction">scrolling</span> your mouse, <b>pan</b> by dragging the view.
-          You can also <b>select</b> a subset of the data by <b><span className="action-instruction">shift click</span></b> with a bar chart, or <span className="action-instruction">shift-drag</span> to draw the brush, with a scatter plot or line chart.
+          All the loaded charts by default are augmented with interactivity by default.
+          You can <b>select</b> a subset of the data by <b><span className="action-instruction">shift click</span></b> with a bar chart, or <span className="action-instruction">shift-drag</span> to draw the brush, with a scatter plot or line chart.
         </p>
         <h4>Recording/Restoring Interactions</h4>
         <p>

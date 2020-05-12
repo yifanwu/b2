@@ -444,7 +444,7 @@ export class MidasElement extends React.Component<MidasElementProps, MidasElemen
             <div className="midas-chart-action">
               {toggleSummaryPin}
               <a title="Snap an image of chat to notebook" onClick={() => this.snapToCell()}>📷 snapshot to notebook</a>
-              <a title="Copy data query code to clopboard" onClick={() => this.copyCodeToClipboard()}>📋 copy code to clipboard</a>
+              <a title="Copy code to derived the filtered data to clopboard. Cmd+V in a cell to see the results." onClick={() => this.copyCodeToClipboard()}>📋 copy code to clipboard</a>
               <a title="Copy visual code definitions to clippboard" onClick={() => this.changeVisual()}>📊 find defining cell</a>
               <a title="Move chart left" onClick={() => this.move("left")}>⬅️ move left</a>
               <a title="Move chart right" onClick={() => this.move("right")}>➡️ move right</a>
