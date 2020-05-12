@@ -466,6 +466,31 @@ class MidasDataFrame(object):
     def plot_heatmap(self, zoom_start=12, radius=12):
         return plot_heatmap(self, zoom_start, radius)
 
+    def linear_regression(self, x: str, y: str):
+        """simple 1D linear regression
+
+        Arguments:
+            x {str} -- the x column
+            y {str} -- the y column
+
+        Returns:
+            a tuple of the slope and intercept
+        """
+        x_vals = self[x]
+        y_vals = self[y]
+        # mean of our inputs and outputs
+        x_mean = np.mean(x_vals)
+        y_mean = np.mean(y_vals)
+        n = len(self)
+        numerator = 0
+        denominator = 0
+        for i in range(n):
+            numerator += (x_vals[i] - x_mean) * (y_vals[i] - y_mean)
+            denominator += (x_vals[i] - x_mean) ** 2
+            
+        slope = numerator / denominator
+        intercept = y_mean - (slope * x_mean)
+        return intercept, slope
 
     def static_vis(self, **kwargs):
         """This function is called inplace of `vis` for reactive cells, whose participation in the event loop is different from the others.
