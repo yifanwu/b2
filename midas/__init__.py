@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 from warnings import warn
 
-from .midas import Midas
+from .midas import B2
 from .midas_algebra.dataframe import MidasDataFrame
 
-__all__ = ['Midas', 'MidasDataFrame']
+__all__ = ['B2', 'MidasDataFrame']
 
 __version__ = '0.0.2'
 

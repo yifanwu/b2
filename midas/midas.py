@@ -38,7 +38,7 @@ from .config import MidasConfig
 is_in_ipynb = isnotebook()
 
 
-class Midas(object):
+class B2(object):
     """[summary]
     The Midas object holds the environment that controls different dataframes
     convention:
@@ -378,7 +378,7 @@ class Midas(object):
         if df is None or df.table is None:
             return self._get_original_code(df_name)
         else:
-            return get_midas_code(df._ops)
+            return get_midas_code(df._ops, self._assigned_name)
 
         
 
@@ -386,9 +386,9 @@ class Midas(object):
         df_info = self._i_get_df_info(df_name)
         if type(df_info) == VisualizedDFInfo:
             visualized_df_info = cast(VisualizedDFInfo, df_info)
-            return get_midas_code(visualized_df_info.original_df._ops)
+            return get_midas_code(visualized_df_info.original_df._ops, self._assigned_name)
         else:
             raise InternalLogicalError(f"{df_name} is not visualized")
 
 
-__all__ = ['Midas']
+__all__ = ['B2']

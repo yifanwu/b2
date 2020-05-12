@@ -2,7 +2,7 @@ import React from "react";
 import MidasContainer from "./MidasContainer";
 import { ProfilerShelf } from "./ProfilerShelf";
 import { MidasContainerFunctions } from "../types";
-import { TOGGLE_MIDAS_BUTTON } from "../constants";
+import { TOGGLE_MIDAS_BUTTON, SYS_NAME, SYS_DISPLAY_NAME } from "../constants";
 import { addNotebookMenuBtn } from "../utils";
 import { LogEntryBase } from "../logging";
 
@@ -30,7 +30,7 @@ export class MidasSidebar extends React.Component<MidasSidebarProps, MidasSideba
     };
 
     this.toggle = this.toggle.bind(this);
-    addNotebookMenuBtn(this.toggle, TOGGLE_MIDAS_BUTTON, "Toggle Midas", "Toggle the Midas pane");
+    addNotebookMenuBtn(this.toggle, TOGGLE_MIDAS_BUTTON, `Toggle ${SYS_DISPLAY_NAME}`, `Toggle the ${SYS_DISPLAY_NAME} pane`);
 
     this.setMidasContainerRef = this.setMidasContainerRef.bind(this);
     this.setProfilerShelfRef = this.setProfilerShelfRef.bind(this);

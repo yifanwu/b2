@@ -3,13 +3,12 @@ import ReactDOM from "react-dom";
 
 import { MidasSidebar } from "./components/MidasSidebar";
 import { MidasContainerFunctions } from "./types";
-import { MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW } from "./constants";
+import { MIN_SIDE_BAR_PX_WIDTH_FOR_DAHSBOARD_VIEW, SIDEBAR_ID, SIDE_INSIDE } from "./constants";
 import { LogEntry, LogResize } from "./logging";
 import { enableMidasInteractions } from "./utils";
 
-const SIDEBAR_ID = "midas-sidebar-wrapper";
 const SIDEBAR_SELECTOR = `#${SIDEBAR_ID}`;
-const SIDE_INSIDE_SELECTOR = "#midas-inside";
+const SIDE_INSIDE_SELECTOR = `#${SIDE_INSIDE}`;
 /**
  * Makes the resizer that allows changing the width of the sidebar.
  * @param divToResize the div representing the sidebar.

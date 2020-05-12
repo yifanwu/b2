@@ -6,7 +6,6 @@ from pandas import notnull
 from typing import Tuple
 from IPython.core.debugger import set_trace
 
-# from midas.midas_algebra.dataframe import MidasDataFrame
 from midas.constants import ISDEBUG
 from .errors import InternalLogicalError
 from midas.constants import IS_OVERVIEW_FIELD_NAME, MAX_BINS, STUB_DISTRIBUTION_BIN, MAX_GENERATED_BINS
@@ -27,7 +26,7 @@ DATE_HIERARCHY = [
 ]
 
 
-# MidasDataFrame
+# B2DataFrame
 def static_vega_gen(encoding: EncodingSpec, df):
     records = dataframe_to_dict(df, FilterLabelOptions.none)
     # data = json.dumps(records)
@@ -132,18 +131,18 @@ def get_datetime_distribution_code(col_name, df):
     return ("", False, "Cannot parse the date time column")
 
 
-def get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df_name, new_name, midas_reference_name) -> Tuple[str, bool, str]:
+def get_numeric_distribution_code(current_max_bins, unique_vals, col_name, df_name, new_name, reference_name) -> Tuple[str, bool, str]:
     d_max = unique_vals[-1]
     d_min = unique_vals[0]
     min_bucket_size = (d_max - d_min) / MAX_GENERATED_BINS
     # imports = "import numpy as np"
     try:
         bound = snap_to_nice_number(min_bucket_size)
-        code = create_binning_code(bound, col_name, df_name, new_name, midas_reference_name)
+        code = create_binning_code(bound, col_name, df_name, new_name, reference_name)
         return (code, True, "")
     except InternalLogicalError as e:
         # let's still given them a stub code
-        code = create_binning_code(STUB_DISTRIBUTION_BIN, col_name, df_name, new_name, midas_reference_name)
+        code = create_binning_code(STUB_DISTRIBUTION_BIN, col_name, df_name, new_name, reference_name)
         return (f"# Please fix the following \n{code}", False, f"We were not able to create a distribution for column {col_name}, df {df_name}, because of error: {e}.")
     
 
@@ -226,7 +225,7 @@ def sanitize_dataframe(df: Table):
             df[col_name] = np.where(notnull(col), col, None).astype(object)
     return df
 
-# MidasDataFrame
+# B2DataFrame
 def dataframe_to_dict(df, include_filter_label: FilterLabelOptions):
     """[summary]
     

@@ -1,6 +1,6 @@
 import { PerChartSelectionValue, SelectionValue, FunKind, MidasContainerFunctions } from "./types";
 import { SelectionDimensions } from "./charts/vegaGen";
-import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG, TOGGLE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS, INTERACT_EMOJI, BUTTON_GROUP_ID } from "./constants";
+import { CELL_METADATA_FUN_TYPE, MIDAS_COLAPSE_CELL_CLASS, IS_DEBUG, TOGGLE_SELECTION_BUTTON, MIDAS_CONTAINER_ID, MIDAS_BUSY_CLASS, INTERACT_EMOJI, BUTTON_GROUP_ID, SYS_DISPLAY_NAME } from "./constants";
 import CellManager from "./CellManager";
 import { LoggerFunction, LogCode, LogDataframeInteraction, ActionKind } from "./logging";
 
@@ -154,7 +154,7 @@ export function setupCellManagerUIChanges(cellManager: CellManager) {
     cellManager.toggleSelectionCells,
     TOGGLE_SELECTION_BUTTON,
     `Toggle ${INTERACT_EMOJI}`,
-    "Click to toggle Midas selection cells.",
+    `Click to toggle selection cells.`,
   );
   // addNotebookMenuBtn(
   //   cellManager.deleteAllSelectionCells,

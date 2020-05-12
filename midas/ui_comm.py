@@ -242,7 +242,7 @@ class UiComm(object):
 
         # if ISDEBUG: set_trace()
         records = dataframe_to_dict(df, FilterLabelOptions.unfiltered)
-        code = get_midas_code(df._ops)
+        code = get_midas_code(df._ops, self.midas_instance_name)
         # TODO: check if we even need to do the dumping
         data = json.dumps(records)
         hash_val = df._id + "_" + encoding.to_hash()

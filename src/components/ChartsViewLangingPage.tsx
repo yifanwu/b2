@@ -19,7 +19,7 @@ export const ChartsViewLandingPage: React.StatelessComponent<{}> = () => {
         </p>
         <h4>Toggle and Resize Panes</h4>
         <p>
-          To toggle this pane (restoring the traditional notebook view), click on <b>Toggle Midas</b>, from the menu bar on the top. Similarly, you can click <b>Toggle Column Shelf</b> to just hide the pane to the right.
+          To toggle this pane (restoring the traditional notebook view), click on <b>Toggle {SYS_NAME}</b>, from the menu bar on the top. Similarly, you can click <b>Toggle Column Shelf</b> to just hide the pane to the right.
         </p>
         <p>To resize, you can also drag the left edge of the the main (blue)pane---the resizer will be highlighted with a darker shade of blue when you hover over.</p>
         <br></br>

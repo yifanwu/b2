@@ -43,18 +43,23 @@ export const MULTICLICK_SIGNAL = "select";
 export const MULTICLICK_PIXEL_SIGNAL = "select_tuple";
 export const MULTICLICK_TOGGLE = "select_toggle";
 
+export const SYS_DISPLAY_NAME = "B2";
+export const SYS_NAME = "midas";
 // internal structures of the notebook that we will modify
-export const CELL_METADATA_FUN_TYPE = "midasFunType";
+export const CELL_METADATA_FUN_TYPE = `${SYS_NAME}FunType`;
 
 // some div ids that we use
-export const TOGGLE_SELECTION_BUTTON = "midas-toggle-selection-btn";
-export const DELETE_SELECTION_BUTTON = "midas-delete-selection-btn";
-export const SNAPSHOT_BUTTON = "midas-snap-shot-all";
-export const TOGGLE_PANE_BUTTON = "midas-toggle-pane";
-export const TOGGLE_MIDAS_BUTTON = "midas-toggle-all";
-export const BUTTON_GROUP_ID = "midas-menu-btn-group";
+export const TOGGLE_SELECTION_BUTTON = `${SYS_NAME}-toggle-selection-btn`;
+export const DELETE_SELECTION_BUTTON = `${SYS_NAME}-delete-selection-btn`;
+export const SNAPSHOT_BUTTON = `${SYS_NAME}-snap-shot-all`;
+export const TOGGLE_PANE_BUTTON = `${SYS_NAME}-toggle-pane`;
+export const TOGGLE_MIDAS_BUTTON = `${SYS_NAME}-toggle-all`;
+export const BUTTON_GROUP_ID = `${SYS_NAME}-menu-btn-group`;
 
-export const MIDAS_COLAPSE_CELL_CLASS = "midas-collapse-cell";
-export const MIDAS_CURRENT_CLASS = "midas-current-cell";
-export const MIDAS_CONTAINER_ID = "midas-content-container";
-export const MIDAS_BUSY_CLASS = "midas-selection-busy";
+export const SIDEBAR_ID = `${SYS_NAME}-sidebar-wrapper`;
+export const SIDE_INSIDE = `${SYS_NAME}-inside`;
+
+export const MIDAS_COLAPSE_CELL_CLASS = `${SYS_NAME}-collapse-cell`;
+export const MIDAS_CURRENT_CLASS = `${SYS_NAME}-current-cell`;
+export const MIDAS_CONTAINER_ID = `${SYS_NAME}-content-container`;
+export const MIDAS_BUSY_CLASS = `${SYS_NAME}-selection-busy`;

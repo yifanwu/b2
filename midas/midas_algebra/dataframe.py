@@ -436,10 +436,10 @@ class MidasDataFrame(object):
         return self._rt_funcs.get_filtered_df(self.df_name)
 
 
-    def get_code(self):
-        """returns the code used to generate the current dataframe
-        """
-        return get_midas_code(self._ops)
+    # def get_code(self):
+    #     """returns the code used to generate the current dataframe
+    #     """
+    #     return get_midas_code(self._ops)
 
 
     def vis(self, **kwargs):
@@ -690,7 +690,7 @@ def get_midas_code(op: RelationalOp) -> str:
             else:
                 if not(hasattr(j_op.other, "_suggested_df_name") or hasattr(j_op.other._suggested_df_name, "_suggested_df_name")):
                     raise InternalLogicalError("the join df should have a suggested name")
-                ops_code = get_midas_code(j_op.other._ops)
+                ops_code = get_midas_code(j_op.other._ops, midas_reference_name)
                 join_prep_code = f"{j_op.other._suggested_df_name} = {ops_code}"
                 other_df_name = j_op.other._suggested_df_name
             new_table = f"{join_prep_code}\n{prev_table}.join({j_op.self_columns!r}, {other_df_name}, {j_op.other_columns!r})"
@@ -699,7 +699,7 @@ def get_midas_code(op: RelationalOp) -> str:
             raise NotImplementedError(op.op_type)   
 
 
-def convert_value_or_predicate(val_or_pred) -> str:
+def convert_value_or_predicate(val_or_pred, midas_reference_name) -> str:
     """Convert a value or predicate into a code string.
 
     val_or_red: intended to be a function or callable from the
@@ -729,7 +729,7 @@ def convert_value_or_predicate(val_or_pred) -> str:
         # within the correct predicate function)
         f = max(function_nodes, key=operator.attrgetter("lineno")).name # type: ignore
 
-        return f"m.are.{f}({assignments})"
+        return f"{midas_reference_name}.are.{f}({assignments})"
     elif inspect.isfunction(val_or_pred):
         return get_lambda_declaration_or_fn_name(val_or_pred)
     else:
