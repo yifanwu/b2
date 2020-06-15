@@ -9,8 +9,6 @@ For more information, see https://github.com/yifanwu/midas.
 
 DESCRIPTION         = "Midas: Reification of interactions in Jupyter Notebook"
 NAME                = "midas-ext"
-PACKAGES            = ['midas',
-                       'midas.tests']
 PACKAGE_DATA        = {'midas': ['static/*.js',
                                  'static/*.js.map',
                                  'static/*.html']}
@@ -34,7 +32,7 @@ import os
 import re
 
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
     from distutils.core import setup
 
@@ -70,7 +68,7 @@ setup(name=NAME,
       url=URL,
       download_url=DOWNLOAD_URL,
       license=LICENSE,
-      packages=PACKAGES,
+      packages=find_packages(),
       package_data=PACKAGE_DATA,
       data_files=DATA_FILES,
     #   extras_require=EXTRAS_REQUIRE,

@@ -5,10 +5,10 @@ export const CHART_HEIGHT = 120;
 export const INTERACT_EMOJI = "🔵";
 
 // derived from config
-export const EmbedConfig = IS_DEBUG
-  ? {actions: true, renderer: "svg"}
-  : {actions: false, renderer: "svg"}
-  ;
+export const EmbedConfig = {actions: true, renderer: "svg"};
+// = IS_DEBUG
+// : {actions: false, renderer: "svg"}
+// ;
 
 // in px
 export const CONTAINER_INIT_WIDTHS = 768; // set via css
