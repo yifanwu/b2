@@ -6,8 +6,8 @@ from datascience.tables import Table
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_any_dtype 
 from IPython.core.debugger import set_trace
 
-from midas.util.errors import type_check_with_warning, InternalLogicalError
-from midas.vis_types import EncodingSpec
+from .util.errors import type_check_with_warning, InternalLogicalError
+from .vis_types import EncodingSpec
 
 
 def toggle_x_y(selection_dimensions: Literal["", "x", "y", "xy"]):

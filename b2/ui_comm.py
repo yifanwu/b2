@@ -1,5 +1,4 @@
 from datetime import datetime
-from midas.config import IS_DEBUG
 from IPython import get_ipython 
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_datetime64_any_dtype 
 from ipykernel.comm import Comm # type: ignore
@@ -14,14 +13,13 @@ import inspect
 
 # for development
 from IPython.core.debugger import set_trace
-from midas.constants import ISDEBUG
+from .constants import ISDEBUG
 
-from midas.midas_algebra.data_types import DFId
-from midas.midas_algebra.selection import SelectionValue
+from .algebra.data_types import DFId
+from .algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, VisualizedDFInfo, get_midas_code
+from .algebra.selection import SelectionValue, NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
 from .constants import MIDAS_CELL_COMM_NAME, MAX_BINS, MIDAS_RECOVERY_COMM_NAME, STUB_DISTRIBUTION_BIN
-from midas.state_types import DFName
-from midas.midas_algebra.dataframe import MidasDataFrame, RelationalOp, DFInfo, VisualizedDFInfo, get_midas_code
-from midas.midas_algebra.selection import NumericRangeSelection, SetSelection, ColumnRef, EmptySelection
+from .state_types import DFName
 from .util.errors import InternalLogicalError, MockComm, debug_log, NotAllCaseHandledError
 from .util.utils import sanitize_string_for_var_name
 from .vis_types import EncodingSpec, FilterLabelOptions

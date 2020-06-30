@@ -6,12 +6,11 @@ from pandas import notnull
 from typing import Tuple
 from IPython.core.debugger import set_trace
 
-from midas.constants import ISDEBUG
+from b2.constants import IS_OVERVIEW_FIELD_NAME, MAX_BINS, STUB_DISTRIBUTION_BIN, MAX_GENERATED_BINS
+from b2.vis_types import FilterLabelOptions, EncodingSpec
+
 from .errors import InternalLogicalError
-from midas.constants import IS_OVERVIEW_FIELD_NAME, MAX_BINS, STUB_DISTRIBUTION_BIN, MAX_GENERATED_BINS
-from midas.vis_types import FilterLabelOptions
 from .utils import sanitize_string_for_var_name
-from midas.vis_types import EncodingSpec
 
 
 def get_chart_title(df_name: str):

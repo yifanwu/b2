@@ -1,5 +1,5 @@
 from typing import Any, Optional
-from midas.config import IS_DEBUG
+from b2.config import IS_DEBUG
 
 class bcolors:
     HEADER = '\033[95m'

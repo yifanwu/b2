@@ -8,7 +8,7 @@ Symlink files instead of copying files:
 python setup.py develop
 yarn install
 npm run build # yarn watch if in dev mode for continuous update
-jupyter nbextension install --py --symlink midas
+jupyter nbextension install --py --symlink B2
 ```
 
 You will need to understand how [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) work.
@@ -38,4 +38,4 @@ Code with `#REDZONE` are places where it is brittle and assumptions might be bro
 
 ### Asynchrony
 
-Right when the user does the interaction, the Midas pane is set to be busy---interactions are disabled. Then when it gets the last ack from the code (`after_selection`), it releases.
+Right when the user does the interaction, the pane is set to be busy---interactions are disabled. Then when it gets the last ack from the code (`after_selection`), it releases.

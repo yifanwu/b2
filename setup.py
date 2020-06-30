@@ -1,28 +1,28 @@
 LONG_DESCRIPTION = """
-Midas
+B2
 ============
 
 Reification of interactions in Jupyter Notebook.
 
-For more information, see https://github.com/yifanwu/midas.
+For more information, see https://github.com/yifanwu/b2.
 """
 
-DESCRIPTION         = "Midas: Reification of interactions in Jupyter Notebook"
-NAME                = "midas-ext"
-PACKAGE_DATA        = {'midas': ['static/*.js',
+DESCRIPTION         = "B2: easy EDA in Jupyter Notebook"
+NAME                = "b2-ext"
+PACKAGE_DATA        = {'b2': ['static/*.js',
                                  'static/*.js.map',
                                  'static/*.html']}
 AUTHOR              = 'Yifan Wu'
 AUTHOR_EMAIL        = 'yifanwu@berkeley.edu'
-URL                 = 'http://github.com/yifanwu/midas'
-DOWNLOAD_URL        = 'http://github.com/yifanwu/midas'
+URL                 = 'http://github.com/yifanwu/b2'
+DOWNLOAD_URL        = 'http://github.com/yifanwu/b2'
 LICENSE             = 'BSD 3-clause'
 DATA_FILES          = [
-                            ('share/jupyter/nbextensions/midas', [
-                             'midas/static/index.js',
-                             'midas/static/index.js.map'
+                            ('share/jupyter/nbextensions/b2', [
+                             'b2/static/index.js',
+                             'b2/static/index.js.map'
                             ]),
-                            ('etc/jupyter/nbconfig/notebook.d' , ['midas.json'])
+                            ('etc/jupyter/nbconfig/notebook.d' , ['b2.json'])
                         ]
 # EXTRAS_REQUIRE      = {'foldcode': ['codemirror/addon/fold/foldcode']}
 
@@ -56,7 +56,7 @@ def version(path):
     raise RuntimeError("Unable to find version string.")
 
 
-VERSION = version('midas/__init__.py')
+VERSION = version('b2/__init__.py')
 
 
 setup(name=NAME,

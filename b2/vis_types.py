@@ -1,5 +1,5 @@
 from enum import Enum
-from midas.util.errors import UserError
+from b2.util.errors import UserError
 from typing import List, Any, Dict, Optional
 from typing_extensions import Literal
 
@@ -51,7 +51,7 @@ class EncodingSpec(object):
         selection_dimensions: Literal["", "x", "y", "xy"],
         sort: Literal["x", "y", "-y", "-x", ""] = ""
     ):
-        """EncodingSpec object used for Midas to generate Vega-Lite specifications
+        """EncodingSpec object used for B2 to generate Vega-Lite specifications
         
         Arguments:
             mark {str} -- "bar" | "circle" | "line"

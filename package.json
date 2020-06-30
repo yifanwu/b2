@@ -1,17 +1,17 @@
 {
-  "name": "midas",
+  "name": "b2",
   "version": "0.0.3",
   "description": "Reification of interactions in computational notebooks",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yifanwu/midas.git"
+    "url": "git+https://github.com/yifanwu/b2.git"
   },
   "author": "",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/yifanwu/midas/issues"
+    "url": "https://github.com/yifanwu/b2/issues"
   },
-  "homepage": "https://github.com/yifanwu/midas#readme",
+  "homepage": "https://github.com/yifanwu/b2#readme",
   "scripts": {
     "format": "prettier --write 'src/*.ts'",
     "lint": "prettier --check 'src/*.ts'",

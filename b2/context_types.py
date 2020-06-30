@@ -1,4 +1,4 @@
-from typing import NamedTuple, Callable, List
+from typing import NamedTuple, List
 
 class JoinInfo(NamedTuple):
     dfs: List[str]

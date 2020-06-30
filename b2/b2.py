@@ -17,20 +17,19 @@ except ImportError as err:
     display = lambda x: None
     logging = lambda x, y: None
 
-from midas.constants import ISDEBUG
-from midas.midas_algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType, find_selections_with_df_name
-from .midas_algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code
+from b2.constants import ISDEBUG
+from b2.algebra.selection import SelectionValue, ColumnRef, EmptySelection, SelectionType, find_selections_with_df_name
+from .algebra.dataframe import MidasDataFrame, DFInfo, VisualizedDFInfo, get_midas_code, JoinInfo, RuntimeFunctions, RelationalOp
+from .algebra.context import Context
 from .util.errors import InternalLogicalError, UserError
 from .util.utils import red_print, isnotebook, find_name
 from .vis_types import EncodingSpec
 from .state_types import DFName
 from .ui_comm import UiComm
-from midas.midas_algebra.dataframe import MidasDataFrame, DFInfo, JoinInfo, RuntimeFunctions, RelationalOp, VisualizedDFInfo
-from midas.midas_algebra.context import Context
 
-from midas.state_types import DFName
+from b2.state_types import DFName
 from .ui_comm import UiComm
-from .midas_magic import MidasMagic
+from .b2_magic import B2Magic
 from .util.instructions import HELP_INSTRUCTION
 from .config import MidasConfig
 
@@ -45,7 +44,7 @@ class B2(object):
       * a single "_" means that it's accesssed by JS facing features
       * two "_" means that it's accessed by other Py functions
     """
-    _magic: MidasMagic
+    _magic: B2Magic
     _ui_comm: UiComm
     _context: Context
     _rt_funcs: RuntimeFunctions
@@ -93,7 +92,7 @@ class B2(object):
         self.current_selection = []
         if is_in_ipynb:
             ip = get_ipython()
-            magics = MidasMagic(ip, ui_comm)
+            magics = B2Magic(ip, ui_comm)
             ip.register_magics(magics)
 
 

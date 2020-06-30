@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 from warnings import warn
 
-from .midas import B2
-from .midas_algebra.dataframe import MidasDataFrame
+from .b2 import B2
+from .algebra.dataframe import MidasDataFrame
 
 __all__ = ['B2', 'MidasDataFrame']
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 
 def _jupyter_nbextension_paths():
@@ -16,9 +16,9 @@ def _jupyter_nbextension_paths():
         # the path is relative to the `midas` directory
         src="static",
         # directory in the `nbextension/` namespace
-        dest="midas",
+        dest="b2",
         # _also_ in the `nbextension/` namespace
-        require="midas/index")]
+        require="b2/index")]
 
 
 def find_static_assets():

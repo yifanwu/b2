@@ -18,7 +18,7 @@ const commonConfig = {
   }
 };
 
-const outputPath = __dirname + "/midas/static";
+const outputPath = __dirname + "/b2/static";
 const outputLibraryTarget = "amd";
 
 module.exports = [
@@ -26,7 +26,7 @@ module.exports = [
     entry: "./src/index.tsx",
     output: {
       filename: "index.js",
-      library: "nbextensions/midas/index",
+      library: "nbextensions/b2/index",
       path: outputPath,
       libraryTarget: outputLibraryTarget
     }

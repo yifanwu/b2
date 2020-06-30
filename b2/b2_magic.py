@@ -5,10 +5,10 @@ from IPython.core.magic_arguments import (argument, magic_arguments, parse_argst
 from .ui_comm import UiComm
 
 @magics_class
-class MidasMagic(Magics):
+class B2Magic(Magics):
     ui_comm: UiComm
     def __init__(self, shell, ui_comm: UiComm):
-        super(MidasMagic, self).__init__(shell)
+        super(B2Magic, self).__init__(shell)
         self.ui_comm = ui_comm
 
     @cell_magic

@@ -1,12 +1,12 @@
 .DS_Store
 *.zip
 *.key
-midas/scrap/
+b2/scrap/
 *old.py
 midasenv/
-midas/widget/
-midas/static/
-midas/midas_algebra/tests/
+b2/widget/
+b2/static/
+b2/algebra/tests/
 sandbox/
 *.json
 notebooks/

@@ -4,21 +4,18 @@ import codecs
 from os import path
 import traceback
 import ast
-import sqlite3
 from re import sub
 import requests
 from pathlib import Path
 import time 
 import numpy as np
-from datetime import datetime
 
-from typing import Tuple, List, Optional
+from typing import Tuple, List
 from IPython import get_ipython  # type: ignore
 from IPython.core.debugger import set_trace
 
-from midas.constants import ISDEBUG
-from midas.util.errors import UserError, InternalLogicalError
-from datascience import are
+from b2.constants import ISDEBUG
+from b2.util.errors import UserError, InternalLogicalError
 
 FG_BLUE = "\x1b[34m";
 RESET_PRINT = "\x1b[0m";

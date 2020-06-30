@@ -78,7 +78,7 @@ function regFoldHelper() {
       let lineText = cm.getLine(start.line);
       let found = lineText.lastIndexOf(Token, 0);
       if (found === 0) {
-        // the following is customization for midas
+        // the following is customization
         // if there is a blue emoji then do not comment the last line out
         // ideally we can access the metadata, but hack works for now
         const end = lineText.includes(INTERACT_EMOJI)
