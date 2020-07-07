@@ -129,6 +129,18 @@ export function makeComm(is_first_time = true) {
         if (load.type !== "initialize") {
           throw LogInternalError("Should send intiialize message first!");
         }
+        // modify notebook css
+        const notebookDiv = document.getElementById("notebook");
+        // Set Style / Append Style
+        notebookDiv.style.display = "flex";
+        notebookDiv.style.flexDirection = "row";
+        notebookDiv.style.maxWidth = "100%";
+        const notebookContainerDiv = document.getElementById("notebook-container");
+        // Set Style / Append Style
+        notebookContainerDiv.style.flexGrow = "1";
+        notebookContainerDiv.style.marginLeft = "10pt";
+        notebookContainerDiv.style.marginRight = "0pt";
+        notebookContainerDiv.style.width = "10%";
 
         const logger = setupLogger(loggerId);
         createMenuBtnGroup();

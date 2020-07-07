@@ -1,6 +1,6 @@
 {
   "name": "b2",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "Reification of interactions in computational notebooks",
   "repository": {
     "type": "git",

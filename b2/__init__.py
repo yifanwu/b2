@@ -6,7 +6,7 @@ from .algebra.dataframe import MidasDataFrame
 
 __all__ = ['B2', 'MidasDataFrame']
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 
 def _jupyter_nbextension_paths():

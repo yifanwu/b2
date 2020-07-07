@@ -83,6 +83,8 @@
   --size-15: 768px;
 }
 
+/* this is loaded via JS so that we do not modify the traditional notebook layout */
+/* 
 #notebook {
   display: flex;
   flex-direction: row;
@@ -94,7 +96,7 @@
   margin-left: 10pt;
   margin-right: 0pt;
   width: 10%;
-}
+} */
 
 #midas-content-container {
   overflow: scroll;
