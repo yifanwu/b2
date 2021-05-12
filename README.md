@@ -1,6 +1,6 @@
 # B2
 
-B2 is a Jupyter extension that augments your programming experience with interactive visualizations for data analysis.
+B2 is a Jupyter extension that augments your programming experience with interactive visualizations for data analysis. You can find the talk and demo [here](https://www.youtube.com/watch?v=wWz7R6RI0z8&ab_channel=YifanWu).
 
 **Load dataframes to visualizations in a dashboard area that you can interact with**
 
